@@ -23,6 +23,7 @@ import { getCharacterById } from '../data/characters';
 import { getTrackById } from '../data/tracks';
 import { GameAudioEngine } from '../game/audio/audioEngine';
 import { loadAssetManifest, resolveAssetPath } from '../game/core/assetLoader';
+import { publicUrl } from '../game/core/publicUrl';
 import { DEFAULT_BINDINGS, DEFAULT_LAPS, TOTAL_RACERS } from '../game/core/constants';
 import { detectTouchDevice, resolveTouchControlsVisible } from '../game/core/mobile';
 import type { CharacterId } from '../game/core/types';
@@ -325,7 +326,7 @@ export function App() {
   const trackDef = getTrackById(selectedTrackId);
   const characterIconPath = manifest
     ? resolveAssetPath(manifest, characterDef.iconAssetId)
-    : '/assets/ui/icon_nilo.png';
+    : publicUrl('/assets/ui/icon_nilo.png');
 
   const championshipRoundLabel =
     mode === 'championship' && championship

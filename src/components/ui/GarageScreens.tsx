@@ -3,6 +3,7 @@ import { CHARACTERS, getCharacterById } from '../../data/characters';
 import { KARTS, getKartById } from '../../data/karts';
 import { CUPS, getTracksByCup } from '../../data/tracks';
 import { resolveAssetPath } from '../../game/core/assetLoader';
+import { publicUrl } from '../../game/core/publicUrl';
 import { DIFFICULTY_CONFIG } from '../../game/core/constants';
 import type { Difficulty, KartAttributes } from '../../game/core/types';
 import { formatRaceTimeMs } from '../../game/racing/raceManager';
@@ -49,7 +50,7 @@ export function CharacterSelectScreen({
             const active = char.id === selectedCharacterId;
             const portraitPath = manifest
               ? resolveAssetPath(manifest, char.portraitAssetId)
-              : `/assets/ui/portrait_${char.id}.png`;
+              : publicUrl(`/assets/ui/portrait_${char.id}.png`);
             return (
               <button
                 key={char.id}

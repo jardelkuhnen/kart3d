@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ALLOWED_ASSET_LICENSES } from './constants';
+import { publicUrl } from './publicUrl';
 import type { AssetManifest, AssetManifestEntry } from './types';
 
 let cachedManifest: AssetManifest | null = null;
@@ -71,11 +72,10 @@ export async function loadAssetManifest(forceRefresh = false): Promise<AssetMani
     return cachedManifest;
   }
 
-  const response = await fetch('/assets/manifest.json');
+  const manifestUrl = publicUrl('/assets/manifest.json');
+  const response = await fetch(manifestUrl);
   if (!response.ok) {
-    throw new Error(
-      `Falha ao carregar /assets/manifest.json (HTTP ${response.status}).`,
-    );
+    throw new Error(`Falha ao carregar ${manifestUrl} (HTTP ${response.status}).`);
   }
 
   const raw: unknown = await response.json();
@@ -97,7 +97,7 @@ export function getManifestEntry(manifest: AssetManifest, assetId: string): Asse
 }
 
 export function resolveAssetPath(manifest: AssetManifest, assetId: string): string {
-  return getManifestEntry(manifest, assetId).path;
+  return publicUrl(getManifestEntry(manifest, assetId).path);
 }
 
 export function resolveAudioSources(manifest: AssetManifest, assetId: string): string[] {

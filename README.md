@@ -4,6 +4,23 @@ Jogo original de corrida de kart arcade 3D para navegador, desenvolvido com **Re
 
 > **Status Atual:** Slices 0 a 8 implementados e verificados (8 personagens originais animados, 8 karts estruturalmente distintos, 8 pistas em 2 copas, 7 adversários com IA física, 6 itens, 4 modos de jogo, 14 telas em português-BR, Pódio 3D, save versionado `v1`, VFX em pool com shaders customizados, 3 perfis de qualidade, suporte mobile completo para Chrome iOS & Android e 114 ativos locais validados). Consulte a seção **Notas de Ambiente e Limitações Conhecidas** e [QA_REPORT.md](QA_REPORT.md) para detalhes completos das medições e ferramentas do host.
 
+## Jogar no GitHub Pages
+
+O build de produção publicado fica em **https://jardelkuhnen.github.io/kart3d/**.
+
+O deploy sai do workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) a cada push em `main`: `npm ci` e `npm run build` com `BASE_PATH=/kart3d/`, depois `actions/upload-pages-artifact` e `actions/deploy-pages` publicam a pasta `dist`. Os ativos em `public/assets/` (GLB, PNG, OGG, MP3 e `manifest.json`) já estão commitados, então o workflow não executa `npm run assets:build` e não precisa de `ffmpeg`.
+
+Em **Settings → Pages → Build and deployment**, o campo **Source** precisa ser **GitHub Actions**. A opção *Deploy from a branch* (`main` / raiz) serve o `index.html` de desenvolvimento e o jogo abre em branco.
+
+`npm run dev` e `npm run preview` continuam na raiz `/` local. Para reproduzir o subcaminho do Pages:
+
+```bash
+BASE_PATH=/kart3d/ npm run build
+BASE_PATH=/kart3d/ npm run preview
+```
+
+Abra `http://127.0.0.1:4173/kart3d/`.
+
 ---
 
 ## Capturas Reais de Gameplay (Playwright + Chrome Metal WebGL)
@@ -81,8 +98,8 @@ npm run preview
 
 - `npm install` — Instala todas as dependências do projeto.
 - `npm run dev` — Inicia o servidor de desenvolvimento Vite.
-- `npm run build` — Executa `tsc --noEmit` e gera o build de produção em `dist/`.
-- `npm run preview` — Sobe o build de produção localmente na porta `4173`.
+- `npm run build` — Executa `tsc --noEmit` e gera o build de produção em `dist/` (base `/`, a menos que `BASE_PATH` esteja definido).
+- `npm run preview` — Sobe o build de produção localmente na porta `4173`. Com `BASE_PATH=/kart3d/` no build e no preview, o jogo fica em `http://127.0.0.1:4173/kart3d/`.
 - `npm run typecheck` — Verificação estrita de tipos TypeScript.
 - `npm run lint` — Análise estática com ESLint.
 - `npm run test` — Executa os testes unitários no Vitest.
