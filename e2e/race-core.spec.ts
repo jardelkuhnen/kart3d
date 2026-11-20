@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-test.describe('KART LEGENDS 3D — Slice 2 Full 8-Racer Race, Items, HUD & Audio', () => {
-  test('selects difficulty, starts 8-racer race, shows minimap & item slot, drives, drifts, toggles mute and pauses cleanly', async ({
+test.describe('KART LEGENDS 3D — Slice 3 Characters, Karts, 8-Racer Race, Items, HUD & Audio', () => {
+  test('selects custom character Lumi & Cometa Estelar kart, picks difficulty, races, drifts, toggles mute & pauses cleanly', async ({
     page,
   }) => {
     const pageErrors: string[] = [];
@@ -21,12 +21,26 @@ test.describe('KART LEGENDS 3D — Slice 2 Full 8-Racer Race, Items, HUD & Audio
 
     await page.goto('/');
 
+    // Select a non-default character (Lumi) and non-default kart (Cometa Estelar)
+    const lumiBtn = page.getByTestId('char-option-lumi');
+    await expect(lumiBtn).toBeVisible({ timeout: 15_000 });
+    await lumiBtn.click();
+    await expect(lumiBtn).toHaveAttribute('aria-pressed', 'true');
+
+    const cometaBtn = page.getByTestId('kart-option-cometa-estelar');
+    await expect(cometaBtn).toBeVisible();
+    await cometaBtn.click();
+    await expect(cometaBtn).toHaveAttribute('aria-pressed', 'true');
+
+    // Bottom HUD badge reflects the selected driver
+    await expect(page.getByRole('img', { name: 'Lumi' }).first()).toBeVisible();
+
     // Difficulty selector works cleanly
     const hardBtn = page.getByRole('button', { name: 'Difícil' });
-    await expect(hardBtn).toBeVisible({ timeout: 15_000 });
     await hardBtn.click();
 
     const startBtn = page.getByRole('button', { name: 'INICIAR CORRIDA' });
+    await expect(startBtn).toBeVisible();
     await startBtn.click();
 
     // Countdown transitions to JÁ!

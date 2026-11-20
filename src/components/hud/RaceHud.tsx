@@ -1,11 +1,28 @@
+import { CHARACTERS, getCharacterById } from '../../data/characters';
 import { getItemById } from '../../data/items';
+import { KARTS, getKartById } from '../../data/karts';
 import { DIFFICULTY_CONFIG, DRIFT_TIERS, SURFACE_PROPERTIES } from '../../game/core/constants';
-import type { AssetManifest, Difficulty } from '../../game/core/types';
+import type {
+  AssetManifest,
+  CharacterId,
+  Difficulty,
+  KartAttributes,
+  KartId,
+} from '../../game/core/types';
 import { resolveAssetPath } from '../../game/core/assetLoader';
 import { formatRaceTimeMs, type RacePhase } from '../../game/racing/raceManager';
 import type { FullHudSnapshot } from '../../game/racing/raceSimulation';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from '../../game/tracks/portoDasLanternas';
 import { Minimap } from './Minimap';
+
+const STAT_ROWS: Array<{ key: keyof KartAttributes; label: string }> = [
+  { key: 'topSpeed', label: 'Velocidade' },
+  { key: 'acceleration', label: 'Aceleração' },
+  { key: 'handling', label: 'Curva' },
+  { key: 'grip', label: 'Aderência' },
+  { key: 'driftEfficiency', label: 'Drift' },
+  { key: 'mass', label: 'Massa' },
+];
 
 export interface RaceHudProps {
   trackName: string;
@@ -16,9 +33,13 @@ export interface RaceHudProps {
   phase: RacePhase;
   countdownLabel: string | null;
   paused: boolean;
+  selectedCharacterId: CharacterId;
+  selectedKartId: KartId;
   difficulty: Difficulty;
   muted: boolean;
   telemetry: FullHudSnapshot;
+  onSelectCharacter: (id: CharacterId) => void;
+  onSelectKart: (id: KartId) => void;
   onSelectDifficulty: (difficulty: Difficulty) => void;
   onStartRace: () => void;
   onRestartRace: () => void;
@@ -37,15 +58,21 @@ export function RaceHud({
   phase,
   countdownLabel,
   paused,
+  selectedCharacterId,
+  selectedKartId,
   difficulty,
   muted,
   telemetry,
+  onSelectCharacter,
+  onSelectKart,
   onSelectDifficulty,
   onStartRace,
   onRestartRace,
   onTogglePause,
   onToggleMute,
 }: RaceHudProps) {
+  const selectedCharacter = getCharacterById(selectedCharacterId);
+  const selectedKart = getKartById(selectedKartId);
   const driftTierColor =
     telemetry.driftTier > 0
       ? DRIFT_TIERS[telemetry.driftTier - 1].sparkColor
@@ -131,12 +158,96 @@ export function RaceHud({
       <div className="kl-center-stage">
         {phase === 'intro' && (
           <section className="kl-panel kl-launch-card" aria-label="Iniciar Corrida">
-            <span className="kl-brand-badge">SLICE 2 · CORRIDA COMPLETA (8 PILOTOS)</span>
+            <span className="kl-brand-badge">SLICE 3 · ELENCO & GARAGEM (8 PILOTOS · 8 KARTS)</span>
             <h1 className="kl-title">KART LEGENDS 3D</h1>
             <p className="kl-subtitle">
-              {trackName} · Piloto: <strong>{characterName}</strong> · Kart:{' '}
-              <strong>{kartName}</strong>
+              {trackName} · Piloto: <strong>{characterName}</strong> ({selectedCharacter.title}) ·
+              Kart: <strong>{kartName}</strong>
             </p>
+
+            <div className="kl-garage-grid">
+              <div className="kl-garage-col" role="group" aria-label="Escolha o Piloto">
+                <div className="kl-garage-heading">Piloto (8 Originais)</div>
+                <div className="kl-char-grid">
+                  {CHARACTERS.map((char) => {
+                    const active = char.id === selectedCharacterId;
+                    const portraitPath = manifest
+                      ? resolveAssetPath(manifest, char.portraitAssetId)
+                      : `/assets/ui/portrait_${char.id}.png`;
+                    return (
+                      <button
+                        key={char.id}
+                        type="button"
+                        className={`kl-char-btn ${active ? 'active' : ''}`}
+                        aria-pressed={active}
+                        data-testid={`char-option-${char.id}`}
+                        onClick={() => onSelectCharacter(char.id)}
+                      >
+                        <img
+                          src={portraitPath}
+                          alt={char.name}
+                          className="kl-char-thumb"
+                          width={34}
+                          height={34}
+                        />
+                        <span className="kl-char-btn-name">{char.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="kl-garage-note">{selectedCharacter.bio}</p>
+              </div>
+
+              <div className="kl-garage-col" role="group" aria-label="Escolha o Kart">
+                <div className="kl-garage-heading">Kart (8 Modelos Únicos)</div>
+                <div className="kl-kart-grid">
+                  {KARTS.map((kart) => {
+                    const active = kart.id === selectedKartId;
+                    return (
+                      <button
+                        key={kart.id}
+                        type="button"
+                        className={`kl-kart-btn ${active ? 'active' : ''}`}
+                        aria-pressed={active}
+                        data-testid={`kart-option-${kart.id}`}
+                        onClick={() => onSelectKart(kart.id)}
+                      >
+                        <span
+                          className="kl-kart-swatch"
+                          style={{
+                            background: `linear-gradient(135deg, ${kart.primaryColor}, ${kart.trimColor})`,
+                          }}
+                          aria-hidden="true"
+                        />
+                        <span className="kl-kart-btn-name">{kart.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="kl-stats-mini-grid" aria-label="Atributos Combinados">
+                  {STAT_ROWS.map(({ key, label }) => {
+                    const bonus = selectedCharacter.statBonuses[key] ?? 0;
+                    const value = Math.min(10, selectedKart.attributes[key] + bonus);
+                    return (
+                      <div key={key} className="kl-stat-mini">
+                        <div className="kl-stat-mini-top">
+                          <span>{label}</span>
+                          <span>
+                            {value}/10{bonus > 0 ? ` (+${bonus})` : ''}
+                          </span>
+                        </div>
+                        <div className="kl-stat-mini-bar">
+                          <div
+                            className="kl-stat-mini-fill"
+                            style={{ width: `${value * 10}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
 
             <div className="kl-difficulty-group" role="group" aria-label="Dificuldade da IA">
               {(['easy', 'normal', 'hard'] as Difficulty[]).map((level) => (

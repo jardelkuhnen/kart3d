@@ -2,6 +2,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Document } from '@gltf-transform/core';
+import { CHARACTERS_BY_ID } from '../src/data/characters';
+import { KARTS_BY_ID } from '../src/data/karts';
 import type { AssetManifest, AssetManifestEntry } from '../src/game/core/types';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from '../src/game/tracks/portoDasLanternas';
 import {
@@ -14,7 +16,7 @@ import {
   generateUiConfirmOgg,
   generateVictoryFanfareOgg,
 } from './asset-pipeline/audio-builder';
-import { NILO_BUILD_SPEC, buildCharacterGlb } from './asset-pipeline/character-builder';
+import { CHARACTER_BUILD_SPECS, buildCharacterGlb } from './asset-pipeline/character-builder';
 import {
   addMeshToNode,
   buildBoxBeveled,
@@ -32,7 +34,7 @@ import {
   buildOndaDeVentoGlb,
   buildPulsoSolarGlb,
 } from './asset-pipeline/item-builder';
-import { TRILHA_RAPOSA_BUILD_SPEC, buildKartGlb } from './asset-pipeline/kart-builder';
+import { KART_BUILD_SPECS, buildKartGlb } from './asset-pipeline/kart-builder';
 import {
   type ItemIconKind,
   createAsphaltTextures,
@@ -323,22 +325,46 @@ async function main(): Promise<void> {
   const startLinePng = createCheckeredStartTexture(512);
   const chevronPng = createChevronSignTexture(256);
   const boostPadPng = createBoostPadTexture(256);
-  const niloPortraitPng = createCharacterPortraitPng(
-    [251, 146, 60],
-    [180, 83, 9],
-    [249, 115, 22],
-    [13, 148, 136],
-    256,
-    false,
-  );
-  const niloIconPng = createCharacterPortraitPng(
-    [251, 146, 60],
-    [180, 83, 9],
-    [249, 115, 22],
-    [13, 148, 136],
-    128,
-    true,
-  );
+  const toByteRgb = (rgb: [number, number, number]): [number, number, number] => [
+    Math.round(rgb[0] * 255),
+    Math.round(rgb[1] * 255),
+    Math.round(rgb[2] * 255),
+  ];
+
+  const characterUiSpecs = CHARACTER_BUILD_SPECS.flatMap((spec) => {
+    const def = CHARACTERS_BY_ID[spec.id];
+    const pri = toByteRgb(spec.primaryRgb);
+    const acc = toByteRgb(spec.accentRgb);
+    const skin = toByteRgb(spec.furOrSkinRgb);
+    const bgTop: [number, number, number] = [
+      Math.min(255, pri[0] + 45),
+      Math.min(255, pri[1] + 45),
+      Math.min(255, pri[2] + 45),
+    ];
+    const bgBot: [number, number, number] = [
+      Math.max(18, Math.round(pri[0] * 0.45)),
+      Math.max(18, Math.round(pri[1] * 0.45)),
+      Math.max(24, Math.round(pri[2] * 0.45)),
+    ];
+    return [
+      {
+        id: `ui-portrait-${spec.id}`,
+        name: `Retrato de Seleção — ${def.name}`,
+        type: 'ui' as const,
+        relPath: `assets/ui/portrait_${spec.id}.png`,
+        buffer: createCharacterPortraitPng(bgTop, bgBot, skin, acc, 256, false, spec.id),
+        usedIn: ['CharacterSelect', 'RaceHud'],
+      },
+      {
+        id: `ui-icon-${spec.id}`,
+        name: `Ícone de HUD — ${def.name}`,
+        type: 'ui' as const,
+        relPath: `assets/ui/icon_${spec.id}.png`,
+        buffer: createCharacterPortraitPng(bgTop, bgBot, skin, acc, 128, true, spec.id),
+        usedIn: ['RaceHud', 'Minimap'],
+      },
+    ];
+  });
 
   const textureSpecs: Array<{
     id: string;
@@ -388,22 +414,7 @@ async function main(): Promise<void> {
       buffer: chevronPng,
       usedIn: ['ChevronBoardProp', 'TrackSigns'],
     },
-    {
-      id: 'ui-portrait-nilo',
-      name: 'Retrato de Seleção — Nilo',
-      type: 'ui',
-      relPath: 'assets/ui/portrait_nilo.png',
-      buffer: niloPortraitPng,
-      usedIn: ['CharacterSelect', 'RaceHud'],
-    },
-    {
-      id: 'ui-icon-nilo',
-      name: 'Ícone de HUD — Nilo',
-      type: 'ui',
-      relPath: 'assets/ui/icon_nilo.png',
-      buffer: niloIconPng,
-      usedIn: ['RaceHud', 'Minimap'],
-    },
+    ...characterUiSpecs,
     ...(
       [
         ['pulso-solar', 'Ícone HUD — Pulso Solar', 'item_pulso_solar.png'],
@@ -498,57 +509,73 @@ async function main(): Promise<void> {
     requiredNodes: ['BoostPadRoot', 'BoostDeck'],
   });
 
-  // 3. Definitive Character GLB (Slice 1: Nilo with all 9 GLTF animation clips)
-  const niloSize = await buildCharacterGlb(
-    NILO_BUILD_SPEC,
-    path.join(PUBLIC_DIR, 'assets/characters/nilo.glb'),
-  );
-  entries.push({
-    id: 'character-nilo',
-    name: 'Piloto Nilo — Raposa Exploradora',
-    type: 'character',
-    path: '/assets/characters/nilo.glb',
-    format: 'glb',
-    origin: 'Pipeline local GLTF animado (character-builder.ts)',
-    author: 'Kart Legends 3D Pipeline',
-    license: 'Original-Project-License',
-    sizeBytes: niloSize,
-    validationStatus: 'validated',
-    usedIn: ['RaceScene', 'CharacterRig'],
-    requiredNodes: ['Character_nilo_Root', 'Torso', 'Head', 'ArmL', 'ArmR', 'EarL', 'EarR', 'TailBase'],
-    requiredAnimations: REQUIRED_CHARACTER_ANIMS,
-  });
+  // 3. All 8 Definitive Character GLBs (each with 9 real GLTF animation clips)
+  for (const spec of CHARACTER_BUILD_SPECS) {
+    const def = CHARACTERS_BY_ID[spec.id];
+    const sizeBytes = await buildCharacterGlb(
+      spec,
+      path.join(PUBLIC_DIR, `assets/characters/${spec.id}.glb`),
+    );
+    entries.push({
+      id: def.modelAssetId,
+      name: `Piloto ${def.name} — ${def.title}`,
+      type: 'character',
+      path: `/assets/characters/${spec.id}.glb`,
+      format: 'glb',
+      origin: 'Pipeline local GLTF animado (character-builder.ts)',
+      author: 'Kart Legends 3D Pipeline',
+      license: 'Original-Project-License',
+      sizeBytes,
+      validationStatus: 'validated',
+      usedIn: ['RaceScene', 'CharacterSelect', 'CharacterRig'],
+      requiredNodes: [
+        `Character_${spec.id}_Root`,
+        'Torso',
+        'Head',
+        'ArmL',
+        'ArmR',
+        'EarL',
+        'EarR',
+        'TailBase',
+      ],
+      requiredAnimations: REQUIRED_CHARACTER_ANIMS,
+    });
+  }
 
-  // 4. Definitive Kart GLB (Slice 1: Trilha Raposa)
-  const trilhaRaposaSize = await buildKartGlb(
-    TRILHA_RAPOSA_BUILD_SPEC,
-    path.join(PUBLIC_DIR, 'assets/karts/trilha_raposa.glb'),
-  );
-  entries.push({
-    id: 'kart-trilha-raposa',
-    name: 'Kart Trilha Raposa',
-    type: 'kart',
-    path: '/assets/karts/trilha_raposa.glb',
-    format: 'glb',
-    origin: 'Pipeline local GLTF de veículos (kart-builder.ts)',
-    author: 'Kart Legends 3D Pipeline',
-    license: 'Original-Project-License',
-    sizeBytes: trilhaRaposaSize,
-    validationStatus: 'validated',
-    usedIn: ['RaceScene', 'KartEntity'],
-    requiredNodes: [
-      'KartRoot',
-      'ChassisGroup',
-      'SteeringWheel',
-      'DriverMount',
-      'ExhaustL',
-      'ExhaustR',
-      'WheelFL',
-      'WheelFR',
-      'WheelRL',
-      'WheelRR',
-    ],
-  });
+  // 4. All 8 Structurally Distinct Kart GLBs
+  for (const spec of KART_BUILD_SPECS) {
+    const def = KARTS_BY_ID[spec.id];
+    const fileSlug = spec.id.replace(/-/g, '_');
+    const sizeBytes = await buildKartGlb(
+      spec,
+      path.join(PUBLIC_DIR, `assets/karts/${fileSlug}.glb`),
+    );
+    entries.push({
+      id: def.modelAssetId,
+      name: `Kart ${def.name}`,
+      type: 'kart',
+      path: `/assets/karts/${fileSlug}.glb`,
+      format: 'glb',
+      origin: 'Pipeline local GLTF de veículos (kart-builder.ts)',
+      author: 'Kart Legends 3D Pipeline',
+      license: 'Original-Project-License',
+      sizeBytes,
+      validationStatus: 'validated',
+      usedIn: ['RaceScene', 'KartSelect', 'RacerMeshInstance'],
+      requiredNodes: [
+        'KartRoot',
+        'ChassisGroup',
+        'SteeringWheel',
+        'DriverMount',
+        'ExhaustL',
+        'ExhaustR',
+        'WheelFL',
+        'WheelFR',
+        'WheelRL',
+        'WheelRR',
+      ],
+    });
+  }
 
   // 5. Definitive Track GLB (Slice 1: Porto das Lanternas)
   const portoSize = await buildPortoDasLanternasGlb(

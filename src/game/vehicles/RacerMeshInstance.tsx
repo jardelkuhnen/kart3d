@@ -75,7 +75,6 @@ export function RacerMeshInstance({
   const isPlayer = racerIndex === 0;
 
   useEffect(() => {
-    const racer = getRacerFromRef(simRef, racerIndex);
     const driverMountOffset = new THREE.Vector3(0, 0.54, 0.22);
     let chassis: THREE.Object3D | null = null;
     let steeringWheel: THREE.Object3D | null = null;
@@ -89,15 +88,9 @@ export function RacerMeshInstance({
         obj.castShadow = isPlayer;
         obj.receiveShadow = true;
 
-        // Clone material per racer and apply character/kart palette tint cleanly
+        // Clone material per racer instance so disposeObject3D never disposes shared GLTF materials
         if (obj.material instanceof THREE.MeshStandardMaterial) {
-          const clonedMat = obj.material.clone();
-          if (clonedMat.name.includes('Primary')) {
-            clonedMat.color.set(racer.primaryColor);
-          } else if (clonedMat.name.includes('Trim')) {
-            clonedMat.color.set(racer.accentColor);
-          }
-          obj.material = clonedMat;
+          obj.material = obj.material.clone();
         }
       }
       if (obj.name === 'ChassisGroup') chassis = obj;
@@ -125,7 +118,7 @@ export function RacerMeshInstance({
     return () => {
       disposeObject3D(kartScene);
     };
-  }, [kartScene, racerIndex, simRef, isPlayer]);
+  }, [kartScene, isPlayer]);
 
   useEffect(() => {
     if (isPlayer && onPlayerRapierSync) {

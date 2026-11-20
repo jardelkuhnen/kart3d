@@ -7,7 +7,7 @@ import { getTrackById } from '../data/tracks';
 import { GameAudioEngine } from '../game/audio/audioEngine';
 import { loadAssetManifest, resolveAssetPath } from '../game/core/assetLoader';
 import { DEFAULT_LAPS, DEFAULT_SETTINGS, TOTAL_RACERS } from '../game/core/constants';
-import type { Difficulty } from '../game/core/types';
+import type { CharacterId, Difficulty, KartId } from '../game/core/types';
 import type { RacePhase } from '../game/racing/raceManager';
 import type { FullHudSnapshot } from '../game/racing/raceSimulation';
 import { RaceScene, type RaceStageSync } from '../scenes/RaceScene';
@@ -74,6 +74,8 @@ export function App() {
   const settings = useGameStore((s) => s.settings);
   const setManifest = useGameStore((s) => s.setManifest);
   const setManifestError = useGameStore((s) => s.setManifestError);
+  const setSelectedCharacterId = useGameStore((s) => s.setSelectedCharacterId);
+  const setSelectedKartId = useGameStore((s) => s.setSelectedKartId);
   const setDifficulty = useGameStore((s) => s.setDifficulty);
   const updateSettings = useGameStore((s) => s.updateSettings);
   const setScreen = useGameStore((s) => s.setScreen);
@@ -120,6 +122,24 @@ export function App() {
       active = false;
     };
   }, [setManifest, setManifestError, setScreen]);
+
+  const handleSelectCharacter = useCallback(
+    (id: CharacterId) => {
+      audioEngine.unlock();
+      audioEngine.playSfx('sfx-ui-click');
+      setSelectedCharacterId(id);
+    },
+    [audioEngine, setSelectedCharacterId],
+  );
+
+  const handleSelectKart = useCallback(
+    (id: KartId) => {
+      audioEngine.unlock();
+      audioEngine.playSfx('sfx-ui-click');
+      setSelectedKartId(id);
+    },
+    [audioEngine, setSelectedKartId],
+  );
 
   const handleSelectDifficulty = useCallback(
     (level: Difficulty) => {
@@ -202,9 +222,13 @@ export function App() {
             phase={stageSync.phase}
             countdownLabel={stageSync.countdownLabel}
             paused={paused}
+            selectedCharacterId={selectedCharacterId}
+            selectedKartId={selectedKartId}
             difficulty={difficulty}
             muted={settings.audio.muted}
             telemetry={telemetry}
+            onSelectCharacter={handleSelectCharacter}
+            onSelectKart={handleSelectKart}
             onSelectDifficulty={handleSelectDifficulty}
             onStartRace={handleStartRace}
             onRestartRace={handleRestartRace}

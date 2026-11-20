@@ -61,6 +61,7 @@ export function CharacterRig({ modelPath, animState, steerAngle = 0 }: Character
       mixerRef.current = null;
       actionsRef.current = {};
       activeStateRef.current = null;
+      headNodeRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clonedScene, gltf.animations]);

@@ -4,11 +4,13 @@ import { Environment, Lightformer, useGLTF } from '@react-three/drei';
 import { CuboidCollider, Physics, RigidBody, type RapierRigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { useGameStore } from '../app/store';
-import { getCharacterById } from '../data/characters';
+import { CHARACTERS, getCharacterById } from '../data/characters';
+import { getKartById } from '../data/karts';
 import { GameAudioEngine } from '../game/audio/audioEngine';
 import { RaceCamera } from '../game/camera/RaceCamera';
 import { disposeObject3D, resolveAssetPath } from '../game/core/assetLoader';
 import { DEFAULT_LAPS, FIXED_TIMESTEP, FixedStepClock } from '../game/core/constants';
+import type { CharacterId, KartId } from '../game/core/types';
 import { InputManager } from '../game/input/inputManager';
 import { RaceProgressTracker, type RacePhase } from '../game/racing/raceManager';
 import { type FullHudSnapshot, RaceSimulation } from '../game/racing/raceSimulation';
@@ -275,6 +277,28 @@ function WorldItemsRenderer({
   );
 }
 
+const FALLBACK_CHARACTER_PATHS: Record<CharacterId, string> = {
+  nilo: '/assets/characters/nilo.glb',
+  boro: '/assets/characters/boro.glb',
+  lumi: '/assets/characters/lumi.glb',
+  kora: '/assets/characters/kora.glb',
+  tiko: '/assets/characters/tiko.glb',
+  mavi: '/assets/characters/mavi.glb',
+  runi: '/assets/characters/runi.glb',
+  zera: '/assets/characters/zera.glb',
+};
+
+const FALLBACK_KART_PATHS: Record<KartId, string> = {
+  'trilha-raposa': '/assets/karts/trilha_raposa.glb',
+  'engrenagem-turbo': '/assets/karts/engrenagem_turbo.glb',
+  'cometa-estelar': '/assets/karts/cometa_estelar.glb',
+  'raiz-veloz': '/assets/karts/raiz_veloz.glb',
+  'chave-mestra-gt': '/assets/karts/chave_mestra_gt.glb',
+  'brisa-corsaria': '/assets/karts/brisa_corsaria.glb',
+  'escorpiao-dourado': '/assets/karts/escorpiao_dourado.glb',
+  'lamina-glacial': '/assets/karts/lamina_glacial.glb',
+};
+
 function RaceWorldContent({
   phaseRequest,
   paused,
@@ -290,21 +314,31 @@ function RaceWorldContent({
   const difficulty = useGameStore((s) => s.difficulty);
   const settings = useGameStore((s) => s.settings);
 
-  const characterDef = getCharacterById(selectedCharacterId);
-  const assetPaths = useMemo(() => {
-    if (!manifest) {
-      return {
-        character: '/assets/characters/nilo.glb',
-        kart: '/assets/karts/trilha_raposa.glb',
-        track: '/assets/tracks/porto_das_lanternas.glb',
-      };
-    }
-    return {
-      character: resolveAssetPath(manifest, characterDef.modelAssetId),
-      kart: resolveAssetPath(manifest, 'kart-trilha-raposa'),
-      track: resolveAssetPath(manifest, 'track-porto-das-lanternas'),
-    };
-  }, [manifest, characterDef.modelAssetId]);
+  const trackModelPath = useMemo(
+    () =>
+      manifest
+        ? resolveAssetPath(manifest, 'track-porto-das-lanternas')
+        : '/assets/tracks/porto_das_lanternas.glb',
+    [manifest],
+  );
+
+  // Align visual GLB models 1:1 with RaceSimulation's 8-racer roster order
+  const racerAssetList = useMemo(() => {
+    const playerChar = getCharacterById(selectedCharacterId);
+    const playerKart = getKartById(selectedKartId);
+    const aiChars = CHARACTERS.filter((c) => c.id !== playerChar.id).slice(0, 7);
+    const roster = [
+      { char: playerChar, kart: playerKart },
+      ...aiChars.map((char) => ({ char, kart: getKartById(char.defaultKartId) })),
+    ];
+
+    return roster.map(({ char, kart }) => ({
+      character: manifest
+        ? resolveAssetPath(manifest, char.modelAssetId)
+        : FALLBACK_CHARACTER_PATHS[char.id],
+      kart: manifest ? resolveAssetPath(manifest, kart.modelAssetId) : FALLBACK_KART_PATHS[kart.id],
+    }));
+  }, [manifest, selectedCharacterId, selectedKartId]);
 
   const startSlot = PORTO_DAS_LANTERNAS_LAYOUT.startGridSlots[0];
 
@@ -557,15 +591,15 @@ function RaceWorldContent({
       </Environment>
 
       <Physics gravity={[0, -28, 0]} timeStep={FIXED_TIMESTEP}>
-        <PortoTrackWorld trackModelPath={assetPaths.track} />
+        <PortoTrackWorld trackModelPath={trackModelPath} />
         <WorldItemsRenderer simRef={simRef} paused={paused} />
-        {Array.from({ length: 8 }, (_, idx) => (
+        {racerAssetList.map((racerAsset, idx) => (
           <RacerMeshInstance
             key={idx}
             racerIndex={idx}
             simRef={simRef}
-            kartModelPath={assetPaths.kart}
-            characterModelPath={assetPaths.character}
+            kartModelPath={racerAsset.kart}
+            characterModelPath={racerAsset.character}
             poseRef={idx === 0 ? poseRef : undefined}
             onPlayerRapierSync={
               idx === 0
@@ -605,8 +639,12 @@ export function RaceScene(props: RaceSceneProps) {
   );
 }
 
-useGLTF.preload('/assets/characters/nilo.glb');
-useGLTF.preload('/assets/karts/trilha_raposa.glb');
+for (const charPath of Object.values(FALLBACK_CHARACTER_PATHS)) {
+  useGLTF.preload(charPath);
+}
+for (const kartPath of Object.values(FALLBACK_KART_PATHS)) {
+  useGLTF.preload(kartPath);
+}
 useGLTF.preload('/assets/tracks/porto_das_lanternas.glb');
 useGLTF.preload('/assets/props/item_box.glb');
 useGLTF.preload('/assets/items/nevoa_prisma.glb');

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-20T02:12:10.663Z",
+  "generatedAt": "2026-11-20T02:28:05.840Z",
   "project": "KART LEGENDS 3D",
   "assets": [
     {
@@ -89,7 +89,7 @@
       "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
       "author": "Kart Legends 3D Pipeline",
       "license": "Original-Project-License",
-      "sizeBytes": 23651,
+      "sizeBytes": 20368,
       "validationStatus": "validated",
       "usedIn": [
         "CharacterSelect",
@@ -105,7 +105,231 @@
       "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
       "author": "Kart Legends 3D Pipeline",
       "license": "Original-Project-License",
-      "sizeBytes": 9296,
+      "sizeBytes": 8515,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceHud",
+        "Minimap"
+      ]
+    },
+    {
+      "id": "ui-portrait-boro",
+      "name": "Retrato de Seleção — Boro",
+      "type": "ui",
+      "path": "/assets/ui/portrait_boro.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 22716,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CharacterSelect",
+        "RaceHud"
+      ]
+    },
+    {
+      "id": "ui-icon-boro",
+      "name": "Ícone de HUD — Boro",
+      "type": "ui",
+      "path": "/assets/ui/icon_boro.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 8943,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceHud",
+        "Minimap"
+      ]
+    },
+    {
+      "id": "ui-portrait-lumi",
+      "name": "Retrato de Seleção — Lumi",
+      "type": "ui",
+      "path": "/assets/ui/portrait_lumi.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 27460,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CharacterSelect",
+        "RaceHud"
+      ]
+    },
+    {
+      "id": "ui-icon-lumi",
+      "name": "Ícone de HUD — Lumi",
+      "type": "ui",
+      "path": "/assets/ui/icon_lumi.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 10404,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceHud",
+        "Minimap"
+      ]
+    },
+    {
+      "id": "ui-portrait-kora",
+      "name": "Retrato de Seleção — Kora",
+      "type": "ui",
+      "path": "/assets/ui/portrait_kora.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 24179,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CharacterSelect",
+        "RaceHud"
+      ]
+    },
+    {
+      "id": "ui-icon-kora",
+      "name": "Ícone de HUD — Kora",
+      "type": "ui",
+      "path": "/assets/ui/icon_kora.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 9424,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceHud",
+        "Minimap"
+      ]
+    },
+    {
+      "id": "ui-portrait-tiko",
+      "name": "Retrato de Seleção — Tiko",
+      "type": "ui",
+      "path": "/assets/ui/portrait_tiko.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 20829,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CharacterSelect",
+        "RaceHud"
+      ]
+    },
+    {
+      "id": "ui-icon-tiko",
+      "name": "Ícone de HUD — Tiko",
+      "type": "ui",
+      "path": "/assets/ui/icon_tiko.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 8180,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceHud",
+        "Minimap"
+      ]
+    },
+    {
+      "id": "ui-portrait-mavi",
+      "name": "Retrato de Seleção — Mavi",
+      "type": "ui",
+      "path": "/assets/ui/portrait_mavi.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 19698,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CharacterSelect",
+        "RaceHud"
+      ]
+    },
+    {
+      "id": "ui-icon-mavi",
+      "name": "Ícone de HUD — Mavi",
+      "type": "ui",
+      "path": "/assets/ui/icon_mavi.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 7640,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceHud",
+        "Minimap"
+      ]
+    },
+    {
+      "id": "ui-portrait-runi",
+      "name": "Retrato de Seleção — Runi",
+      "type": "ui",
+      "path": "/assets/ui/portrait_runi.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 22184,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CharacterSelect",
+        "RaceHud"
+      ]
+    },
+    {
+      "id": "ui-icon-runi",
+      "name": "Ícone de HUD — Runi",
+      "type": "ui",
+      "path": "/assets/ui/icon_runi.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 8729,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceHud",
+        "Minimap"
+      ]
+    },
+    {
+      "id": "ui-portrait-zera",
+      "name": "Retrato de Seleção — Zera",
+      "type": "ui",
+      "path": "/assets/ui/portrait_zera.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 27705,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CharacterSelect",
+        "RaceHud"
+      ]
+    },
+    {
+      "id": "ui-icon-zera",
+      "name": "Ícone de HUD — Zera",
+      "type": "ui",
+      "path": "/assets/ui/icon_zera.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 10525,
       "validationStatus": "validated",
       "usedIn": [
         "RaceHud",
@@ -275,14 +499,281 @@
       "origin": "Pipeline local GLTF animado (character-builder.ts)",
       "author": "Kart Legends 3D Pipeline",
       "license": "Original-Project-License",
-      "sizeBytes": 136320,
+      "sizeBytes": 132144,
       "validationStatus": "validated",
       "usedIn": [
         "RaceScene",
+        "CharacterSelect",
         "CharacterRig"
       ],
       "requiredNodes": [
         "Character_nilo_Root",
+        "Torso",
+        "Head",
+        "ArmL",
+        "ArmR",
+        "EarL",
+        "EarR",
+        "TailBase"
+      ],
+      "requiredAnimations": [
+        "idle",
+        "drive",
+        "turnLeft",
+        "turnRight",
+        "drift",
+        "hit",
+        "victory",
+        "defeat",
+        "podium"
+      ]
+    },
+    {
+      "id": "character-boro",
+      "name": "Piloto Boro — Pequeno Inventor",
+      "type": "character",
+      "path": "/assets/characters/boro.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF animado (character-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 123148,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "CharacterSelect",
+        "CharacterRig"
+      ],
+      "requiredNodes": [
+        "Character_boro_Root",
+        "Torso",
+        "Head",
+        "ArmL",
+        "ArmR",
+        "EarL",
+        "EarR",
+        "TailBase"
+      ],
+      "requiredAnimations": [
+        "idle",
+        "drive",
+        "turnLeft",
+        "turnRight",
+        "drift",
+        "hit",
+        "victory",
+        "defeat",
+        "podium"
+      ]
+    },
+    {
+      "id": "character-lumi",
+      "name": "Piloto Lumi — Piloto das Estrelas",
+      "type": "character",
+      "path": "/assets/characters/lumi.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF animado (character-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 105132,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "CharacterSelect",
+        "CharacterRig"
+      ],
+      "requiredNodes": [
+        "Character_lumi_Root",
+        "Torso",
+        "Head",
+        "ArmL",
+        "ArmR",
+        "EarL",
+        "EarR",
+        "TailBase"
+      ],
+      "requiredAnimations": [
+        "idle",
+        "drive",
+        "turnLeft",
+        "turnRight",
+        "drift",
+        "hit",
+        "victory",
+        "defeat",
+        "podium"
+      ]
+    },
+    {
+      "id": "character-kora",
+      "name": "Piloto Kora — Guardiã do Bosque",
+      "type": "character",
+      "path": "/assets/characters/kora.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF animado (character-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 119696,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "CharacterSelect",
+        "CharacterRig"
+      ],
+      "requiredNodes": [
+        "Character_kora_Root",
+        "Torso",
+        "Head",
+        "ArmL",
+        "ArmR",
+        "EarL",
+        "EarR",
+        "TailBase"
+      ],
+      "requiredAnimations": [
+        "idle",
+        "drive",
+        "turnLeft",
+        "turnRight",
+        "drift",
+        "hit",
+        "victory",
+        "defeat",
+        "podium"
+      ]
+    },
+    {
+      "id": "character-tiko",
+      "name": "Piloto Tiko — Mecânico Veloz",
+      "type": "character",
+      "path": "/assets/characters/tiko.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF animado (character-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 110940,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "CharacterSelect",
+        "CharacterRig"
+      ],
+      "requiredNodes": [
+        "Character_tiko_Root",
+        "Torso",
+        "Head",
+        "ArmL",
+        "ArmR",
+        "EarL",
+        "EarR",
+        "TailBase"
+      ],
+      "requiredAnimations": [
+        "idle",
+        "drive",
+        "turnLeft",
+        "turnRight",
+        "drift",
+        "hit",
+        "victory",
+        "defeat",
+        "podium"
+      ]
+    },
+    {
+      "id": "character-mavi",
+      "name": "Piloto Mavi — Navegadora Aventureira",
+      "type": "character",
+      "path": "/assets/characters/mavi.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF animado (character-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 114212,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "CharacterSelect",
+        "CharacterRig"
+      ],
+      "requiredNodes": [
+        "Character_mavi_Root",
+        "Torso",
+        "Head",
+        "ArmL",
+        "ArmR",
+        "EarL",
+        "EarR",
+        "TailBase"
+      ],
+      "requiredAnimations": [
+        "idle",
+        "drive",
+        "turnLeft",
+        "turnRight",
+        "drift",
+        "hit",
+        "victory",
+        "defeat",
+        "podium"
+      ]
+    },
+    {
+      "id": "character-runi",
+      "name": "Piloto Runi — Corredor das Dunas",
+      "type": "character",
+      "path": "/assets/characters/runi.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF animado (character-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 125928,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "CharacterSelect",
+        "CharacterRig"
+      ],
+      "requiredNodes": [
+        "Character_runi_Root",
+        "Torso",
+        "Head",
+        "ArmL",
+        "ArmR",
+        "EarL",
+        "EarR",
+        "TailBase"
+      ],
+      "requiredAnimations": [
+        "idle",
+        "drive",
+        "turnLeft",
+        "turnRight",
+        "drift",
+        "hit",
+        "victory",
+        "defeat",
+        "podium"
+      ]
+    },
+    {
+      "id": "character-zera",
+      "name": "Piloto Zera — Exploradora do Gelo",
+      "type": "character",
+      "path": "/assets/characters/zera.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF animado (character-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 100108,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "CharacterSelect",
+        "CharacterRig"
+      ],
+      "requiredNodes": [
+        "Character_zera_Root",
         "Torso",
         "Head",
         "ArmL",
@@ -312,11 +803,215 @@
       "origin": "Pipeline local GLTF de veículos (kart-builder.ts)",
       "author": "Kart Legends 3D Pipeline",
       "license": "Original-Project-License",
-      "sizeBytes": 155776,
+      "sizeBytes": 138600,
       "validationStatus": "validated",
       "usedIn": [
         "RaceScene",
-        "KartEntity"
+        "KartSelect",
+        "RacerMeshInstance"
+      ],
+      "requiredNodes": [
+        "KartRoot",
+        "ChassisGroup",
+        "SteeringWheel",
+        "DriverMount",
+        "ExhaustL",
+        "ExhaustR",
+        "WheelFL",
+        "WheelFR",
+        "WheelRL",
+        "WheelRR"
+      ]
+    },
+    {
+      "id": "kart-engrenagem-turbo",
+      "name": "Kart Engrenagem Turbo",
+      "type": "kart",
+      "path": "/assets/karts/engrenagem_turbo.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de veículos (kart-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 135324,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "KartSelect",
+        "RacerMeshInstance"
+      ],
+      "requiredNodes": [
+        "KartRoot",
+        "ChassisGroup",
+        "SteeringWheel",
+        "DriverMount",
+        "ExhaustL",
+        "ExhaustR",
+        "WheelFL",
+        "WheelFR",
+        "WheelRL",
+        "WheelRR"
+      ]
+    },
+    {
+      "id": "kart-cometa-estelar",
+      "name": "Kart Cometa Estelar",
+      "type": "kart",
+      "path": "/assets/karts/cometa_estelar.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de veículos (kart-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 138760,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "KartSelect",
+        "RacerMeshInstance"
+      ],
+      "requiredNodes": [
+        "KartRoot",
+        "ChassisGroup",
+        "SteeringWheel",
+        "DriverMount",
+        "ExhaustL",
+        "ExhaustR",
+        "WheelFL",
+        "WheelFR",
+        "WheelRL",
+        "WheelRR"
+      ]
+    },
+    {
+      "id": "kart-raiz-veloz",
+      "name": "Kart Raiz Veloz",
+      "type": "kart",
+      "path": "/assets/karts/raiz_veloz.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de veículos (kart-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 128152,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "KartSelect",
+        "RacerMeshInstance"
+      ],
+      "requiredNodes": [
+        "KartRoot",
+        "ChassisGroup",
+        "SteeringWheel",
+        "DriverMount",
+        "ExhaustL",
+        "ExhaustR",
+        "WheelFL",
+        "WheelFR",
+        "WheelRL",
+        "WheelRR"
+      ]
+    },
+    {
+      "id": "kart-chave-mestra-gt",
+      "name": "Kart Chave-Mestra GT",
+      "type": "kart",
+      "path": "/assets/karts/chave_mestra_gt.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de veículos (kart-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 142236,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "KartSelect",
+        "RacerMeshInstance"
+      ],
+      "requiredNodes": [
+        "KartRoot",
+        "ChassisGroup",
+        "SteeringWheel",
+        "DriverMount",
+        "ExhaustL",
+        "ExhaustR",
+        "WheelFL",
+        "WheelFR",
+        "WheelRL",
+        "WheelRR"
+      ]
+    },
+    {
+      "id": "kart-brisa-corsaria",
+      "name": "Kart Brisa Corsária",
+      "type": "kart",
+      "path": "/assets/karts/brisa_corsaria.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de veículos (kart-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 137772,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "KartSelect",
+        "RacerMeshInstance"
+      ],
+      "requiredNodes": [
+        "KartRoot",
+        "ChassisGroup",
+        "SteeringWheel",
+        "DriverMount",
+        "ExhaustL",
+        "ExhaustR",
+        "WheelFL",
+        "WheelFR",
+        "WheelRL",
+        "WheelRR"
+      ]
+    },
+    {
+      "id": "kart-escorpiao-dourado",
+      "name": "Kart Escorpião Dourado",
+      "type": "kart",
+      "path": "/assets/karts/escorpiao_dourado.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de veículos (kart-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 128164,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "KartSelect",
+        "RacerMeshInstance"
+      ],
+      "requiredNodes": [
+        "KartRoot",
+        "ChassisGroup",
+        "SteeringWheel",
+        "DriverMount",
+        "ExhaustL",
+        "ExhaustR",
+        "WheelFL",
+        "WheelFR",
+        "WheelRL",
+        "WheelRR"
+      ]
+    },
+    {
+      "id": "kart-lamina-glacial",
+      "name": "Kart Lâmina Glacial",
+      "type": "kart",
+      "path": "/assets/karts/lamina_glacial.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de veículos (kart-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 135244,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "KartSelect",
+        "RacerMeshInstance"
       ],
       "requiredNodes": [
         "KartRoot",
@@ -597,54 +1292,6 @@
       ]
     },
     {
-      "id": "sfx-collision-hit",
-      "name": "Impacto de Colisão",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/collision_hit.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 5120,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
-      "id": "sfx-countdown-go",
-      "name": "Contagem Regressiva (Largada)",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/countdown_go.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 6986,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
-      "id": "sfx-jump-launch",
-      "name": "Impulso de Salto",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/jump_launch.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 3604,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
       "id": "sfx-item-pickup",
       "name": "Coleta de Item",
       "type": "audio-sfx",
@@ -661,15 +1308,15 @@
       ]
     },
     {
-      "id": "sfx-lap-complete",
-      "name": "Volta Concluída",
+      "id": "sfx-collision-hit",
+      "name": "Impacto de Colisão",
       "type": "audio-sfx",
-      "path": "/assets/audio/sfx/lap_complete.ogg",
+      "path": "/assets/audio/sfx/collision_hit.ogg",
       "format": "ogg",
       "origin": "Síntese PCM local + ffmpeg Opus",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 9459,
+      "sizeBytes": 5120,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -677,15 +1324,15 @@
       ]
     },
     {
-      "id": "sfx-land-thud",
-      "name": "Aterrissagem",
+      "id": "sfx-turbo-boost",
+      "name": "Disparo de Turbo",
       "type": "audio-sfx",
-      "path": "/assets/audio/sfx/land_thud.ogg",
+      "path": "/assets/audio/sfx/turbo_boost.ogg",
       "format": "ogg",
       "origin": "Síntese PCM local + ffmpeg Opus",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 3234,
+      "sizeBytes": 6809,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -709,6 +1356,38 @@
       ]
     },
     {
+      "id": "sfx-jump-launch",
+      "name": "Impulso de Salto",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/jump_launch.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 3604,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-land-thud",
+      "name": "Aterrissagem",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/land_thud.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 3234,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
       "id": "sfx-drift-spark",
       "name": "Faísca de Drift",
       "type": "audio-sfx",
@@ -725,15 +1404,31 @@
       ]
     },
     {
-      "id": "sfx-turbo-boost",
-      "name": "Disparo de Turbo",
+      "id": "sfx-countdown-go",
+      "name": "Contagem Regressiva (Largada)",
       "type": "audio-sfx",
-      "path": "/assets/audio/sfx/turbo_boost.ogg",
+      "path": "/assets/audio/sfx/countdown_go.ogg",
       "format": "ogg",
       "origin": "Síntese PCM local + ffmpeg Opus",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 6809,
+      "sizeBytes": 6986,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-lap-complete",
+      "name": "Volta Concluída",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/lap_complete.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 9459,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",

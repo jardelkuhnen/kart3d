@@ -366,7 +366,7 @@ export function createWaterTexture(size = 256): Buffer {
 }
 
 /**
- * Stylized 2D character portrait / HUD emblem PNG with radial burst & clean silhouette.
+ * Stylized 2D character portrait / HUD emblem PNG with radial burst & unique silhouette per character.
  */
 export function createCharacterPortraitPng(
   bgTop: RgbColor,
@@ -375,6 +375,7 @@ export function createCharacterPortraitPng(
   accent: RgbColor,
   size = 256,
   isIcon = false,
+  characterId = 'nilo',
 ): Buffer {
   return renderPng(size, size, (_x, _y, u, v) => {
     const cx = u - 0.5;
@@ -382,26 +383,15 @@ export function createCharacterPortraitPng(
     const dist = Math.hypot(cx, cy);
     const angle = Math.atan2(cy, cx);
 
-    // Rounded emblem frame border
-    if (dist > 0.48) {
-      return [0, 0, 0, 0];
-    }
-    if (dist > 0.44) {
-      return [255, 204, 42, 255];
-    }
+    if (dist > 0.48) return [0, 0, 0, 0];
+    if (dist > 0.44) return [accent[0], accent[1], accent[2], 255];
 
-    // Radial burst backdrop
     const burst = 0.88 + 0.12 * Math.sin(angle * 12);
     let r = lerp(bgTop[0], bgBottom[0], v) * burst;
     let g = lerp(bgTop[1], bgBottom[1], v) * burst;
     let b = lerp(bgTop[2], bgBottom[2], v) * burst;
 
-    // Stylized character head & ears silhouette
     const inHead = Math.hypot(cx * 1.1, (cy - 0.04) * 1.15) < 0.24;
-    const inLeftEar =
-      cx < -0.05 && cx > -0.25 && cy < -0.08 && cy > -0.34 && Math.abs(cx + 0.15 + (cy + 0.21) * 0.35) < 0.095;
-    const inRightEar =
-      cx > 0.05 && cx < 0.25 && cy < -0.08 && cy > -0.34 && Math.abs(cx - 0.15 - (cy + 0.21) * 0.35) < 0.095;
     const inScarf = Math.hypot(cx * 0.72, (cy - 0.28) * 1.6) < 0.24;
 
     if (inScarf) {
@@ -409,43 +399,78 @@ export function createCharacterPortraitPng(
       g = accent[1];
       b = accent[2];
     }
-    if (inLeftEar || inRightEar || inHead) {
+    if (inHead) {
       r = primary[0];
       g = primary[1];
       b = primary[2];
     }
 
-    // Cream muzzle & aviator goggles highlight
-    const inMuzzle = Math.hypot(cx * 1.25, (cy - 0.12) * 1.6) < 0.14;
-    if (inMuzzle) {
-      r = 252;
-      g = 242;
-      b = 222;
+    // Character-specific crown/ears/hat silhouette
+    if (characterId === 'nilo') {
+      const inLeftEar =
+        cx < -0.05 && cx > -0.25 && cy < -0.08 && cy > -0.34 && Math.abs(cx + 0.15 + (cy + 0.21) * 0.35) < 0.095;
+      const inRightEar =
+        cx > 0.05 && cx < 0.25 && cy < -0.08 && cy > -0.34 && Math.abs(cx - 0.15 - (cy + 0.21) * 0.35) < 0.095;
+      if (inLeftEar || inRightEar) {
+        r = primary[0];
+        g = primary[1];
+        b = primary[2];
+      }
+      if (Math.hypot(cx * 1.25, (cy - 0.12) * 1.6) < 0.14) {
+        r = 252;
+        g = 242;
+        b = 222;
+      }
+    } else if (characterId === 'lumi' || characterId === 'zera') {
+      // Star visor / arctic visor band across eyes
+      if (Math.abs(cx) < 0.18 && Math.abs(cy + 0.01) < 0.06) {
+        r = accent[0];
+        g = accent[1];
+        b = accent[2];
+      }
+      if (characterId === 'lumi' && Math.hypot(Math.abs(cx) - 0.16, cy + 0.28) < 0.045) {
+        r = 125;
+        g = 249;
+        b = 255;
+      }
+    } else if (characterId === 'mavi') {
+      // Captain tricorn hat top
+      if (cy < -0.11 && cy > -0.33 && Math.abs(cx) < 0.29) {
+        r = 30;
+        g = 41;
+        b = 59;
+      }
+    } else if (characterId === 'kora') {
+      // Woodland crown antlers
+      if (cy < -0.14 && cy > -0.35 && Math.abs(Math.abs(cx) - 0.14) < 0.045) {
+        r = 163;
+        g = 230;
+        b = 53;
+      }
+    } else if (characterId === 'runi' || characterId === 'boro' || characterId === 'tiko') {
+      if (cy < -0.12 && cy > -0.32 && Math.hypot(cx * 0.9, cy + 0.2) < 0.24) {
+        r = accent[0];
+        g = accent[1];
+        b = accent[2];
+      }
     }
 
-    const inLeftGoggle = Math.hypot(cx + 0.09, cy + 0.12) < 0.068;
-    const inRightGoggle = Math.hypot(cx - 0.09, cy + 0.12) < 0.068;
-    if (inLeftGoggle || inRightGoggle) {
-      const inner = Math.hypot(cx + (cx < 0 ? 0.09 : -0.09), cy + 0.12) < 0.045;
-      r = inner ? 252 : 34;
-      g = inner ? 196 : 42;
-      b = inner ? 48 : 64;
+    if (characterId === 'nilo' || characterId === 'boro' || characterId === 'runi') {
+      const inLeftGoggle = Math.hypot(cx + 0.09, cy + 0.12) < 0.068;
+      const inRightGoggle = Math.hypot(cx - 0.09, cy + 0.12) < 0.068;
+      if (inLeftGoggle || inRightGoggle) {
+        const inner = Math.hypot(cx + (cx < 0 ? 0.09 : -0.09), cy + 0.12) < 0.045;
+        r = inner ? 252 : 34;
+        g = inner ? 196 : 42;
+        b = inner ? 48 : 64;
+      }
     }
 
-    // Glossy eyes
-    if (!isIcon || dist < 0.42) {
-      const inEyeL = Math.hypot(cx + 0.075, cy - 0.01) < 0.028;
-      const inEyeR = Math.hypot(cx - 0.075, cy - 0.01) < 0.028;
-      if (inEyeL || inEyeR) {
+    if ((!isIcon || dist < 0.42) && characterId !== 'lumi' && characterId !== 'zera') {
+      if (Math.hypot(cx + 0.075, cy - 0.01) < 0.028 || Math.hypot(cx - 0.075, cy - 0.01) < 0.028) {
         r = 18;
         g = 24;
         b = 38;
-      }
-      const inNose = Math.hypot(cx, cy - 0.085) < 0.024;
-      if (inNose) {
-        r = 22;
-        g = 24;
-        b = 30;
       }
     }
 

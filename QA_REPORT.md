@@ -1,6 +1,6 @@
 # QA REPORT — KART LEGENDS 3D
 
-**Status Geral do Projeto:** **PARCIAL** (Slices 0, 1 e 2 de 8 concluídos e verificados; Slices 3–7 em andamento).
+**Status Geral do Projeto:** **PARCIAL** (Slices 0, 1, 2 e 3 de 8 concluídos e verificados; Slices 4–7 em andamento).
 
 ---
 
@@ -50,3 +50,25 @@
 - **Classificação Real (`raceSimulation.ts`)**: ordenação 1º–8º por `(chegada, tempo, volta, checkpoints concluídos, progresso na spline, distância ao próximo checkpoint)` + colisões massa-ponderadas entre karts + tabela de pontuação.
 - **HUD Completo (`RaceHud.tsx` + `Minimap.tsx`)**: posição `1º–8º`, minimapa em tempo real com os 8 competidores, slot de item, alertas de corrida, velocímetro, drift/turbo e placar final completo de 8 linhas.
 - **Sistema de Áudio (`audioEngine.ts`)**: música de menu/corrida/vitória/derrota, ambiência costeira, 13 efeitos de corrida/UI via Howler.js + sintetizador contínuo Web Audio para motor reativo à velocidade e chiado de drift, com 3 canais independentes e desbloqueio seguro de autoplay.
+
+---
+
+## Slice 3 — 8 Personagens Animados e 8 Karts Estruturalmente Distintos
+
+### Verificações Executadas
+
+| Comando | Resultado | Observações |
+| :--- | :--- | :--- |
+| `npm run assets:build` | PASS | 72 recursos gerados em `public/assets/` (8 personagens GLB animados, 8 karts GLB distintos, 8 retratos e 8 ícones HUD PNG + pista, itens e áudio) |
+| `npm run validate:assets` | PASS | 72 ativos verificados, 0 erros, 0 arquivos órfãos |
+| `npm run typecheck` | PASS | `tsc --noEmit` (strict) com 0 erros |
+| `npm run lint` | PASS | `eslint .` com 0 erros e 0 avisos |
+| `npm run test` | PASS | Vitest: 10 arquivos, 32 testes aprovados em 2.82 s (incluindo `garage.test.ts` com auditoria de nós/9 animações nos 8 personagens, nós/geometria nos 8 karts e diferenças físicas de velocidade, aceleração, curva, drift, aderência e colisão por massa) |
+| `npm run build` | PASS | Build de produção Vite gerada em `dist/` (594 módulos em 753 ms) |
+| `npm run test:e2e` | PASS | Playwright (Chrome + ANGLE Metal GPU): 2/2 aprovados em 14.2 s (`boot.spec.ts` em 5.1 s; `race-core.spec.ts` em 11.1 s selecionando `Lumi` + `Cometa Estelar`, iniciando corrida de 8 competidores, dirigindo, fazendo drift, silenciando áudio e pausando com 0 erros) |
+
+### Escopo Entregue no Slice 3
+
+- **8 Personagens Originais (`character-builder.ts` + `texture-builder.ts`)**: *Nilo*, *Boro*, *Lumi*, *Kora*, *Tiko*, *Mavi*, *Runi* e *Zera*, cada um com silhueta e acessórios próprios, retrato de seleção PNG, ícone de HUD PNG e os 9 clipes de animação GLTF (`idle`, `drive`, `turnLeft`, `turnRight`, `drift`, `hit`, `victory`, `defeat`, `podium`).
+- **8 Karts Distintos (`kart-builder.ts` + `RacerMeshInstance.tsx`)**: *Trilha Raposa*, *Engrenagem Turbo*, *Cometa Estelar*, *Raiz Veloz*, *Chave-Mestra GT*, *Brisa Corsária*, *Escorpião Dourado* e *Lâmina Glacial*, preservando seus materiais PBR próprios em cena sem sobrescrita cromática genérica e sincronizando todos os 8 pilotos/karts na corrida (`RaceScene.tsx`).
+- **Garagem Interativa (`RaceHud.tsx` + `App.tsx`)**: Seleção de qualquer um dos 8 pilotos e 8 karts diretamente na tela inicial com comparação em tempo real de 6 barras de atributos combinados (kart + bônus do piloto).
