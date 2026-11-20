@@ -275,6 +275,54 @@ export async function generateRaceMusicOgg(outPath: string): Promise<number> {
   return encodeWavToOgg(synthesizeNotesToWav(notes, lead.length * step), outPath);
 }
 
+export async function generateEclipseRaceMusicOgg(outPath: string): Promise<number> {
+  const bpm = 152;
+  const step = 60 / bpm / 2;
+  const notes: SynthNote[] = [];
+  // High-energy minor-key Copa Eclipse synth-arpeggio loop (A minor / D minor / E minor)
+  const lead = [
+    57, 60, 64, 69, 67, 64, 60, 64,
+    57, 62, 65, 69, 67, 65, 64, 62,
+    55, 59, 62, 67, 65, 62, 59, 62,
+    60, 64, 67, 72, 71, 69, 67, 64,
+  ];
+  const bassRoots = [33, 33, 33, 33, 38, 38, 38, 38, 35, 35, 35, 35, 40, 40, 40, 40];
+
+  for (let i = 0; i < lead.length; i += 1) {
+    notes.push({
+      freqHz: midiToHz(lead[i]),
+      startSec: i * step,
+      durationSec: step * 0.8,
+      waveform: 'square',
+      gain: 0.16,
+      attackSec: 0.005,
+      releaseSec: 0.05,
+    });
+    notes.push({
+      freqHz: 3100,
+      startSec: i * step,
+      durationSec: 0.03,
+      waveform: 'noise',
+      gain: i % 2 === 1 ? 0.12 : 0.05,
+      attackSec: 0.002,
+      releaseSec: 0.015,
+    });
+  }
+  for (let i = 0; i < bassRoots.length; i += 1) {
+    notes.push({
+      freqHz: midiToHz(bassRoots[i]),
+      startSec: i * step * 2,
+      durationSec: step * 1.65,
+      waveform: 'saw',
+      gain: 0.34,
+      attackSec: 0.006,
+      releaseSec: 0.07,
+    });
+  }
+
+  return encodeWavToOgg(synthesizeNotesToWav(notes, lead.length * step), outPath);
+}
+
 export async function generateVictoryFanfareOgg(outPath: string): Promise<number> {
   const notes: SynthNote[] = [
     { freqHz: 523.25, startSec: 0.0, durationSec: 0.14, waveform: 'triangle', gain: 0.48 },
@@ -384,6 +432,46 @@ export function generateAmbienceValleyOgg(outPath: string): Promise<number> {
 
 export function generateAmbienceCanyonOgg(outPath: string): Promise<number> {
   return synthesizeBiomeAmbience(outPath, { lpFactor: 0.975, lfoCycles: 1, gain: 1.55 });
+}
+
+export function generateAmbienceNeonOgg(outPath: string): Promise<number> {
+  return synthesizeBiomeAmbience(outPath, {
+    lpFactor: 0.95,
+    lfoCycles: 2,
+    chimeFreqA: 110,
+    chimeFreqB: 220,
+    gain: 1.15,
+  });
+}
+
+export function generateAmbienceBorealOgg(outPath: string): Promise<number> {
+  return synthesizeBiomeAmbience(outPath, {
+    lpFactor: 0.98,
+    lfoCycles: 1,
+    chimeFreqA: 987.77,
+    chimeFreqB: 1318.51,
+    gain: 1.45,
+  });
+}
+
+export function generateAmbienceSkyOgg(outPath: string): Promise<number> {
+  return synthesizeBiomeAmbience(outPath, {
+    lpFactor: 0.96,
+    lfoCycles: 1,
+    chimeFreqA: 659.25,
+    chimeFreqB: 1046.5,
+    gain: 1.0,
+  });
+}
+
+export function generateAmbienceStormOgg(outPath: string): Promise<number> {
+  return synthesizeBiomeAmbience(outPath, {
+    lpFactor: 0.985,
+    lfoCycles: 3,
+    chimeFreqA: 55,
+    chimeFreqB: 82.41,
+    gain: 1.9,
+  });
 }
 
 export async function generateRaceSfxLibrary(sfxDir: string): Promise<Record<string, number>> {

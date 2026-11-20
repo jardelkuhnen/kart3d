@@ -262,6 +262,7 @@ export const PORTO_DAS_LANTERNAS_LAYOUT: TrackLayoutDef = {
   boostPads,
   ramps,
   shortcuts: [HARBOR_SHORTCUT],
+  movingHazards: [],
   tunnelRange: { sStart: totalLength * 0.69, sEnd: totalLength * 0.77 },
   bridgeRange: { sStart: totalLength * 0.19, sEnd: totalLength * 0.28 },
   itemBoxZones,

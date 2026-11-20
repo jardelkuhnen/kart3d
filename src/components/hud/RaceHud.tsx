@@ -1,11 +1,12 @@
 import { CHARACTERS, getCharacterById } from '../../data/characters';
 import { getItemById } from '../../data/items';
 import { KARTS, getKartById } from '../../data/karts';
-import { getTrackById } from '../../data/tracks';
+import { CUPS, getTracksByCup } from '../../data/tracks';
 import { DIFFICULTY_CONFIG, DRIFT_TIERS, SURFACE_PROPERTIES } from '../../game/core/constants';
 import type {
   AssetManifest,
   CharacterId,
+  CupId,
   Difficulty,
   KartAttributes,
   KartId,
@@ -14,11 +15,7 @@ import type {
 import { resolveAssetPath } from '../../game/core/assetLoader';
 import { formatRaceTimeMs, type RacePhase } from '../../game/racing/raceManager';
 import type { FullHudSnapshot } from '../../game/racing/raceSimulation';
-import {
-  AURORA_TRACK_IDS,
-  getTrackLayout,
-  getTrackVisualTheme,
-} from '../../game/tracks/registry';
+import { getTrackLayout, getTrackVisualTheme } from '../../game/tracks/registry';
 import { Minimap } from './Minimap';
 
 const STAT_ROWS: Array<{ key: keyof KartAttributes; label: string }> = [
@@ -41,12 +38,14 @@ export interface RaceHudProps {
   paused: boolean;
   selectedCharacterId: CharacterId;
   selectedKartId: KartId;
+  selectedCupId: CupId;
   selectedTrackId: TrackId;
   difficulty: Difficulty;
   muted: boolean;
   telemetry: FullHudSnapshot;
   onSelectCharacter: (id: CharacterId) => void;
   onSelectKart: (id: KartId) => void;
+  onSelectCup: (cupId: CupId) => void;
   onSelectTrack: (id: TrackId) => void;
   onSelectDifficulty: (difficulty: Difficulty) => void;
   onStartRace: () => void;
@@ -68,12 +67,14 @@ export function RaceHud({
   paused,
   selectedCharacterId,
   selectedKartId,
+  selectedCupId,
   selectedTrackId,
   difficulty,
   muted,
   telemetry,
   onSelectCharacter,
   onSelectKart,
+  onSelectCup,
   onSelectTrack,
   onSelectDifficulty,
   onStartRace,
@@ -83,6 +84,7 @@ export function RaceHud({
 }: RaceHudProps) {
   const selectedCharacter = getCharacterById(selectedCharacterId);
   const selectedKart = getKartById(selectedKartId);
+  const cupTracks = getTracksByCup(selectedCupId);
   const trackLayout = getTrackLayout(selectedTrackId);
   const trackTheme = getTrackVisualTheme(selectedTrackId);
   const driftTierColor =
@@ -170,25 +172,42 @@ export function RaceHud({
       <div className="kl-center-stage">
         {phase === 'intro' && (
           <section className="kl-panel kl-launch-card" aria-label="Iniciar Corrida">
-            <span className="kl-brand-badge">SLICE 4 · COPA AURORA (4 PISTAS · 8 PILOTOS · 8 KARTS)</span>
+            <span className="kl-brand-badge">SLICE 5 · 8 PISTAS (2 COPAS) · 8 PILOTOS · 8 KARTS</span>
             <h1 className="kl-title">KART LEGENDS 3D</h1>
             <p className="kl-subtitle">
               Pista: <strong>{trackName}</strong> · Piloto: <strong>{characterName}</strong> ·
               Kart: <strong>{kartName}</strong>
             </p>
 
-            <div className="kl-track-picker" role="group" aria-label="Copa Aurora — Escolha a Pista">
-              {AURORA_TRACK_IDS.map((trackId) => {
-                const tr = getTrackById(trackId);
-                const active = trackId === selectedTrackId;
+            <div className="kl-cup-tabs" role="group" aria-label="Escolha a Copa">
+              {CUPS.map((cup) => {
+                const active = cup.id === selectedCupId;
                 return (
                   <button
-                    key={trackId}
+                    key={cup.id}
+                    type="button"
+                    className={`kl-cup-tab ${active ? 'active' : ''}`}
+                    aria-pressed={active}
+                    data-testid={`cup-tab-${cup.id}`}
+                    onClick={() => onSelectCup(cup.id)}
+                  >
+                    {cup.name}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="kl-track-picker" role="group" aria-label="Escolha a Pista">
+              {cupTracks.map((tr) => {
+                const active = tr.id === selectedTrackId;
+                return (
+                  <button
+                    key={tr.id}
                     type="button"
                     className={`kl-track-btn ${active ? 'active' : ''}`}
                     aria-pressed={active}
-                    data-testid={`track-option-${trackId}`}
-                    onClick={() => onSelectTrack(trackId)}
+                    data-testid={`track-option-${tr.id}`}
+                    onClick={() => onSelectTrack(tr.id)}
                   >
                     <span className="kl-track-btn-name">{tr.name}</span>
                     <span className="kl-track-btn-theme">{tr.theme}</span>

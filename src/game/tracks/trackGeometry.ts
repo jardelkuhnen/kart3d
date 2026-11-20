@@ -68,6 +68,28 @@ export interface ShortcutPathDef {
   samples: readonly TrackSplineSample[];
 }
 
+export interface MovingHazardDef {
+  id: string;
+  s: number;
+  position: TrackVec3;
+  right: TrackVec3;
+  yaw: number;
+  sweepHalfWidth: number;
+  speedRadS: number;
+  phaseOffset: number;
+  radius: number;
+  style: 'neon-barrier' | 'storm-gate';
+}
+
+export function evaluateMovingHazardPos(h: MovingHazardDef, timeSec: number): TrackVec3 {
+  const offset = Math.sin(timeSec * h.speedRadS + h.phaseOffset) * h.sweepHalfWidth;
+  return {
+    x: h.position.x + h.right.x * offset,
+    y: h.position.y,
+    z: h.position.z + h.right.z * offset,
+  };
+}
+
 export type TrackPropKind =
   | 'house'
   | 'lighthouse'
@@ -89,7 +111,19 @@ export type TrackPropKind =
   | 'mesa-arch'
   | 'ruin-pillar'
   | 'cactus'
-  | 'sun-totem';
+  | 'sun-totem'
+  | 'skyscraper'
+  | 'neon-arch'
+  | 'neon-billboard'
+  | 'glacier-spire'
+  | 'snow-pine'
+  | 'aurora-pillar'
+  | 'cloud-island'
+  | 'sky-gazebo'
+  | 'sky-ring'
+  | 'castle-tower'
+  | 'storm-arch'
+  | 'lightning-spire';
 
 export interface TrackPropPlacement {
   kind: TrackPropKind;
@@ -116,6 +150,8 @@ export interface TrackVisualTheme {
   musicAssetId: MusicTrackId;
   ambienceAssetId: AmbienceId;
   shortcutBannerLabel: string;
+  hasLightning?: boolean;
+  hasStarfield?: boolean;
 }
 
 export interface TrackLayoutDef {
@@ -134,6 +170,7 @@ export interface TrackLayoutDef {
   boostPads: readonly BoostPadDef[];
   ramps: readonly RampDef[];
   shortcuts: readonly ShortcutPathDef[];
+  movingHazards: readonly MovingHazardDef[];
   tunnelRange: { sStart: number; sEnd: number } | null;
   bridgeRange: { sStart: number; sEnd: number } | null;
   itemBoxZones: readonly TrackVec3[][];
@@ -481,6 +518,15 @@ export interface TrackAssemblyInput {
     controlPoints: readonly TrackVec3[];
     sampleCount?: number;
   }[];
+  movingHazardSpecs?: readonly {
+    id: string;
+    sFraction: number;
+    sweepHalfWidth: number;
+    speedRadS: number;
+    phaseOffset: number;
+    radius?: number;
+    style: 'neon-barrier' | 'storm-gate';
+  }[];
   bridgeFractionRange: { start: number; end: number } | null;
   tunnelFractionRange: { start: number; end: number } | null;
   itemRowFractions?: readonly number[];
@@ -569,6 +615,22 @@ export function assembleTrackLayout(input: TrackAssemblyInput): TrackLayoutDef {
     lateralMax: z.lateralMax,
   }));
 
+  const movingHazards: MovingHazardDef[] = (input.movingHazardSpecs ?? []).map((h) => {
+    const sample = getSampleAtDistance(samples, totalLength, h.sFraction * totalLength);
+    return {
+      id: h.id,
+      s: sample.s,
+      position: sample.point,
+      right: sample.right,
+      yaw: yawFromTangent(sample.tangent),
+      sweepHalfWidth: h.sweepHalfWidth,
+      speedRadS: h.speedRadS,
+      phaseOffset: h.phaseOffset,
+      radius: h.radius ?? 1.45,
+      style: h.style,
+    };
+  });
+
   const startGridSlots = Array.from({ length: 8 }, (_, slotIdx) => {
     const row = Math.floor(slotIdx / 2);
     const col = slotIdx % 2 === 0 ? -1 : 1;
@@ -627,6 +689,7 @@ export function assembleTrackLayout(input: TrackAssemblyInput): TrackLayoutDef {
     boostPads,
     ramps,
     shortcuts,
+    movingHazards,
     tunnelRange: input.tunnelFractionRange
       ? {
           sStart: totalLength * input.tunnelFractionRange.start,

@@ -2,7 +2,7 @@
 
 Jogo original de corrida de kart arcade 3D para navegador, construído com **React**, **TypeScript (strict)**, **Three.js / React Three Fiber**, **Rapier Physics**, **Zustand** e **Howler.js**.
 
-> **Status Atual:** Slice 4 concluído (Copa Aurora completa com todas as 4 pistas distintas — *Porto das Lanternas*, *Bosque de Cristal*, *Vale dos Moinhos* com moinhos animados e *Cânion Solar* — com biomas visuais, superfícies dedicadas, atalhos, rampas, ambiência sonora própria e seletor interativo).
+> **Status Atual:** Slice 5 concluído (Todas as 8 pistas completas nas 2 Copas — Copa Aurora e Copa Eclipse: *Cidade Neon*, *Pico Boreal* com trechos escorregadios de gelo, *Jardim Celeste* em ilhas flutuantes e *Fortaleza Tempestade* com portões dinâmicos e relâmpagos — além de trilha sonora própria, ambiências por bioma e perigos móveis sincronizados com física e IA).
 
 ## Requisitos de Ambiente
 

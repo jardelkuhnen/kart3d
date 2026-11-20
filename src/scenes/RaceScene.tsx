@@ -16,7 +16,7 @@ import { InputManager } from '../game/input/inputManager';
 import { RaceProgressTracker, type RacePhase } from '../game/racing/raceManager';
 import { type FullHudSnapshot, RaceSimulation } from '../game/racing/raceSimulation';
 import {
-  AURORA_TRACK_IDS,
+  AVAILABLE_TRACK_IDS,
   FALLBACK_TRACK_GLB_PATHS,
   getTrackLayout,
   getTrackVisualTheme,
@@ -24,6 +24,7 @@ import {
 import {
   type TrackLayoutDef,
   type TrackVisualTheme,
+  evaluateMovingHazardPos,
   yawFromTangent,
 } from '../game/tracks/trackGeometry';
 import type { LiveKartPose } from '../game/vehicles/KartEntity';
@@ -44,7 +45,45 @@ export interface RaceSceneProps {
   onPauseToggle: () => void;
 }
 
+function StormLightningFlash() {
+  const flashLightRef = useRef<THREE.DirectionalLight | null>(null);
+
+  useFrame((state) => {
+    const light = flashLightRef.current;
+    if (!light) return;
+    const t = state.clock.elapsedTime;
+    const gate = Math.sin(t * 1.45) > 0.72 && Math.sin(t * 23.0) > 0.78;
+    light.intensity = gate ? 5.2 : 0;
+  });
+
+  return <directionalLight ref={flashLightRef} position={[65, 95, -35]} color="#e0e7ff" intensity={0} />;
+}
+
 function TrackSkyEnvironment({ theme }: { theme: TrackVisualTheme }) {
+  const starGeo = useMemo(() => {
+    const count = 160;
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count; i += 1) {
+      const a = i * 2.39996;
+      const elev = 0.25 + ((Math.sin(i * 12.9898) * 43758.5453) % 1) * 0.65;
+      const r = 310;
+      const y = Math.abs(elev) * r;
+      const horiz = Math.sqrt(Math.max(0, r * r - y * y));
+      positions[i * 3] = Math.cos(a) * horiz;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = Math.sin(a) * horiz;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    return geo;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      starGeo.dispose();
+    };
+  }, [starGeo]);
+
   return (
     <group>
       <color attach="background" args={[theme.skyHorizonColor]} />
@@ -57,6 +96,12 @@ function TrackSkyEnvironment({ theme }: { theme: TrackVisualTheme }) {
         <sphereGeometry args={[18, 14, 14]} />
         <meshBasicMaterial color={theme.sunColor} fog={false} />
       </mesh>
+      {theme.hasStarfield && (
+        <points geometry={starGeo}>
+          <pointsMaterial color="#e0f2fe" size={2.2} sizeAttenuation={false} fog={false} />
+        </points>
+      )}
+      {theme.hasLightning && <StormLightningFlash />}
     </group>
   );
 }
@@ -80,6 +125,17 @@ const SHADOW_CASTER_PREFIXES = [
   'RuinPillar_',
   'Cactus_',
   'Rock_',
+  'Skyscraper_',
+  'NeonArch_',
+  'NeonBoard_',
+  'Glacier_',
+  'SnowPine_',
+  'AuroraPillar_',
+  'SkyGazebo_',
+  'SkyRing_',
+  'CastleTower_',
+  'StormArch_',
+  'LightningSpire_',
 ];
 
 function TrackWorld({
@@ -192,6 +248,76 @@ function TrackWorld({
           />
         ))}
       </RigidBody>
+    </group>
+  );
+}
+
+function MovingTrackHazards({
+  layout,
+  simRef,
+}: {
+  layout: TrackLayoutDef;
+  simRef: React.MutableRefObject<RaceSimulation>;
+}) {
+  const hazardRefs = useRef<Array<THREE.Group | null>>([]);
+
+  useFrame(() => {
+    const timeSec = simRef.current.tracker.raceElapsedMs * 0.001;
+    for (let i = 0; i < layout.movingHazards.length; i += 1) {
+      const grp = hazardRefs.current[i];
+      if (!grp) continue;
+      const pos = evaluateMovingHazardPos(layout.movingHazards[i], timeSec);
+      grp.position.set(pos.x, pos.y, pos.z);
+    }
+  });
+
+  if (layout.movingHazards.length === 0) return null;
+
+  return (
+    <group>
+      {layout.movingHazards.map((h, idx) => (
+        <group
+          key={h.id}
+          ref={(el) => {
+            hazardRefs.current[idx] = el;
+          }}
+          position={[h.position.x, h.position.y, h.position.z]}
+          rotation={[0, h.yaw, 0]}
+        >
+          {h.style === 'neon-barrier' ? (
+            <>
+              <mesh position={[0, 1.0, 0]}>
+                <cylinderGeometry args={[0.55, 0.72, 2.0, 12]} />
+                <meshStandardMaterial
+                  color="#ec4899"
+                  emissive="#f43f5e"
+                  emissiveIntensity={1.4}
+                  roughness={0.25}
+                />
+              </mesh>
+              <mesh position={[0, 2.25, 0]}>
+                <octahedronGeometry args={[0.5, 0]} />
+                <meshBasicMaterial color="#38bdf8" />
+              </mesh>
+            </>
+          ) : (
+            <>
+              <mesh position={[0, 1.35, 0]}>
+                <boxGeometry args={[2.3, 2.7, 0.85]} />
+                <meshStandardMaterial
+                  color="#374151"
+                  metalness={0.6}
+                  roughness={0.4}
+                />
+              </mesh>
+              <mesh position={[0, 1.35, 0]}>
+                <octahedronGeometry args={[0.75, 0]} />
+                <meshBasicMaterial color="#a78bfa" />
+              </mesh>
+            </>
+          )}
+        </group>
+      ))}
     </group>
   );
 }
@@ -659,6 +785,7 @@ function RaceWorldContent({
 
       <Physics gravity={[0, -28, 0]} timeStep={FIXED_TIMESTEP}>
         <TrackWorld key={selectedTrackId} layout={layout} trackModelPath={trackModelPath} />
+        <MovingTrackHazards key={`haz-${selectedTrackId}`} layout={layout} simRef={simRef} />
         <WorldItemsRenderer key={`items-${selectedTrackId}`} layout={layout} simRef={simRef} paused={paused} />
         {racerAssetList.map((racerAsset, idx) => (
           <RacerMeshInstance
@@ -712,7 +839,7 @@ for (const charPath of Object.values(FALLBACK_CHARACTER_PATHS)) {
 for (const kartPath of Object.values(FALLBACK_KART_PATHS)) {
   useGLTF.preload(kartPath);
 }
-for (const trackId of AURORA_TRACK_IDS) {
+for (const trackId of AVAILABLE_TRACK_IDS) {
   useGLTF.preload(FALLBACK_TRACK_GLB_PATHS[trackId]);
 }
 useGLTF.preload('/assets/props/item_box.glb');

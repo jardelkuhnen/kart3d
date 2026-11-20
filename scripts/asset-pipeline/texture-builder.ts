@@ -588,3 +588,17 @@ export function createItemIconPng(kind: ItemIconKind, size = 128): Buffer {
     return [r, g, b, 255];
   });
 }
+
+export function createIceTexture(size = 256): Buffer {
+  return renderPng(size, size, (_x, _y, u, v) => {
+    const baseN = fbm2D(u, v, 8, 4, 8801);
+    const glint = fbm2D(u * 2, v * 2, 16, 3, 9912);
+    const fracture = Math.abs(Math.sin((u * 5 + v * 3 + baseN * 1.4) * Math.PI * 2));
+    const sheen = smoothstep(0.55, 0.9, glint) * 28;
+    const frost = fracture < 0.08 ? 35 : 0;
+    const r = 165 + baseN * 36 + sheen + frost;
+    const g = 224 + baseN * 24 + sheen + frost * 0.8;
+    const b = 248 + baseN * 7;
+    return [r, g, b, 255];
+  });
+}

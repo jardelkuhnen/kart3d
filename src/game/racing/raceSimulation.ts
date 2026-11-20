@@ -26,7 +26,11 @@ import {
   RaceProgressTracker,
   type RacerRaceState,
 } from '../racing/raceManager';
-import { type TrackLayoutDef, projectPointOntoTrack } from '../tracks/trackGeometry';
+import {
+  type TrackLayoutDef,
+  evaluateMovingHazardPos,
+  projectPointOntoTrack,
+} from '../tracks/trackGeometry';
 
 export interface RacerEntityState {
   id: string;
@@ -329,6 +333,7 @@ export class RaceSimulation {
           otherKarts: this.racers,
           hazards: this.items.hazards,
           incomingProjectiles: this.items.projectiles,
+          raceTimeSec: this.tracker.raceElapsedMs * 0.001,
           dt,
         });
       }
@@ -440,6 +445,37 @@ export class RaceSimulation {
       const itemEvents = this.items.step(dt, itemAdapters, this.playerId);
       if (itemEvents.pickedUpByPlayer) audioEvents.playerItemPickup = true;
       if (itemEvents.playerHit) audioEvents.playerCollision = true;
+
+      // 3b. Resolve dynamic moving track hazards (Cidade Neon barriers / Fortaleza storm gates)
+      if (this.layout.movingHazards.length > 0) {
+        const timeSec = this.tracker.raceElapsedMs * 0.001;
+        for (const hazard of this.layout.movingHazards) {
+          const hPos = evaluateMovingHazardPos(hazard, timeSec);
+          const minDist = hazard.radius + KART_RADIUS;
+          for (const racer of this.racers) {
+            if (racer.sim.recoverTimer > 0 || Math.abs(racer.sim.y - hPos.y) > 2.2) continue;
+            const dx = racer.sim.x - hPos.x;
+            const dz = racer.sim.z - hPos.z;
+            const dist = Math.hypot(dx, dz);
+            if (dist < minDist) {
+              const safeDist = Math.max(dist, 0.01);
+              const nx = dist > 0.01 ? dx / safeDist : hazard.right.x;
+              const nz = dist > 0.01 ? dz / safeDist : hazard.right.z;
+              racer.sim.x = hPos.x + nx * minDist;
+              racer.sim.z = hPos.z + nz * minDist;
+              if (racer.item.shieldTimer > 0) {
+                racer.item.shieldTimer = 0;
+              } else {
+                racer.sim.hitTimer = Math.max(racer.sim.hitTimer, 0.75);
+                racer.sim.forwardSpeed *= 0.45;
+                if (racer.isPlayer) {
+                  audioEvents.playerCollision = true;
+                }
+              }
+            }
+          }
+        }
+      }
     }
 
     // 4. Recompute 1st..8th standings

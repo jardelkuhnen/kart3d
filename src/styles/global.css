@@ -270,7 +270,32 @@ body,
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
+  margin-top: 6px;
+}
+
+.kl-cup-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
   margin-top: 8px;
+}
+
+.kl-cup-tab {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.kl-cup-tab.active {
+  background: var(--accent-cyan);
+  color: #062135;
+  border-color: #bae6fd;
 }
 
 .kl-track-btn {

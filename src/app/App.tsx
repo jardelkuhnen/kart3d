@@ -3,11 +3,11 @@ import { useGameStore } from './store';
 import { RaceHud } from '../components/hud/RaceHud';
 import { getCharacterById } from '../data/characters';
 import { getKartById } from '../data/karts';
-import { getTrackById } from '../data/tracks';
+import { getTrackById, getTracksByCup } from '../data/tracks';
 import { GameAudioEngine } from '../game/audio/audioEngine';
 import { loadAssetManifest, resolveAssetPath } from '../game/core/assetLoader';
 import { DEFAULT_LAPS, DEFAULT_SETTINGS, TOTAL_RACERS } from '../game/core/constants';
-import type { CharacterId, Difficulty, KartId, TrackId } from '../game/core/types';
+import type { CharacterId, CupId, Difficulty, KartId, TrackId } from '../game/core/types';
 import type { RacePhase } from '../game/racing/raceManager';
 import type { FullHudSnapshot } from '../game/racing/raceSimulation';
 import { RaceScene, type RaceStageSync } from '../scenes/RaceScene';
@@ -69,6 +69,7 @@ export function App() {
   const manifestError = useGameStore((s) => s.manifestError);
   const selectedCharacterId = useGameStore((s) => s.selectedCharacterId);
   const selectedKartId = useGameStore((s) => s.selectedKartId);
+  const selectedCupId = useGameStore((s) => s.selectedCupId);
   const selectedTrackId = useGameStore((s) => s.selectedTrackId);
   const difficulty = useGameStore((s) => s.difficulty);
   const settings = useGameStore((s) => s.settings);
@@ -76,6 +77,7 @@ export function App() {
   const setManifestError = useGameStore((s) => s.setManifestError);
   const setSelectedCharacterId = useGameStore((s) => s.setSelectedCharacterId);
   const setSelectedKartId = useGameStore((s) => s.setSelectedKartId);
+  const setSelectedCupId = useGameStore((s) => s.setSelectedCupId);
   const setSelectedTrackId = useGameStore((s) => s.setSelectedTrackId);
   const setDifficulty = useGameStore((s) => s.setDifficulty);
   const updateSettings = useGameStore((s) => s.updateSettings);
@@ -149,6 +151,19 @@ export function App() {
       setSelectedTrackId(id);
     },
     [audioEngine, setSelectedTrackId],
+  );
+
+  const handleSelectCup = useCallback(
+    (cupId: CupId) => {
+      audioEngine.unlock();
+      audioEngine.playSfx('sfx-ui-click');
+      setSelectedCupId(cupId);
+      const cupTracks = getTracksByCup(cupId);
+      if (cupTracks.length > 0 && !cupTracks.some((tr) => tr.id === selectedTrackId)) {
+        setSelectedTrackId(cupTracks[0].id);
+      }
+    },
+    [audioEngine, selectedTrackId, setSelectedCupId, setSelectedTrackId],
   );
 
   const handleSelectDifficulty = useCallback(
@@ -234,12 +249,14 @@ export function App() {
             paused={paused}
             selectedCharacterId={selectedCharacterId}
             selectedKartId={selectedKartId}
+            selectedCupId={selectedCupId}
             selectedTrackId={selectedTrackId}
             difficulty={difficulty}
             muted={settings.audio.muted}
             telemetry={telemetry}
             onSelectCharacter={handleSelectCharacter}
             onSelectKart={handleSelectKart}
+            onSelectCup={handleSelectCup}
             onSelectTrack={handleSelectTrack}
             onSelectDifficulty={handleSelectDifficulty}
             onStartRace={handleStartRace}

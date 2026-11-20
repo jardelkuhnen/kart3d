@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-20T02:38:54.656Z",
+  "generatedAt": "2026-11-20T02:49:32.091Z",
   "project": "KART LEGENDS 3D",
   "assets": [
     {
@@ -1035,7 +1035,7 @@
       "origin": "Pipeline local GLTF de pistas (track-builder.ts)",
       "author": "Kart Legends 3D Pipeline",
       "license": "Original-Project-License",
-      "sizeBytes": 1226952,
+      "sizeBytes": 1389908,
       "validationStatus": "validated",
       "usedIn": [
         "RaceScene",
@@ -1059,7 +1059,7 @@
       "origin": "Pipeline local GLTF de pistas (track-builder.ts)",
       "author": "Kart Legends 3D Pipeline",
       "license": "Original-Project-License",
-      "sizeBytes": 1219712,
+      "sizeBytes": 1382668,
       "validationStatus": "validated",
       "usedIn": [
         "RaceScene",
@@ -1083,7 +1083,7 @@
       "origin": "Pipeline local GLTF de pistas (track-builder.ts)",
       "author": "Kart Legends 3D Pipeline",
       "license": "Original-Project-License",
-      "sizeBytes": 1199076,
+      "sizeBytes": 1362048,
       "validationStatus": "validated",
       "usedIn": [
         "RaceScene",
@@ -1108,11 +1108,107 @@
       "origin": "Pipeline local GLTF de pistas (track-builder.ts)",
       "author": "Kart Legends 3D Pipeline",
       "license": "Original-Project-License",
-      "sizeBytes": 1211908,
+      "sizeBytes": 1374856,
       "validationStatus": "validated",
       "usedIn": [
         "RaceScene",
         "CanionSolar"
+      ],
+      "requiredNodes": [
+        "TrackRoot",
+        "MainRoadMesh",
+        "LeftStoneWall",
+        "RightStoneWall",
+        "TrackStartGantry",
+        "SceneryGroup"
+      ]
+    },
+    {
+      "id": "track-cidade-neon",
+      "name": "Pista 5 — Cidade Neon",
+      "type": "track",
+      "path": "/assets/tracks/cidade_neon.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de pistas (track-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 1377704,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "CidadeNeon"
+      ],
+      "requiredNodes": [
+        "TrackRoot",
+        "MainRoadMesh",
+        "LeftStoneWall",
+        "RightStoneWall",
+        "TrackStartGantry",
+        "SceneryGroup"
+      ]
+    },
+    {
+      "id": "track-pico-boreal",
+      "name": "Pista 6 — Pico Boreal",
+      "type": "track",
+      "path": "/assets/tracks/pico_boreal.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de pistas (track-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 1380640,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "PicoBoreal"
+      ],
+      "requiredNodes": [
+        "TrackRoot",
+        "MainRoadMesh",
+        "LeftStoneWall",
+        "RightStoneWall",
+        "TrackStartGantry",
+        "SceneryGroup"
+      ]
+    },
+    {
+      "id": "track-jardim-celeste",
+      "name": "Pista 7 — Jardim Celeste",
+      "type": "track",
+      "path": "/assets/tracks/jardim_celeste.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de pistas (track-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 1348300,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "JardimCeleste"
+      ],
+      "requiredNodes": [
+        "TrackRoot",
+        "MainRoadMesh",
+        "LeftStoneWall",
+        "RightStoneWall",
+        "TrackStartGantry",
+        "SceneryGroup"
+      ]
+    },
+    {
+      "id": "track-fortaleza-tempestade",
+      "name": "Pista 8 — Fortaleza Tempestade",
+      "type": "track",
+      "path": "/assets/tracks/fortaleza_tempestade.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de pistas (track-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 1373376,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "FortalezaTempestade"
       ],
       "requiredNodes": [
         "TrackRoot",
@@ -1319,6 +1415,21 @@
       ]
     },
     {
+      "id": "music-race-eclipse",
+      "name": "Música — Corrida Copa Eclipse",
+      "type": "audio-music",
+      "path": "/assets/audio/music/race_eclipse.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 113866,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine"
+      ]
+    },
+    {
       "id": "music-victory",
       "name": "Música — Vitória",
       "type": "audio-music",
@@ -1365,6 +1476,22 @@
       ]
     },
     {
+      "id": "sfx-item-use",
+      "name": "Utilização de Item",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/item_use.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 4239,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
       "id": "sfx-jump-launch",
       "name": "Impulso de Salto",
       "type": "audio-sfx",
@@ -1374,22 +1501,6 @@
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
       "sizeBytes": 3604,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
-      "id": "sfx-land-thud",
-      "name": "Aterrissagem",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/land_thud.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 3234,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1413,15 +1524,15 @@
       ]
     },
     {
-      "id": "sfx-item-pickup",
-      "name": "Coleta de Item",
+      "id": "sfx-turbo-boost",
+      "name": "Disparo de Turbo",
       "type": "audio-sfx",
-      "path": "/assets/audio/sfx/item_pickup.ogg",
+      "path": "/assets/audio/sfx/turbo_boost.ogg",
       "format": "ogg",
       "origin": "Síntese PCM local + ffmpeg Opus",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 4528,
+      "sizeBytes": 6809,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1445,15 +1556,15 @@
       ]
     },
     {
-      "id": "sfx-turbo-boost",
-      "name": "Disparo de Turbo",
+      "id": "sfx-land-thud",
+      "name": "Aterrissagem",
       "type": "audio-sfx",
-      "path": "/assets/audio/sfx/turbo_boost.ogg",
+      "path": "/assets/audio/sfx/land_thud.ogg",
       "format": "ogg",
       "origin": "Síntese PCM local + ffmpeg Opus",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 6809,
+      "sizeBytes": 3234,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1461,15 +1572,15 @@
       ]
     },
     {
-      "id": "sfx-item-use",
-      "name": "Utilização de Item",
+      "id": "sfx-item-pickup",
+      "name": "Coleta de Item",
       "type": "audio-sfx",
-      "path": "/assets/audio/sfx/item_use.ogg",
+      "path": "/assets/audio/sfx/item_pickup.ogg",
       "format": "ogg",
       "origin": "Síntese PCM local + ffmpeg Opus",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 4239,
+      "sizeBytes": 4528,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1586,6 +1697,70 @@
       "usedIn": [
         "AudioEngine",
         "CanionSolar"
+      ]
+    },
+    {
+      "id": "sfx-ambience-neon",
+      "name": "Ambiência — Metrópole Neon",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_neon.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 42542,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "CidadeNeon"
+      ]
+    },
+    {
+      "id": "sfx-ambience-boreal",
+      "name": "Ambiência — Vento Glacial",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_boreal.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 42795,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "PicoBoreal"
+      ]
+    },
+    {
+      "id": "sfx-ambience-sky",
+      "name": "Ambiência — Jardins Suspensos",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_sky.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 42278,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "JardimCeleste"
+      ]
+    },
+    {
+      "id": "sfx-ambience-storm",
+      "name": "Ambiência — Trovões da Fortaleza",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_storm.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 42614,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "FortalezaTempestade"
       ]
     }
   ]

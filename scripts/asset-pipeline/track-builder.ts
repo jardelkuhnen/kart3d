@@ -21,6 +21,7 @@ import {
   createCurbTexture,
   createDirtTrackTexture,
   createGrassTurfTexture,
+  createIceTexture,
   createSandTexture,
   createTerracottaTexture,
   createWaterTexture,
@@ -279,7 +280,15 @@ function instantiatePrototype(
   return instance;
 }
 
-export type TrackBiome = 'porto' | 'bosque' | 'vale' | 'canion';
+export type TrackBiome =
+  | 'porto'
+  | 'bosque'
+  | 'vale'
+  | 'canion'
+  | 'neon'
+  | 'boreal'
+  | 'celeste'
+  | 'fortaleza';
 
 interface BiomePalette {
   curbA: [number, number, number];
@@ -289,7 +298,7 @@ interface BiomePalette {
   tunnelColor: [number, number, number, number];
   tunnelLight: [number, number, number];
   foliageColor: [number, number, number, number];
-  baseSurface: 'grass' | 'sand';
+  baseSurface: 'grass' | 'sand' | 'snow' | 'asphalt' | 'cloud';
   waterColor: [number, number, number, number];
   hasWaterPlane: boolean;
 }
@@ -343,6 +352,54 @@ const BIOME_PALETTES: Record<TrackBiome, BiomePalette> = {
     waterColor: [0.86, 0.62, 0.32, 1],
     hasWaterPlane: false,
   },
+  neon: {
+    curbA: [56, 189, 248],
+    curbB: [236, 72, 153],
+    wallColor: [0.14, 0.16, 0.32, 1],
+    rampColor: [0.22, 0.82, 0.98, 1],
+    tunnelColor: [0.08, 0.1, 0.24, 1],
+    tunnelLight: [0.2, 0.88, 1.0],
+    foliageColor: [0.15, 0.45, 0.78, 1],
+    baseSurface: 'asphalt',
+    waterColor: [0.1, 0.14, 0.32, 1],
+    hasWaterPlane: false,
+  },
+  boreal: {
+    curbA: [94, 234, 212],
+    curbB: [224, 242, 254],
+    wallColor: [0.68, 0.86, 0.96, 1],
+    rampColor: [0.35, 0.9, 0.95, 1],
+    tunnelColor: [0.36, 0.62, 0.84, 1],
+    tunnelLight: [0.35, 0.96, 0.88],
+    foliageColor: [0.22, 0.52, 0.56, 1],
+    baseSurface: 'snow',
+    waterColor: [0.26, 0.72, 0.88, 1],
+    hasWaterPlane: true,
+  },
+  celeste: {
+    curbA: [244, 114, 182],
+    curbB: [254, 249, 195],
+    wallColor: [0.94, 0.9, 0.98, 1],
+    rampColor: [0.98, 0.76, 0.22, 1],
+    tunnelColor: [0.78, 0.72, 0.92, 1],
+    tunnelLight: [0.98, 0.86, 0.48],
+    foliageColor: [0.18, 0.68, 0.48, 1],
+    baseSurface: 'cloud',
+    waterColor: [0.85, 0.92, 1.0, 1],
+    hasWaterPlane: false,
+  },
+  fortaleza: {
+    curbA: [167, 139, 250],
+    curbB: [229, 231, 235],
+    wallColor: [0.28, 0.26, 0.34, 1],
+    rampColor: [0.68, 0.42, 0.96, 1],
+    tunnelColor: [0.18, 0.16, 0.24, 1],
+    tunnelLight: [0.68, 0.55, 1.0],
+    foliageColor: [0.22, 0.28, 0.32, 1],
+    baseSurface: 'asphalt',
+    waterColor: [0.18, 0.22, 0.38, 1],
+    hasWaterPlane: true,
+  },
 };
 
 export async function buildPortoDasLanternasGlb(
@@ -374,14 +431,35 @@ export async function buildTrackGlb(
   const cobblePng = createCobbleTexture(256);
   const terracottaPng = createTerracottaTexture(256);
   const waterPng = createWaterTexture(256);
+  const icePng = createIceTexture(256);
 
   // Materials
   const roadMat = createPbrMaterial(doc, {
     name: `${biome}_RoadAsphalt`,
     baseColorTexturePng: asphalt.albedo,
     roughnessTexturePng: asphalt.roughness,
-    roughnessFactor: 0.88,
-    metallicFactor: 0.05,
+    roughnessFactor: biome === 'neon' ? 0.28 : 0.88,
+    metallicFactor: biome === 'neon' ? 0.18 : 0.05,
+  });
+
+  const iceMat = createPbrMaterial(doc, {
+    name: `${biome}_IceMat`,
+    baseColorTexturePng: icePng,
+    roughnessFactor: 0.14,
+    metallicFactor: 0.08,
+  });
+
+  const snowGroundMat = createPbrMaterial(doc, {
+    name: `${biome}_SnowMat`,
+    baseColorFactor: [0.86, 0.93, 0.98, 1],
+    roughnessFactor: 0.85,
+  });
+
+  const cloudSeaMat = createPbrMaterial(doc, {
+    name: `${biome}_CloudSeaMat`,
+    baseColorFactor: [0.95, 0.97, 1.0, 1],
+    emissiveFactor: [0.14, 0.16, 0.22],
+    roughnessFactor: 0.95,
   });
 
   const curbMat = createPbrMaterial(doc, {
@@ -531,7 +609,7 @@ export async function buildTrackGlb(
   addMeshToNode(doc, root, 'LeftStoneWall', leftWallGeom, stoneWallMat);
   addMeshToNode(doc, root, 'RightStoneWall', rightWallGeom, stoneWallMat);
 
-  // Visual surface overlay patches on road stretches (e.g. Forest Dirt Trail / Canyon Sand Wash)
+  // Visual surface overlay patches on road stretches (e.g. Forest Dirt Trail / Canyon Sand Wash / Boreal Ice)
   for (const zone of layout.surfaceZones) {
     if (zone.lateralMin > -layout.halfWidth && zone.lateralMax < layout.halfWidth) continue;
     const zonePts = layout.samples
@@ -542,7 +620,8 @@ export async function buildTrackGlb(
       .map((s) => ({ x: s.point.x, y: s.point.y + 0.02, z: s.point.z }));
     if (zonePts.length >= 4) {
       const { road: patchGeom } = buildRoadRibbon(zonePts, layout.halfWidth - 0.15, 0.1, false);
-      const patchMat = zone.surface === 'sand' ? sandMat : dirtMat;
+      const patchMat =
+        zone.surface === 'ice' ? iceMat : zone.surface === 'sand' ? sandMat : dirtMat;
       addMeshToNode(doc, root, `SurfacePatch_${zone.id}`, patchGeom, patchMat);
     }
   }
@@ -563,13 +642,22 @@ export async function buildTrackGlb(
   for (const shortcut of layout.shortcuts) {
     const scPts = shortcut.samples.map((s) => s.point);
     const { road: scRoad } = buildRoadRibbon(scPts, shortcut.halfWidth, 0.45, false);
-    const scMat = shortcut.surface === 'sand' ? sandMat : shortcut.surface === 'grass' ? grassMat : dirtMat;
+    const scMat =
+      shortcut.surface === 'ice'
+        ? iceMat
+        : shortcut.surface === 'sand'
+          ? sandMat
+          : shortcut.surface === 'grass'
+            ? grassMat
+            : shortcut.surface === 'asphalt'
+              ? roadMat
+              : dirtMat;
     addMeshToNode(doc, root, `Shortcut_${shortcut.id}`, scRoad, scMat);
   }
 
   // 3. Biome Terrain Floor & Water Plane (safely beneath minimum road height)
   const minRoadY = layout.samples.reduce((min, s) => Math.min(min, s.point.y), Infinity);
-  const floorTopY = minRoadY - 0.8;
+  const floorTopY = biome === 'celeste' ? minRoadY - 6.5 : minRoadY - 0.8;
 
   if (palette.hasWaterPlane) {
     const waterPlane = addMeshToNode(
@@ -607,7 +695,16 @@ export async function buildTrackGlb(
       node.setTranslation(land.pos);
     }
   } else {
-    const baseMat = palette.baseSurface === 'sand' ? sandMat : grassMat;
+    const baseMat =
+      palette.baseSurface === 'sand'
+        ? sandMat
+        : palette.baseSurface === 'snow'
+          ? snowGroundMat
+          : palette.baseSurface === 'asphalt'
+            ? ironMat
+            : palette.baseSurface === 'cloud'
+              ? cloudSeaMat
+              : grassMat;
     const basin = addMeshToNode(
       doc,
       root,
@@ -617,8 +714,7 @@ export async function buildTrackGlb(
     );
     basin.setTranslation([0, floorTopY - 0.7, 0]);
 
-    if (biome === 'bosque' || biome === 'vale') {
-      // Decorative water channel cutting cleanly underneath bridgeRange
+    if (biome === 'bosque' || biome === 'vale' || biome === 'boreal') {
       const bridgeMid = layout.bridgeRange
         ? layout.samples.find(
             (s) => s.s >= (layout.bridgeRange!.sStart + layout.bridgeRange!.sEnd) * 0.5,
@@ -1320,6 +1416,198 @@ export async function buildTrackGlb(
     { mesh: makeMesh('TotemGem', buildBoxBeveled(0.75, 0.75, 0.75, 0.05), lanternGlowMat), translation: [0, 4.1, 0] as [number, number, number] },
   ];
 
+  // Copa Eclipse Scenery Prototypes (Cidade Neon, Pico Boreal, Jardim Celeste, Fortaleza Tempestade)
+  const skyscraperDarkMat = createPbrMaterial(doc, {
+    name: 'SkyscraperFacade',
+    baseColorFactor: [0.08, 0.1, 0.2, 1],
+    metallicFactor: 0.45,
+    roughnessFactor: 0.35,
+  });
+  const neonPinkGlowMat = createPbrMaterial(doc, {
+    name: 'NeonPinkGlow',
+    baseColorFactor: [0.96, 0.28, 0.65, 1],
+    emissiveFactor: [0.95, 0.2, 0.6],
+    roughnessFactor: 0.2,
+  });
+  const neonGoldGlowMat = createPbrMaterial(doc, {
+    name: 'NeonGoldGlow',
+    baseColorFactor: [0.98, 0.8, 0.22, 1],
+    emissiveFactor: [0.95, 0.72, 0.18],
+    roughnessFactor: 0.2,
+  });
+
+  const towerCoreMesh = makeMesh('SkyscraperBody', buildBoxBeveled(11.5, 36, 11.5, 0.15), skyscraperDarkMat);
+  const skyscraperTrimMeshes = [crystalMatCyan, neonPinkGlowMat, neonGoldGlowMat].map((glowMat, i) =>
+    makeMesh(`SkyscraperBand_${i}`, buildBoxBeveled(11.9, 1.1, 11.9, 0.05), glowMat),
+  );
+  const skyscraperVariants = skyscraperTrimMeshes.map((bandMesh) => [
+    { mesh: towerCoreMesh, translation: [0, 18, 0] as [number, number, number] },
+    { mesh: bandMesh, translation: [0, 12, 0] as [number, number, number] },
+    { mesh: bandMesh, translation: [0, 24, 0] as [number, number, number] },
+    { mesh: bandMesh, translation: [0, 35, 0] as [number, number, number] },
+  ]);
+
+  const neonArchBeamMeshes = [crystalMatCyan, neonPinkGlowMat].map((glowMat, i) => ({
+    post: makeMesh(`NeonArchPost_${i}`, buildBoxBeveled(0.55, 7.2, 0.55, 0.05), glowMat),
+    top: makeMesh(`NeonArchTop_${i}`, buildBoxBeveled(layout.halfWidth * 2 + 3.2, 0.65, 0.65, 0.05), glowMat),
+  }));
+  const neonArchVariants = neonArchBeamMeshes.map((m) => [
+    { mesh: m.post, translation: [-(layout.halfWidth + 1.4), 3.6, 0] as [number, number, number] },
+    { mesh: m.post, translation: [layout.halfWidth + 1.4, 3.6, 0] as [number, number, number] },
+    { mesh: m.top, translation: [0, 7.2, 0] as [number, number, number] },
+  ]);
+
+  const billboardPostMesh = makeMesh(
+    'BillboardPost',
+    buildBoxBeveled(0.55, 5.4, 0.55, 0.04),
+    ironMat,
+  );
+  const billboardPanelMeshes = [crystalMatCyan, neonPinkGlowMat, crystalMatMagenta].map((glowMat, i) =>
+    makeMesh(`BillboardPanel_${i}`, buildBoxBeveled(6.4, 2.8, 0.35, 0.04), glowMat),
+  );
+
+  // Pico Boreal Props
+  const glacierSpireParts = [
+    {
+      mesh: makeMesh(
+        'GlacierMainSpire',
+        buildLatheMesh(
+          [
+            { x: 4.8, y: 0 },
+            { x: 3.2, y: 6.0 },
+            { x: 1.6, y: 12.5 },
+            { x: 0.2, y: 17.5 },
+          ],
+          6,
+        ),
+        iceMat,
+      ),
+    },
+  ];
+  const snowMat = createPbrMaterial(doc, {
+    name: 'SnowFoliageCap',
+    baseColorFactor: [0.92, 0.96, 1.0, 1],
+    roughnessFactor: 0.72,
+  });
+  const snowPineParts = [
+    { mesh: pineTreeParts[0].mesh },
+    { mesh: pineTreeParts[1].mesh },
+    {
+      mesh: makeMesh(
+        'SnowCapCone',
+        buildLatheMesh(
+          [
+            { x: 1.25, y: 6.7 },
+            { x: 0.05, y: 9.3 },
+          ],
+          9,
+        ),
+        snowMat,
+      ),
+    },
+  ];
+  const auroraPostMesh = makeMesh(
+    'AuroraPostBase',
+    buildLatheMesh(
+      [
+        { x: 0.48, y: 0 },
+        { x: 0.32, y: 4.2 },
+      ],
+      8,
+    ),
+    iceMat,
+  );
+  const auroraCapMeshes = [crystalMatCyan, crystalMatMagenta].map((glowMat, i) =>
+    makeMesh(`AuroraCrystalOrb_${i}`, buildBoxBeveled(0.75, 0.95, 0.75, 0.08), glowMat),
+  );
+
+  // Jardim Celeste Props
+  const cloudIslandParts = [
+    {
+      mesh: makeMesh(
+        'CloudBase',
+        buildLatheMesh(
+          [
+            { x: 0.4, y: -5.5 },
+            { x: 4.5, y: -2.0 },
+            { x: 9.5, y: 0.0 },
+            { x: 8.8, y: 1.8 },
+            { x: 0.2, y: 2.2 },
+          ],
+          10,
+        ),
+        cloudSeaMat,
+      ),
+    },
+    {
+      mesh: makeMesh(
+        'IslandTurfTop',
+        buildLatheMesh(
+          [
+            { x: 8.4, y: 1.9 },
+            { x: 7.5, y: 2.8 },
+            { x: 0.1, y: 3.1 },
+          ],
+          10,
+        ),
+        grassMat,
+      ),
+    },
+  ];
+  const marbleMat = createPbrMaterial(doc, {
+    name: 'SkyMarble',
+    baseColorFactor: [0.96, 0.95, 0.98, 1],
+    roughnessFactor: 0.42,
+  });
+  const skyGazeboParts = [
+    { mesh: makeMesh('GazeboFloor', buildLatheMesh([{ x: 4.2, y: 0 }, { x: 4.2, y: 0.5 }], 8), marbleMat) },
+    { mesh: makeMesh('GazeboCol1', buildLatheMesh([{ x: 0.25, y: 0.5 }, { x: 0.22, y: 4.5 }], 8), marbleMat), translation: [2.8, 0, 2.8] as [number, number, number] },
+    { mesh: makeMesh('GazeboCol2', buildLatheMesh([{ x: 0.25, y: 0.5 }, { x: 0.22, y: 4.5 }], 8), marbleMat), translation: [-2.8, 0, 2.8] as [number, number, number] },
+    { mesh: makeMesh('GazeboCol3', buildLatheMesh([{ x: 0.25, y: 0.5 }, { x: 0.22, y: 4.5 }], 8), marbleMat), translation: [2.8, 0, -2.8] as [number, number, number] },
+    { mesh: makeMesh('GazeboCol4', buildLatheMesh([{ x: 0.25, y: 0.5 }, { x: 0.22, y: 4.5 }], 8), marbleMat), translation: [-2.8, 0, -2.8] as [number, number, number] },
+    { mesh: makeMesh('GazeboDome', buildLatheMesh([{ x: 4.4, y: 4.5 }, { x: 3.2, y: 6.4 }, { x: 0.1, y: 7.4 }], 10), neonGoldGlowMat) },
+  ];
+  const skyRingParts = [
+    { mesh: makeMesh('SkyRingLeft', buildTubeAlongPath([{ x: -9.8, y: 0, z: 0 }, { x: -7.5, y: 6.5, z: 0 }, { x: 0, y: 8.8, z: 0 }, { x: 7.5, y: 6.5, z: 0 }, { x: 9.8, y: 0, z: 0 }], 0.42, 10, false), neonGoldGlowMat) },
+  ];
+
+  // Fortaleza Tempestade Props
+  const fortressStoneMat = createPbrMaterial(doc, {
+    name: 'FortressSlate',
+    baseColorFactor: [0.24, 0.24, 0.3, 1],
+    roughnessFactor: 0.88,
+  });
+  const castleTowerParts = [
+    {
+      mesh: makeMesh(
+        'CastleKeep',
+        buildLatheMesh(
+          [
+            { x: 4.2, y: 0 },
+            { x: 3.8, y: 12 },
+            { x: 4.4, y: 14.5 },
+            { x: 0.2, y: 19.5 },
+          ],
+          8,
+        ),
+        fortressStoneMat,
+      ),
+    },
+    {
+      mesh: makeMesh('CastleBrazier', buildBoxBeveled(1.2, 1.2, 1.2, 0.08), crystalMatMagenta),
+      translation: [0, 20.2, 0] as [number, number, number],
+    },
+  ];
+  const stormArchParts = [
+    { mesh: makeMesh('StormArchL', buildBoxBeveled(2.2, 10.5, 2.6, 0.15), fortressStoneMat), translation: [-(layout.halfWidth + 1.8), 5.2, 0] as [number, number, number] },
+    { mesh: makeMesh('StormArchR', buildBoxBeveled(2.2, 10.5, 2.6, 0.15), fortressStoneMat), translation: [layout.halfWidth + 1.8, 5.2, 0] as [number, number, number] },
+    { mesh: makeMesh('StormArchTop', buildBoxBeveled(layout.halfWidth * 2 + 5.6, 2.4, 2.8, 0.15), fortressStoneMat), translation: [0, 10.2, 0] as [number, number, number] },
+  ];
+  const lightningSpireParts = [
+    { mesh: makeMesh('SpireBase', buildBoxBeveled(1.0, 5.2, 1.0, 0.06), ironMat), translation: [0, 2.6, 0] as [number, number, number] },
+    { mesh: makeMesh('SpireOrb', buildBoxBeveled(0.8, 0.8, 0.8, 0.08), crystalMatCyan), translation: [0, 5.6, 0] as [number, number, number] },
+  ];
+
   layout.scenery.forEach((item, index) => {
     const p = { x: item.position.x, y: item.position.y, z: item.position.z, yaw: item.yaw, scale: item.scale };
     switch (item.kind) {
@@ -1438,6 +1726,75 @@ export async function buildTrackGlb(
         break;
       case 'sun-totem':
         instantiatePrototype(doc, sceneryGroup, `SunTotem_${index}`, sunTotemParts, p);
+        break;
+      case 'skyscraper':
+        instantiatePrototype(
+          doc,
+          sceneryGroup,
+          `Skyscraper_${index}`,
+          skyscraperVariants[(item.variant ?? 0) % skyscraperVariants.length],
+          p,
+        );
+        break;
+      case 'neon-arch':
+        instantiatePrototype(
+          doc,
+          sceneryGroup,
+          `NeonArch_${index}`,
+          neonArchVariants[(item.variant ?? 0) % neonArchVariants.length],
+          p,
+        );
+        break;
+      case 'neon-billboard':
+        instantiatePrototype(
+          doc,
+          sceneryGroup,
+          `NeonBoard_${index}`,
+          [
+            { mesh: billboardPostMesh },
+            {
+              mesh: billboardPanelMeshes[(item.variant ?? 0) % billboardPanelMeshes.length],
+              translation: [0, 5.2, 0],
+            },
+          ],
+          p,
+        );
+        break;
+      case 'glacier-spire':
+        instantiatePrototype(doc, sceneryGroup, `Glacier_${index}`, glacierSpireParts, p);
+        break;
+      case 'snow-pine':
+        instantiatePrototype(doc, sceneryGroup, `SnowPine_${index}`, snowPineParts, p);
+        break;
+      case 'aurora-pillar':
+        instantiatePrototype(
+          doc,
+          sceneryGroup,
+          `AuroraPillar_${index}`,
+          [
+            { mesh: auroraPostMesh },
+            { mesh: auroraCapMeshes[(item.variant ?? 0) % auroraCapMeshes.length], translation: [0, 4.4, 0] },
+          ],
+          p,
+        );
+        break;
+      case 'cloud-island':
+        instantiatePrototype(doc, sceneryGroup, `CloudIsland_${index}`, cloudIslandParts, p);
+        break;
+      case 'sky-gazebo':
+        instantiatePrototype(doc, sceneryGroup, `SkyGazebo_${index}`, skyGazeboParts, p);
+        break;
+      case 'sky-ring':
+        instantiatePrototype(doc, sceneryGroup, `SkyRing_${index}`, skyRingParts, p);
+        break;
+      case 'castle-tower':
+        instantiatePrototype(doc, sceneryGroup, `CastleTower_${index}`, castleTowerParts, p);
+        break;
+      case 'storm-arch':
+        instantiatePrototype(doc, sceneryGroup, `StormArch_${index}`, stormArchParts, p);
+        break;
+      case 'lightning-spire':
+        instantiatePrototype(doc, sceneryGroup, `LightningSpire_${index}`, lightningSpireParts, p);
         break;
     }
   });

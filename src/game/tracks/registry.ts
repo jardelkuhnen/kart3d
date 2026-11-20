@@ -1,6 +1,10 @@
 import type { TrackId } from '../core/types';
 import { BOSQUE_DE_CRISTAL_LAYOUT } from './bosqueDeCristal';
 import { CANION_SOLAR_LAYOUT } from './canionSolar';
+import { CIDADE_NEON_LAYOUT } from './cidadeNeon';
+import { FORTALEZA_TEMPESTADE_LAYOUT } from './fortalezaTempestade';
+import { JARDIM_CELESTE_LAYOUT } from './jardimCeleste';
+import { PICO_BOREAL_LAYOUT } from './picoBoreal';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from './portoDasLanternas';
 import type { TrackLayoutDef, TrackVisualTheme } from './trackGeometry';
 import { VALE_DOS_MOINHOS_LAYOUT } from './valeDosMoinhos';
@@ -12,18 +16,27 @@ export const AURORA_TRACK_IDS: readonly TrackId[] = [
   'canion-solar',
 ] as const;
 
-// In Slice 4 only Copa Aurora tracks exist as distinct circuits; Copa Eclipse will replace the fallback entries in Slice 5.
-export const AVAILABLE_TRACK_IDS: readonly TrackId[] = AURORA_TRACK_IDS;
+export const ECLIPSE_TRACK_IDS: readonly TrackId[] = [
+  'cidade-neon',
+  'pico-boreal',
+  'jardim-celeste',
+  'fortaleza-tempestade',
+] as const;
+
+export const AVAILABLE_TRACK_IDS: readonly TrackId[] = [
+  ...AURORA_TRACK_IDS,
+  ...ECLIPSE_TRACK_IDS,
+] as const;
 
 export const TRACK_LAYOUTS: Record<TrackId, TrackLayoutDef> = {
   'porto-das-lanternas': PORTO_DAS_LANTERNAS_LAYOUT,
   'bosque-de-cristal': BOSQUE_DE_CRISTAL_LAYOUT,
   'vale-dos-moinhos': VALE_DOS_MOINHOS_LAYOUT,
   'canion-solar': CANION_SOLAR_LAYOUT,
-  'cidade-neon': PORTO_DAS_LANTERNAS_LAYOUT,
-  'pico-boreal': PORTO_DAS_LANTERNAS_LAYOUT,
-  'jardim-celeste': PORTO_DAS_LANTERNAS_LAYOUT,
-  'fortaleza-tempestade': PORTO_DAS_LANTERNAS_LAYOUT,
+  'cidade-neon': CIDADE_NEON_LAYOUT,
+  'pico-boreal': PICO_BOREAL_LAYOUT,
+  'jardim-celeste': JARDIM_CELESTE_LAYOUT,
+  'fortaleza-tempestade': FORTALEZA_TEMPESTADE_LAYOUT,
 };
 
 export const FALLBACK_TRACK_GLB_PATHS: Record<TrackId, string> = {
@@ -31,10 +44,10 @@ export const FALLBACK_TRACK_GLB_PATHS: Record<TrackId, string> = {
   'bosque-de-cristal': '/assets/tracks/bosque_de_cristal.glb',
   'vale-dos-moinhos': '/assets/tracks/vale_dos_moinhos.glb',
   'canion-solar': '/assets/tracks/canion_solar.glb',
-  'cidade-neon': '/assets/tracks/porto_das_lanternas.glb',
-  'pico-boreal': '/assets/tracks/porto_das_lanternas.glb',
-  'jardim-celeste': '/assets/tracks/porto_das_lanternas.glb',
-  'fortaleza-tempestade': '/assets/tracks/porto_das_lanternas.glb',
+  'cidade-neon': '/assets/tracks/cidade_neon.glb',
+  'pico-boreal': '/assets/tracks/pico_boreal.glb',
+  'jardim-celeste': '/assets/tracks/jardim_celeste.glb',
+  'fortaleza-tempestade': '/assets/tracks/fortaleza_tempestade.glb',
 };
 
 const PORTO_THEME: TrackVisualTheme = {
@@ -113,15 +126,95 @@ const CANION_THEME: TrackVisualTheme = {
   shortcutBannerLabel: 'ATALHO DAS DUNAS',
 };
 
+const NEON_THEME: TrackVisualTheme = {
+  skyTopColor: '#090d1f',
+  skyHorizonColor: '#312e81',
+  fogColor: '#1e1b4b',
+  fogNear: 90,
+  fogFar: 290,
+  sunColor: '#a855f7',
+  sunPosition: [-160, 72, -180],
+  sunIntensity: 1.9,
+  hemiSkyColor: '#38bdf8',
+  hemiGroundColor: '#312e81',
+  hemiIntensity: 1.25,
+  envPrimaryColor: '#38bdf8',
+  envSecondaryColor: '#ec4899',
+  musicAssetId: 'music-race-eclipse',
+  ambienceAssetId: 'sfx-ambience-neon',
+  shortcutBannerLabel: 'ATALHO DO VIADUTO',
+  hasStarfield: true,
+};
+
+const BOREAL_THEME: TrackVisualTheme = {
+  skyTopColor: '#0f172a',
+  skyHorizonColor: '#2dd4bf',
+  fogColor: '#5eead4',
+  fogNear: 95,
+  fogFar: 310,
+  sunColor: '#e0f2fe',
+  sunPosition: [170, 68, -190],
+  sunIntensity: 2.15,
+  hemiSkyColor: '#bae6fd',
+  hemiGroundColor: '#1e3a8a',
+  hemiIntensity: 1.25,
+  envPrimaryColor: '#5eead4',
+  envSecondaryColor: '#93c5fd',
+  musicAssetId: 'music-race-eclipse',
+  ambienceAssetId: 'sfx-ambience-boreal',
+  shortcutBannerLabel: 'ATALHO DO GLACIAR',
+  hasStarfield: true,
+};
+
+const CELESTE_THEME: TrackVisualTheme = {
+  skyTopColor: '#0284c7',
+  skyHorizonColor: '#fdf4ff',
+  fogColor: '#e0f2fe',
+  fogNear: 120,
+  fogFar: 350,
+  sunColor: '#fef08a',
+  sunPosition: [-150, 105, -160],
+  sunIntensity: 2.45,
+  hemiSkyColor: '#f0abfc',
+  hemiGroundColor: '#38bdf8',
+  hemiIntensity: 1.3,
+  envPrimaryColor: '#fef08a',
+  envSecondaryColor: '#f0abfc',
+  musicAssetId: 'music-race-eclipse',
+  ambienceAssetId: 'sfx-ambience-sky',
+  shortcutBannerLabel: 'ATALHO DAS NUVENS',
+};
+
+const FORTALEZA_THEME: TrackVisualTheme = {
+  skyTopColor: '#111827',
+  skyHorizonColor: '#4c1d95',
+  fogColor: '#3b0764',
+  fogNear: 85,
+  fogFar: 280,
+  sunColor: '#c4b5fd',
+  sunPosition: [185, 86, -155],
+  sunIntensity: 1.95,
+  hemiSkyColor: '#a78bfa',
+  hemiGroundColor: '#1f2937',
+  hemiIntensity: 1.2,
+  envPrimaryColor: '#a78bfa',
+  envSecondaryColor: '#38bdf8',
+  musicAssetId: 'music-race-eclipse',
+  ambienceAssetId: 'sfx-ambience-storm',
+  shortcutBannerLabel: 'ATALHO DA MURALHA',
+  hasLightning: true,
+  hasStarfield: true,
+};
+
 export const TRACK_VISUAL_THEMES: Record<TrackId, TrackVisualTheme> = {
   'porto-das-lanternas': PORTO_THEME,
   'bosque-de-cristal': BOSQUE_THEME,
   'vale-dos-moinhos': VALE_THEME,
   'canion-solar': CANION_THEME,
-  'cidade-neon': PORTO_THEME,
-  'pico-boreal': PORTO_THEME,
-  'jardim-celeste': PORTO_THEME,
-  'fortaleza-tempestade': PORTO_THEME,
+  'cidade-neon': NEON_THEME,
+  'pico-boreal': BOREAL_THEME,
+  'jardim-celeste': CELESTE_THEME,
+  'fortaleza-tempestade': FORTALEZA_THEME,
 };
 
 export function getTrackLayout(trackId: TrackId): TrackLayoutDef {

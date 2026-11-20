@@ -1,6 +1,6 @@
 # QA REPORT — KART LEGENDS 3D
 
-**Status Geral do Projeto:** **PARCIAL** (Slices 0, 1, 2, 3 e 4 de 8 concluídos e verificados; Slices 5–7 em andamento).
+**Status Geral do Projeto:** **PARCIAL** (Slices 0, 1, 2, 3, 4 e 5 de 8 concluídos e verificados; Slices 6–7 em andamento).
 
 ---
 
@@ -93,3 +93,25 @@
 
 - **Pistas 2, 3 e 4 (`bosqueDeCristal.ts`, `valeDosMoinhos.ts`, `canionSolar.ts` + `registry.ts`)**: splines fechadas distintas sem autointerseção, elevações próprias, pontes, cavernas/túneis, atalhos, trechos de terra/grama/areia integrados à física e 12 marcos cênicos instanciados em GLB (`giant-tree`, `crystal-cluster`, `waterfall-cliff`, `mushroom-lamp`, `windmill` com pás animadas, `barn`, `hay-bale`, `pine-tree`, `mesa-arch`, `ruin-pillar`, `cactus`, `sun-totem`).
 - **Iluminação, Minimapa e Áudio Dinâmico (`RaceScene.tsx` + `RaceHud.tsx`)**: céu, neblina, sol, cubemaps IBL e trilha ambiente OGG trocados dinamicamente conforme a pista escolhida, além do seletor das 4 pistas da Copa Aurora na tela de preparação.
+
+---
+
+## Slice 5 — Copa Eclipse Completa (Cidade Neon, Pico Boreal, Jardim Celeste, Fortaleza Tempestade)
+
+### Verificações Executadas
+
+| Comando | Resultado | Observações |
+| :--- | :--- | :--- |
+| `npm run assets:build` | PASS | 87 recursos gerados em `public/assets/` (adicionadas as pistas `cidade_neon.glb`, `pico_boreal.glb`, `jardim_celeste.glb`, `fortaleza_tempestade.glb`, música `race_eclipse.ogg` e 4 ambiências OGG) |
+| `npm run validate:assets` | PASS | 87 ativos verificados, 0 erros, 0 arquivos órfãos |
+| `npm run typecheck` | PASS | `tsc --noEmit` (strict) com 0 erros |
+| `npm run lint` | PASS | `eslint .` com 0 erros e 0 avisos |
+| `npm run test` | PASS | Vitest: 12 arquivos, 39 testes aprovados em 3.56 s (incluindo `tracks-eclipse.test.ts` verificando folga >= 18 m sem autointerseção, gelo em *Pico Boreal*, obstáculos móveis e colisões em *Cidade Neon*/*Fortaleza Tempestade* e simulação 8 karts em todas as 4 pistas) |
+| `npm run build` | PASS | Build de produção Vite gerada em `dist/` (602 módulos em 791 ms) |
+| `npm run test:e2e` | PASS | Playwright (Chrome + ANGLE Metal GPU): 4/4 aprovados em 29.2 s (`boot.spec.ts` em 7.7 s, `tracks-aurora.spec.ts` em 14.5 s, `tracks-eclipse.spec.ts` em 19.1 s alternando para a Copa Eclipse e correndo em *Fortaleza Tempestade*, `race-core.spec.ts` em 25.6 s) com 0 erros |
+
+### Escopo Entregue no Slice 5
+
+- **Pistas 5, 6, 7 e 8 (`cidadeNeon.ts`, `picoBoreal.ts`, `jardimCeleste.ts`, `fortalezaTempestade.ts`)**: splines fechadas distintas sem autointerseção, 12 novos marcos cênicos instanciados (`skyscraper`, `neon-arch`, `neon-billboard`, `glacier-spire`, `snow-pine`, `aurora-pillar`, `cloud-island`, `sky-gazebo`, `sky-ring`, `castle-tower`, `storm-arch`, `lightning-spire`), nuvem aérea no vazio em *Jardim Celeste* e relâmpagos tempestuosos em *Fortaleza Tempestade*.
+- **Obstáculos Móveis, Gelo & IA (`trackGeometry.ts`, `raceSimulation.ts`, `aiController.ts`)**: barreiras neon e portões móveis sincronizados entre simulação física e cena 3D (com absorção por *Bolha Guardiã* e desvio lateral pela IA) + textura e aderência de gelo (`ice`) em *Pico Boreal*.
+- **Alternância de Copas e Música (`RaceHud.tsx`, `audioEngine.ts`, `audio-builder.ts`)**: abas **Copa Aurora / Copa Eclipse** na interface, música exclusiva `music-race-eclipse` e 4 novas faixas de ambiência sonora.

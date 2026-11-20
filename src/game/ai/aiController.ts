@@ -2,7 +2,11 @@ import { DIFFICULTY_CONFIG } from '../core/constants';
 import type { Difficulty } from '../core/types';
 import type { HomingProjectile, RacerItemSlotState, WorldHazard } from '../items/itemSystem';
 import type { KartInputState, KartSimState } from '../physics/kartController';
-import { type TrackLayoutDef, type TrackPointQuery } from '../tracks/trackGeometry';
+import {
+  type TrackLayoutDef,
+  type TrackPointQuery,
+  evaluateMovingHazardPos,
+} from '../tracks/trackGeometry';
 
 export interface AiDriverState {
   laneOffset: number;
@@ -41,6 +45,7 @@ export interface AiPerceptionContext {
   otherKarts: ReadonlyArray<{ id: string; sim: KartSimState }>;
   hazards: readonly WorldHazard[];
   incomingProjectiles: readonly HomingProjectile[];
+  raceTimeSec?: number;
   dt: number;
 }
 
@@ -111,6 +116,21 @@ export function computeAiKartInput(
       if (dist < 14) {
         const rightDot = dx * Math.cos(selfSim.yaw) - dz * Math.sin(selfSim.yaw);
         desiredLateral += rightDot >= 0 ? -3.4 : 3.4;
+      }
+    }
+
+    // Avoid sweeping track hazards (Cidade Neon barriers / Fortaleza storm gates)
+    if (layout.movingHazards.length > 0) {
+      const timeSec = ctx.raceTimeSec ?? 0;
+      for (const mh of layout.movingHazards) {
+        const pos = evaluateMovingHazardPos(mh, timeSec);
+        const dx = pos.x - selfSim.x;
+        const dz = pos.z - selfSim.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist < 18) {
+          const rightDot = dx * Math.cos(selfSim.yaw) - dz * Math.sin(selfSim.yaw);
+          desiredLateral += rightDot >= 0 ? -4.2 : 4.2;
+        }
       }
     }
 

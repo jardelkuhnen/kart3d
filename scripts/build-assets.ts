@@ -7,14 +7,23 @@ import { KARTS_BY_ID } from '../src/data/karts';
 import type { AssetManifest, AssetManifestEntry } from '../src/game/core/types';
 import { BOSQUE_DE_CRISTAL_LAYOUT } from '../src/game/tracks/bosqueDeCristal';
 import { CANION_SOLAR_LAYOUT } from '../src/game/tracks/canionSolar';
+import { CIDADE_NEON_LAYOUT } from '../src/game/tracks/cidadeNeon';
+import { FORTALEZA_TEMPESTADE_LAYOUT } from '../src/game/tracks/fortalezaTempestade';
+import { JARDIM_CELESTE_LAYOUT } from '../src/game/tracks/jardimCeleste';
+import { PICO_BOREAL_LAYOUT } from '../src/game/tracks/picoBoreal';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from '../src/game/tracks/portoDasLanternas';
 import { VALE_DOS_MOINHOS_LAYOUT } from '../src/game/tracks/valeDosMoinhos';
 import {
+  generateAmbienceBorealOgg,
   generateAmbienceCanyonOgg,
   generateAmbienceCoastalOgg,
   generateAmbienceForestOgg,
+  generateAmbienceNeonOgg,
+  generateAmbienceSkyOgg,
+  generateAmbienceStormOgg,
   generateAmbienceValleyOgg,
   generateDefeatThemeOgg,
+  generateEclipseRaceMusicOgg,
   generateMenuThemeOgg,
   generateRaceMusicOgg,
   generateRaceSfxLibrary,
@@ -626,6 +635,38 @@ async function main(): Promise<void> {
       layout: CANION_SOLAR_LAYOUT,
       usedInComponent: 'CanionSolar',
     },
+    {
+      id: 'track-cidade-neon',
+      name: 'Pista 5 — Cidade Neon',
+      file: 'cidade_neon.glb',
+      biome: 'neon',
+      layout: CIDADE_NEON_LAYOUT,
+      usedInComponent: 'CidadeNeon',
+    },
+    {
+      id: 'track-pico-boreal',
+      name: 'Pista 6 — Pico Boreal',
+      file: 'pico_boreal.glb',
+      biome: 'boreal',
+      layout: PICO_BOREAL_LAYOUT,
+      usedInComponent: 'PicoBoreal',
+    },
+    {
+      id: 'track-jardim-celeste',
+      name: 'Pista 7 — Jardim Celeste',
+      file: 'jardim_celeste.glb',
+      biome: 'celeste',
+      layout: JARDIM_CELESTE_LAYOUT,
+      usedInComponent: 'JardimCeleste',
+    },
+    {
+      id: 'track-fortaleza-tempestade',
+      name: 'Pista 8 — Fortaleza Tempestade',
+      file: 'fortaleza_tempestade.glb',
+      biome: 'fortaleza',
+      layout: FORTALEZA_TEMPESTADE_LAYOUT,
+      usedInComponent: 'FortalezaTempestade',
+    },
   ];
 
   for (const trackSpec of auroraTrackSpecs) {
@@ -785,6 +826,7 @@ async function main(): Promise<void> {
   }> = [
     { id: 'music-menu', name: 'Música — Menu Principal', file: 'menu_theme.ogg', gen: generateMenuThemeOgg },
     { id: 'music-race-aurora', name: 'Música — Corrida Copa Aurora', file: 'race_aurora.ogg', gen: generateRaceMusicOgg },
+    { id: 'music-race-eclipse', name: 'Música — Corrida Copa Eclipse', file: 'race_eclipse.ogg', gen: generateEclipseRaceMusicOgg },
     { id: 'music-victory', name: 'Música — Vitória', file: 'victory_fanfare.ogg', gen: generateVictoryFanfareOgg },
     { id: 'music-defeat', name: 'Música — Derrota / Consolação', file: 'defeat_theme.ogg', gen: generateDefeatThemeOgg },
   ];
@@ -871,6 +913,34 @@ async function main(): Promise<void> {
       file: 'ambience_canyon.ogg',
       trackRef: 'CanionSolar',
       gen: generateAmbienceCanyonOgg,
+    },
+    {
+      id: 'sfx-ambience-neon',
+      name: 'Ambiência — Metrópole Neon',
+      file: 'ambience_neon.ogg',
+      trackRef: 'CidadeNeon',
+      gen: generateAmbienceNeonOgg,
+    },
+    {
+      id: 'sfx-ambience-boreal',
+      name: 'Ambiência — Vento Glacial',
+      file: 'ambience_boreal.ogg',
+      trackRef: 'PicoBoreal',
+      gen: generateAmbienceBorealOgg,
+    },
+    {
+      id: 'sfx-ambience-sky',
+      name: 'Ambiência — Jardins Suspensos',
+      file: 'ambience_sky.ogg',
+      trackRef: 'JardimCeleste',
+      gen: generateAmbienceSkyOgg,
+    },
+    {
+      id: 'sfx-ambience-storm',
+      name: 'Ambiência — Trovões da Fortaleza',
+      file: 'ambience_storm.ogg',
+      trackRef: 'FortalezaTempestade',
+      gen: generateAmbienceStormOgg,
     },
   ];
 
