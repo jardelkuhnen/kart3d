@@ -9,6 +9,8 @@ export interface CharacterRigProps {
   animState: CharacterAnimState;
   steerAngle?: number;
   steerAngleRef?: React.MutableRefObject<number>;
+  castShadow?: boolean;
+  skipAnimationRef?: React.MutableRefObject<boolean>;
 }
 
 export function CharacterRig({
@@ -16,6 +18,8 @@ export function CharacterRig({
   animState,
   steerAngle = 0,
   steerAngleRef,
+  castShadow = true,
+  skipAnimationRef,
 }: CharacterRigProps) {
   const gltf = useGLTF(modelPath);
 
@@ -30,7 +34,7 @@ export function CharacterRig({
     appliedSteerOffsetRef.current = 0;
     clonedScene.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
-        obj.castShadow = true;
+        obj.castShadow = castShadow;
         obj.receiveShadow = true;
       }
       if (obj.name === 'Head') {
@@ -90,6 +94,8 @@ export function CharacterRig({
   }, [animState]);
 
   useFrame((_state, delta) => {
+    if (skipAnimationRef?.current) return;
+
     const head = headNodeRef.current;
     // Undo previous steer offset before mixer evaluates so clamped clips never accumulate rotation
     if (head && appliedSteerOffsetRef.current !== 0) {

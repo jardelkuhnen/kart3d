@@ -20,9 +20,17 @@ test.describe('KART LEGENDS 3D — Copa Eclipse Tracks (Lock + Practice Mode)', 
     });
 
     await page.goto('/');
-    await page.getByRole('button', { name: 'JOGAR' }).click();
+    await page.getByRole('button', { name: 'Corrida Rápida' }).click();
 
-    // Practice Mode opens all 8 characters, 8 karts, and Copa Eclipse immediately
+    // 1. Verify Copa Eclipse is locked in Quick Race (MÉDIO-09)
+    await page.getByTestId('next-to-kart').click();
+    await page.getByTestId('next-to-cup').click();
+    await expect(page.getByTestId('cup-tab-eclipse')).toBeDisabled();
+    await page.getByRole('button', { name: 'Voltar' }).click();
+    await page.getByRole('button', { name: 'Voltar' }).click();
+    await page.getByRole('button', { name: 'Voltar' }).click();
+
+    // 2. Practice Mode opens all 8 characters, 8 karts, and Copa Eclipse immediately
     await page.getByTestId('mode-option-practice').click();
     await page.getByTestId('char-option-zera').click();
     await page.getByTestId('next-to-kart').click();
@@ -56,6 +64,16 @@ test.describe('KART LEGENDS 3D — Copa Eclipse Tracks (Lock + Practice Mode)', 
 
     await page.getByRole('button', { name: 'Encerrar Treino' }).click();
     await expect(page.getByRole('button', { name: 'JOGAR' })).toBeVisible();
+
+    // 3. Switching back to Quick Race must revert locked Practice selections (ALTO-03)
+    await page.getByRole('button', { name: 'Corrida Rápida' }).click();
+    await expect(page.getByTestId('char-option-zera')).toBeDisabled();
+    await expect(page.getByTestId('char-option-nilo')).toHaveAttribute('aria-pressed', 'true');
+    await page.getByTestId('next-to-kart').click();
+    await expect(page.getByTestId('kart-option-lamina-glacial')).toBeDisabled();
+    await page.getByTestId('next-to-cup').click();
+    await expect(page.getByTestId('cup-tab-eclipse')).toBeDisabled();
+    await expect(page.getByTestId('cup-tab-aurora')).toHaveAttribute('aria-pressed', 'true');
 
     expect(pageErrors).toEqual([]);
     expect(consoleErrors).toEqual([]);

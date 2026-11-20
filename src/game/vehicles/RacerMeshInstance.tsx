@@ -1,23 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
-import { BallCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { CharacterRig } from '../characters/CharacterRig';
-import { disposeClonedMaterialsOnly } from '../core/assetLoader';
 import { DRIFT_TIERS } from '../core/constants';
-import type { CharacterAnimState } from '../core/types';
+import { getOrBuildBakedLodGeometry, getSharedLodMaterial } from '../core/sceneOptimizer';
+import type { CharacterAnimState, LiveKartPose } from '../core/types';
 import type { RaceSimulation, RacerEntityState } from '../racing/raceSimulation';
-import type { LiveKartPose } from './KartEntity';
 
 export interface RacerMeshInstanceProps {
   racerIndex: number;
   simRef: React.MutableRefObject<RaceSimulation>;
   kartModelPath: string;
   characterModelPath: string;
-  initialPosition?: [number, number, number];
   poseRef?: React.MutableRefObject<LiveKartPose>;
-  onPlayerRapierSync?: (body: RapierRigidBody | null) => void;
   paused: boolean;
 }
 
@@ -43,16 +39,29 @@ export function RacerMeshInstance({
   simRef,
   kartModelPath,
   characterModelPath,
-  initialPosition,
   poseRef,
-  onPlayerRapierSync,
   paused,
 }: RacerMeshInstanceProps) {
+  const isPlayer = racerIndex === 0;
   const gltf = useGLTF(kartModelPath);
+  const charGltf = useGLTF(characterModelPath);
   const kartScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
 
-  const bodyRef = useRef<RapierRigidBody | null>(null);
+  // Single-draw-call baked LOD1 geometries for distant AI racers (> 28m from camera)
+  const kartLodGeo = useMemo(
+    () => (isPlayer ? null : getOrBuildBakedLodGeometry(gltf.scene)),
+    [gltf.scene, isPlayer],
+  );
+  const charLodGeo = useMemo(
+    () => (isPlayer ? null : getOrBuildBakedLodGeometry(charGltf.scene)),
+    [charGltf.scene, isPlayer],
+  );
+  const lodMaterial = useMemo(() => getSharedLodMaterial(), []);
+
   const visualRootRef = useRef<THREE.Group | null>(null);
+  const detailGroupRef = useRef<THREE.Group | null>(null);
+  const lodGroupRef = useRef<THREE.Group | null>(null);
+  const lodCharOffsetRef = useRef<THREE.Group | null>(null);
   const driverMirrorRef = useRef<THREE.Group | null>(null);
   const driverSeatOffsetRef = useRef<THREE.Group | null>(null);
   const flameLRef = useRef<THREE.Mesh | null>(null);
@@ -74,7 +83,7 @@ export function RacerMeshInstance({
   const [animState, setAnimState] = useState<CharacterAnimState>('idle');
   const lastAnimRef = useRef<CharacterAnimState>('idle');
   const liveSteerRef = useRef(0);
-  const isPlayer = racerIndex === 0;
+  const skipCharAnimRef = useRef(false);
 
   useEffect(() => {
     const driverMountOffset = new THREE.Vector3(0, 0.54, 0.22);
@@ -89,11 +98,6 @@ export function RacerMeshInstance({
       if (obj instanceof THREE.Mesh) {
         obj.castShadow = isPlayer;
         obj.receiveShadow = true;
-
-        // Clone material per racer instance so disposeObject3D never disposes shared GLTF materials
-        if (obj.material instanceof THREE.MeshStandardMaterial) {
-          obj.material = obj.material.clone();
-        }
       }
       if (obj.name === 'ChassisGroup') chassis = obj;
       if (obj.name === 'SteeringWheel') steeringWheel = obj;
@@ -116,19 +120,10 @@ export function RacerMeshInstance({
     if (driverSeatOffsetRef.current) {
       driverSeatOffsetRef.current.position.copy(driverMountOffset);
     }
-
-    return () => {
-      disposeClonedMaterialsOnly(kartScene);
-    };
-  }, [kartScene, isPlayer]);
-
-  useEffect(() => {
-    if (isPlayer && onPlayerRapierSync) {
-      onPlayerRapierSync(bodyRef.current);
-      return () => onPlayerRapierSync(null);
+    if (lodCharOffsetRef.current) {
+      lodCharOffsetRef.current.position.copy(driverMountOffset);
     }
-    return undefined;
-  }, [isPlayer, onPlayerRapierSync]);
+  }, [kartScene, isPlayer]);
 
   useFrame((state) => {
     if (paused) return;
@@ -141,38 +136,62 @@ export function RacerMeshInstance({
       visualRootRef.current.rotation.set(0, sim.yaw + sim.visualSlipYaw, 0);
     }
 
-    if (parts.chassis) {
-      parts.chassis.position.y = sim.suspensionOffset;
-      parts.chassis.rotation.x = sim.chassisPitch;
-      parts.chassis.rotation.z = sim.chassisRoll;
+    // Distance-based LOD for AI racers: full Blender LOD0 within 28m, 2-draw-call baked LOD1 beyond 28m
+    let usingLod = false;
+    if (!isPlayer && kartLodGeo && detailGroupRef.current && lodGroupRef.current) {
+      const cam = state.camera.position;
+      const dx = sim.x - cam.x;
+      const dy = sim.y - cam.y;
+      const dz = sim.z - cam.z;
+      const distSq = dx * dx + dy * dy + dz * dz;
+      const farCulled = distSq > 220 * 220;
+      if (visualRootRef.current) {
+        visualRootRef.current.visible = !farCulled;
+      }
+      if (farCulled) {
+        skipCharAnimRef.current = true;
+        return;
+      }
+      usingLod = distSq > 28 * 28;
+      detailGroupRef.current.visible = !usingLod;
+      lodGroupRef.current.visible = usingLod;
+      skipCharAnimRef.current = usingLod;
     }
 
-    if (driverMirrorRef.current) {
-      driverMirrorRef.current.position.y = sim.suspensionOffset;
-      driverMirrorRef.current.rotation.x = sim.chassisPitch;
-      driverMirrorRef.current.rotation.z = sim.chassisRoll;
-    }
+    if (!usingLod) {
+      if (parts.chassis) {
+        parts.chassis.position.y = sim.suspensionOffset;
+        parts.chassis.rotation.x = sim.chassisPitch;
+        parts.chassis.rotation.z = sim.chassisRoll;
+      }
 
-    if (parts.steeringWheel) {
-      parts.steeringWheel.rotation.z = -sim.steerAngle * 0.65;
-    }
+      if (driverMirrorRef.current) {
+        driverMirrorRef.current.position.y = sim.suspensionOffset;
+        driverMirrorRef.current.rotation.x = sim.chassisPitch;
+        driverMirrorRef.current.rotation.z = sim.chassisRoll;
+      }
 
-    const frontWheelYaw = -sim.steerAngle * 0.42;
-    if (parts.wheelFL) {
-      parts.wheelFL.rotation.order = 'YXZ';
-      parts.wheelFL.rotation.y = frontWheelYaw;
-      parts.wheelFL.rotation.x = -sim.wheelSpinAngle;
-    }
-    if (parts.wheelFR) {
-      parts.wheelFR.rotation.order = 'YXZ';
-      parts.wheelFR.rotation.y = frontWheelYaw;
-      parts.wheelFR.rotation.x = -sim.wheelSpinAngle;
-    }
-    if (parts.wheelRL) {
-      parts.wheelRL.rotation.x = -sim.wheelSpinAngle;
-    }
-    if (parts.wheelRR) {
-      parts.wheelRR.rotation.x = -sim.wheelSpinAngle;
+      if (parts.steeringWheel) {
+        parts.steeringWheel.rotation.z = -sim.steerAngle * 0.65;
+      }
+
+      const frontWheelYaw = -sim.steerAngle * 0.42;
+      if (parts.wheelFL) {
+        parts.wheelFL.rotation.order = 'YXZ';
+        parts.wheelFL.rotation.y = frontWheelYaw;
+        parts.wheelFL.rotation.x = -sim.wheelSpinAngle;
+      }
+      if (parts.wheelFR) {
+        parts.wheelFR.rotation.order = 'YXZ';
+        parts.wheelFR.rotation.y = frontWheelYaw;
+        parts.wheelFR.rotation.x = -sim.wheelSpinAngle;
+      }
+      if (parts.wheelRL) {
+        parts.wheelRL.rotation.x = -sim.wheelSpinAngle;
+      }
+      if (parts.wheelRR) {
+        parts.wheelRR.rotation.x = -sim.wheelSpinAngle;
+      }
     }
 
     if (isPlayer && poseRef) {
@@ -186,30 +205,32 @@ export function RacerMeshInstance({
         boostActive: sim.boostTimer > 0,
         driftActive: sim.driftActive,
         steerAngle: sim.steerAngle,
-        groundHeight: sim.y,
+        groundHeight: sim.groundHeight,
       };
     }
 
-    let nextAnim: CharacterAnimState;
-    if (racer.race.finished) {
-      nextAnim = racer.rank <= 3 ? 'victory' : 'defeat';
-    } else if (sim.hitTimer > 0) {
-      nextAnim = 'hit';
-    } else if (sim.driftActive) {
-      nextAnim = 'drift';
-    } else if (simRef.current.phase === 'racing' && Math.abs(sim.forwardSpeed) > 2) {
-      if (sim.steerAngle < -0.22) nextAnim = 'turnLeft';
-      else if (sim.steerAngle > 0.22) nextAnim = 'turnRight';
-      else nextAnim = 'drive';
-    } else {
-      nextAnim = 'idle';
-    }
+    if (!usingLod) {
+      let nextAnim: CharacterAnimState;
+      if (racer.race.finished) {
+        nextAnim = racer.rank <= 3 ? 'victory' : 'defeat';
+      } else if (sim.hitTimer > 0) {
+        nextAnim = 'hit';
+      } else if (sim.driftActive) {
+        nextAnim = 'drift';
+      } else if (simRef.current.phase === 'racing' && Math.abs(sim.forwardSpeed) > 2) {
+        if (sim.steerAngle < -0.22) nextAnim = 'turnLeft';
+        else if (sim.steerAngle > 0.22) nextAnim = 'turnRight';
+        else nextAnim = 'drive';
+      } else {
+        nextAnim = 'idle';
+      }
 
-    liveSteerRef.current = sim.steerAngle;
+      liveSteerRef.current = sim.steerAngle;
 
-    if (nextAnim !== lastAnimRef.current) {
-      lastAnimRef.current = nextAnim;
-      setAnimState(nextAnim);
+      if (nextAnim !== lastAnimRef.current) {
+        lastAnimRef.current = nextAnim;
+        setAnimState(nextAnim);
+      }
     }
 
     const t = state.clock.elapsedTime;
@@ -247,24 +268,8 @@ export function RacerMeshInstance({
   });
 
   return (
-    <>
-      {isPlayer && (
-        <RigidBody
-          ref={bodyRef}
-          type="dynamic"
-          position={initialPosition ?? [0, 0.35, 0]}
-          lockRotations
-          gravityScale={0}
-          linearDamping={0}
-          colliders={false}
-          restitution={0.2}
-          friction={0}
-        >
-          <BallCollider args={[0.88]} position={[0, 0.88, 0]} />
-        </RigidBody>
-      )}
-
-      <group ref={visualRootRef}>
+    <group ref={visualRootRef}>
+      <group ref={detailGroupRef}>
         <primitive object={kartScene} />
 
         <group ref={driverMirrorRef}>
@@ -273,9 +278,23 @@ export function RacerMeshInstance({
               modelPath={characterModelPath}
               animState={animState}
               steerAngleRef={liveSteerRef}
+              castShadow={isPlayer}
+              skipAnimationRef={skipCharAnimRef}
             />
           </group>
         </group>
+      </group>
+
+      {!isPlayer && kartLodGeo && (
+        <group ref={lodGroupRef} visible={false}>
+          <mesh geometry={kartLodGeo} material={lodMaterial} receiveShadow />
+          {charLodGeo && (
+            <group ref={lodCharOffsetRef} position={[0, 0.54, 0.22]}>
+              <mesh geometry={charLodGeo} material={lodMaterial} receiveShadow />
+            </group>
+          )}
+        </group>
+      )}
 
         <mesh
           ref={flameLRef}
@@ -311,6 +330,5 @@ export function RacerMeshInstance({
           <meshBasicMaterial color="#38bdf8" wireframe transparent opacity={0.45} />
         </mesh>
       </group>
-    </>
   );
 }

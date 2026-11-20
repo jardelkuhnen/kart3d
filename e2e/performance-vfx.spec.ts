@@ -2,7 +2,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
 
-const SCREENSHOTS_DIR = path.resolve(process.cwd(), 'docs/screenshots');
+const SCREENSHOTS_DIR =
+  process.env.UPDATE_SCREENSHOTS === '1'
+    ? path.resolve(process.cwd(), 'docs/screenshots')
+    : path.resolve(process.cwd(), 'test-results/screenshots');
 
 interface PerfSample {
   frames: number;

@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import { computeAiKartInput, createAiDriverState } from '../game/ai/aiController';
 import { FIXED_TIMESTEP } from '../game/core/constants';
+import { createRacerItemState } from '../game/items/itemSystem';
+import { createInitialKartState } from '../game/physics/kartController';
 import { RaceSimulation, computeStandings } from '../game/racing/raceSimulation';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from '../game/tracks/portoDasLanternas';
+import { TRACK_LAYOUTS } from '../game/tracks/registry';
+import {
+  getSampleAtDistance,
+  projectPointOntoTrack,
+  yawFromTangent,
+} from '../game/tracks/trackGeometry';
 
 describe('8-Racer Physics AI, Collisions & Standings', () => {
   it('initializes 1 human + 7 AI racers on distinct grid slots and advances all AI physically along the track', () => {
@@ -126,5 +135,179 @@ describe('8-Racer Physics AI, Collisions & Standings', () => {
     );
     expect(separation).toBeGreaterThan(0.9);
     expect(events.playerCollision).toBe(true);
+  });
+
+  it('targets real shortcut entryS per track instead of fixed 0.44-0.54 fraction (ALTO-01)', () => {
+    for (const layout of Object.values(TRACK_LAYOUTS)) {
+      const sc = layout.shortcuts[0];
+      expect(sc.entryS).toBeGreaterThanOrEqual(0);
+      expect(sc.entryS).toBeLessThanOrEqual(layout.totalLength);
+
+      // 1. At 0.48 * totalLength on tracks where shortcut is far away, shortcut-seeking AI must
+      //    behave identically to non-shortcut AI (never yanking off-track toward a distant shortcut).
+      const midSample = getSampleAtDistance(layout.samples, layout.totalLength, layout.totalLength * 0.48);
+      const distToScEntry = Math.hypot(
+        midSample.point.x - sc.samples[0].point.x,
+        midSample.point.z - sc.samples[0].point.z,
+      );
+      if (distToScEntry > 50) {
+        const aiSeeker = createAiDriverState(0); // shortcutTendency 0.85
+        const aiMainOnly = { ...createAiDriverState(0), shortcutTendency: 0.0 };
+        const sim = createInitialKartState(
+          midSample.point.x,
+          midSample.point.y,
+          midSample.point.z,
+          yawFromTangent(midSample.tangent),
+        );
+        sim.forwardSpeed = 28;
+        const query = projectPointOntoTrack(layout, sim.x, sim.z, sim.y);
+        const baseCtx = {
+          layout,
+          difficulty: 'hard' as const,
+          selfId: 'ai-test',
+          selfSim: sim,
+          selfTrackQuery: query,
+          selfItem: createRacerItemState(),
+          selfRank: 2,
+          otherKarts: [],
+          hazards: [],
+          incomingProjectiles: [],
+          dt: FIXED_TIMESTEP,
+        };
+        const seekerInput = computeAiKartInput(aiSeeker, baseCtx);
+        const mainInput = computeAiKartInput(aiMainOnly, baseCtx);
+        expect(seekerInput.steer, `${layout.id} at 0.48`).toBeCloseTo(mainInput.steer, 6);
+      }
+
+      // 2. Directly on the shortcut, Hard AI with high shortcutTendency steers progressively along shortcut
+      const scEntry = sc.samples[2];
+      const simOnSc = createInitialKartState(
+        scEntry.point.x,
+        scEntry.point.y,
+        scEntry.point.z,
+        yawFromTangent(scEntry.tangent),
+      );
+      simOnSc.forwardSpeed = 26;
+      const qSc = projectPointOntoTrack(layout, simOnSc.x, simOnSc.z, simOnSc.y);
+      expect(qSc.onShortcut, `${layout.id} onShortcut`).toBe(true);
+      const scInput = computeAiKartInput(createAiDriverState(0), {
+        layout,
+        difficulty: 'hard',
+        selfId: 'ai-sc',
+        selfSim: simOnSc,
+        selfTrackQuery: qSc,
+        selfItem: createRacerItemState(),
+        selfRank: 2,
+        otherKarts: [],
+        hazards: [],
+        incomingProjectiles: [],
+        dt: FIXED_TIMESTEP,
+      });
+      expect(Math.abs(scInput.steer), `${layout.id} aligned on shortcut`).toBeLessThan(0.6);
+    }
+  });
+
+  it('separates identically positioned karts, clamps wall collisions, and applies moving-hazard hit cooldown (MÉDIO-01)', () => {
+    const sim = new RaceSimulation(
+      TRACK_LAYOUTS['cidade-neon'],
+      'nilo',
+      'trilha-raposa',
+      'normal',
+      3,
+      true,
+    );
+    sim.tracker.phase = 'racing';
+
+    // 1. Exact same coordinates (dist === 0) must still separate deterministically
+    const s0 = TRACK_LAYOUTS['cidade-neon'].samples[5];
+    sim.racers[0].sim.x = s0.point.x;
+    sim.racers[0].sim.y = s0.point.y;
+    sim.racers[0].sim.z = s0.point.z;
+    sim.racers[1].sim.x = s0.point.x;
+    sim.racers[1].sim.y = s0.point.y;
+    sim.racers[1].sim.z = s0.point.z;
+
+    sim.step(FIXED_TIMESTEP, {
+      throttle: 0,
+      brake: 0,
+      steer: 0,
+      drift: false,
+      useItem: false,
+      recover: false,
+    });
+    const sep = Math.hypot(
+      sim.racers[1].sim.x - sim.racers[0].sim.x,
+      sim.racers[1].sim.z - sim.racers[0].sim.z,
+    );
+    expect(sep).toBeGreaterThan(1.5);
+
+    // 2. Moving hazard hit triggers cooldown so rapid back-to-back frames do not repeatedly slash speed
+    const mh = TRACK_LAYOUTS['cidade-neon'].movingHazards[0];
+    sim.player.sim.x = mh.position.x;
+    sim.player.sim.y = mh.position.y;
+    sim.player.sim.z = mh.position.z;
+    sim.player.sim.forwardSpeed = 30;
+    sim.player.sim.hazardHitCooldown = 0;
+
+    const ev1 = sim.step(FIXED_TIMESTEP, {
+      throttle: 0,
+      brake: 0,
+      steer: 0,
+      drift: false,
+      useItem: false,
+      recover: false,
+    });
+    expect(ev1.playerCollision).toBe(true);
+    expect(sim.player.sim.hazardHitCooldown).toBeGreaterThan(0.3);
+
+    // Put player back on hazard next frame: cooldown must suppress duplicate collision burst
+    sim.player.sim.x = mh.position.x;
+    sim.player.sim.z = mh.position.z;
+    const speedAfterFirst = sim.player.sim.forwardSpeed;
+    const ev2 = sim.step(FIXED_TIMESTEP, {
+      throttle: 0,
+      brake: 0,
+      steer: 0,
+      drift: false,
+      useItem: false,
+      recover: false,
+    });
+    expect(ev2.playerCollision).toBe(false);
+    expect(sim.player.sim.forwardSpeed).toBeGreaterThanOrEqual(speedAfterFirst * 0.85);
+  });
+
+  it('caps Easy AI straight-line top speed strictly below Hard AI (MÉDIO-02)', () => {
+    const runStraight = (throttle: number) => {
+      const sim = new RaceSimulation(
+        PORTO_DAS_LANTERNAS_LAYOUT,
+        'nilo',
+        'trilha-raposa',
+        'normal',
+        3,
+        true,
+        'practice',
+      );
+      sim.tracker.phase = 'racing';
+      const s0 = PORTO_DAS_LANTERNAS_LAYOUT.samples[0];
+      sim.player.sim.x = s0.point.x;
+      sim.player.sim.y = s0.point.y;
+      sim.player.sim.z = s0.point.z;
+      sim.player.sim.yaw = yawFromTangent(s0.tangent);
+      for (let i = 0; i < 240; i += 1) {
+        sim.step(FIXED_TIMESTEP, {
+          throttle,
+          brake: 0,
+          steer: 0,
+          drift: false,
+          useItem: false,
+          recover: false,
+        });
+      }
+      return sim.player.sim.forwardSpeed;
+    };
+
+    const easyTop = runStraight(0.84);
+    const hardTop = runStraight(1.0);
+    expect(hardTop).toBeGreaterThan(easyTop + 2.5);
   });
 });

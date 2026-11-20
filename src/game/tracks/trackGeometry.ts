@@ -64,6 +64,8 @@ export interface ShortcutPathDef {
   id: string;
   surface: SurfaceType;
   halfWidth: number;
+  entryS: number;
+  exitS: number;
   controlPoints: readonly TrackVec3[];
   samples: readonly TrackSplineSample[];
 }
@@ -182,6 +184,7 @@ export interface TrackLayoutDef {
 
 export interface TrackPointQuery {
   nearestSample: TrackSplineSample;
+  surfaceSample?: TrackSplineSample;
   lateralOffset: number;
   distanceAlongTrack: number;
   groundHeight: number;
@@ -341,7 +344,7 @@ export function offsetPointOnTrack(
   };
 }
 
-function findNearestSample(
+export function findNearestSample(
   samples: readonly TrackSplineSample[],
   x: number,
   z: number,
@@ -388,13 +391,13 @@ export function projectPointOntoTrack(
   // Check if the racer is currently on an explicit shortcut path
   for (const shortcut of layout.shortcuts) {
     const sc = findNearestSample(shortcut.samples, x, z, yHint);
-    if (Math.abs(sc.lateral) <= shortcut.halfWidth + 1.2 && sc.distSq < main.distSq + 25) {
+    if (Math.abs(sc.lateral) <= shortcut.halfWidth + 2.6 && sc.distSq < main.distSq + 25) {
       onShortcut = true;
       activeSample = sc.sample;
       lateralOffset = sc.lateral;
       groundHeight = sc.sample.point.y;
       surface = shortcut.surface;
-      wallDistance = shortcut.halfWidth + 2.4;
+      wallDistance = shortcut.halfWidth + 1.8;
       break;
     }
   }
@@ -459,6 +462,7 @@ export function projectPointOntoTrack(
 
   return {
     nearestSample: main.sample,
+    surfaceSample: activeSample,
     lateralOffset,
     distanceAlongTrack: main.sample.s,
     groundHeight,
@@ -555,10 +559,16 @@ export function assembleTrackLayout(input: TrackAssemblyInput): TrackLayoutDef {
 
   const shortcuts: ShortcutPathDef[] = input.shortcuts.map((sc) => {
     const sampled = sampleTrackSpline(sc.controlPoints, sc.sampleCount ?? 36, sc.halfWidth, false);
+    const firstPt = sampled.samples[0].point;
+    const lastPt = sampled.samples[sampled.samples.length - 1].point;
+    const entryMatch = findNearestSample(samples, firstPt.x, firstPt.z, firstPt.y);
+    const exitMatch = findNearestSample(samples, lastPt.x, lastPt.z, lastPt.y);
     return {
       id: sc.id,
       surface: sc.surface,
       halfWidth: sc.halfWidth,
+      entryS: entryMatch.sample.s,
+      exitS: exitMatch.sample.s,
       controlPoints: sc.controlPoints,
       samples: sampled.samples,
     };

@@ -1,4 +1,4 @@
-import { Component, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Component, Suspense, lazy, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useGameStore } from './store';
 import { RaceHud } from '../components/hud/RaceHud';
 import {
@@ -30,7 +30,11 @@ import type { CharacterId } from '../game/core/types';
 import { InputManager } from '../game/input/inputManager';
 import type { RacePhase } from '../game/racing/raceManager';
 import type { FullHudSnapshot } from '../game/racing/raceSimulation';
-import { RaceScene, type RaceStageSync, type SceneStageMode } from '../scenes/RaceScene';
+import type { RaceStageSync, SceneStageMode } from '../scenes/RaceScene';
+
+const RaceScene = lazy(() =>
+  import('../scenes/RaceScene').then((mod) => ({ default: mod.RaceScene })),
+);
 
 interface ErrorBoundaryState {
   error: string | null;
@@ -146,6 +150,7 @@ export function App() {
 
   useEffect(() => {
     const raceActive = screen === 'race' && !paused;
+    inputManager.setCaptureGameplayKeys(raceActive);
     inputManager.setAutoAccelerate(
       raceActive && touchControlsVisible && settings.touch.autoAccelerate,
     );
@@ -182,7 +187,11 @@ export function App() {
         (lastRaceResult?.mode === 'time-trial') ||
         ((lastRaceResult?.playerRank ?? 8) <= 3);
       audioEngine.playMusic(won ? 'music-victory' : 'music-defeat', screen === 'podium');
-    } else if (screen !== 'race' && screen !== 'pause' && !(screen === 'settings' && previousScreen === 'race')) {
+    } else if (
+      screen !== 'race' &&
+      screen !== 'pause' &&
+      !(screen === 'settings' && (previousScreen === 'race' || previousScreen === 'pause'))
+    ) {
       audioEngine.stopAmbience();
       audioEngine.updateEngineTelemetry(0, false, false, 0, false, false, false);
       audioEngine.playMusic('music-menu', true);
@@ -344,18 +353,21 @@ export function App() {
       ) : (
         <>
           <SceneErrorBoundary>
-            <RaceScene
-              sceneMode={sceneMode}
-              phaseRequest={phaseRequest}
-              paused={paused || screen !== 'race'}
-              resetToken={resetToken}
-              audioEngine={audioEngine}
-              inputManager={inputManager}
-              podiumRoster={podiumRoster}
-              onTelemetry={handleTelemetry}
-              onStageSync={setStageSync}
-              onPauseToggle={handleTogglePause}
-            />
+            <Suspense fallback={null}>
+              <RaceScene
+                sceneMode={sceneMode}
+                phaseRequest={phaseRequest}
+                paused={paused || screen !== 'race'}
+                canTogglePause={screen === 'race' || screen === 'pause'}
+                resetToken={resetToken}
+                audioEngine={audioEngine}
+                inputManager={inputManager}
+                podiumRoster={podiumRoster}
+                onTelemetry={handleTelemetry}
+                onStageSync={setStageSync}
+                onPauseToggle={handleTogglePause}
+              />
+            </Suspense>
           </SceneErrorBoundary>
 
           {screen === 'main-menu' && <MainMenuScreen onPlaySfx={playUiSfx} />}

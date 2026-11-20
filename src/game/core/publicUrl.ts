@@ -14,6 +14,6 @@ export function joinPublicUrl(base: string, assetPath: string): string {
 
 /** Public URL for the base baked into this build (`/` locally, `/kart3d/` on Pages). */
 export function publicUrl(assetPath: string): string {
-  const base = import.meta.env.BASE_URL || '/';
+  const base = import.meta.env?.BASE_URL || '/';
   return joinPublicUrl(base, assetPath);
 }

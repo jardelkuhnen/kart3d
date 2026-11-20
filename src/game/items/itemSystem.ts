@@ -1,7 +1,11 @@
 import { ITEMS, ITEMS_BY_ID } from '../../data/items';
 import type { ItemId } from '../core/types';
 import { type KartSimState, triggerKartBoost } from '../physics/kartController';
-import { type TrackLayoutDef, type TrackVec3 } from '../tracks/trackGeometry';
+import {
+  type TrackLayoutDef,
+  type TrackVec3,
+  projectPointOntoTrack,
+} from '../tracks/trackGeometry';
 
 export interface ItemBoxState {
   id: string;
@@ -18,6 +22,7 @@ export interface WorldHazard {
   y: number;
   z: number;
   radius: number;
+  age: number;
   ttl: number;
 }
 
@@ -31,6 +36,7 @@ export interface HomingProjectile {
   z: number;
   yaw: number;
   speed: number;
+  age: number;
   ttl: number;
 }
 
@@ -109,9 +115,11 @@ export class ItemWorldManager {
   public hazards: WorldHazard[] = [];
   public projectiles: HomingProjectile[] = [];
   public windPulses: WindPulseEvent[] = [];
+  private readonly layout: TrackLayoutDef;
   private seq = 0;
 
   constructor(layout: TrackLayoutDef) {
+    this.layout = layout;
     layout.itemBoxZones.forEach((row, rowIdx) => {
       row.forEach((pos, colIdx) => {
         this.boxes.push({
@@ -177,6 +185,7 @@ export class ItemWorldManager {
           y: user.sim.y + 0.3,
           z: user.sim.z - fz * 3.1,
           radius: 2.75,
+          age: 0,
           ttl: def.durationSeconds,
         });
         break;
@@ -200,6 +209,7 @@ export class ItemWorldManager {
           z: user.sim.z + fz * 2.4,
           yaw: user.sim.yaw,
           speed: 48,
+          age: 0,
           ttl: def.durationSeconds,
         });
         break;
@@ -221,13 +231,15 @@ export class ItemWorldManager {
         // Deflect any incoming seeker projectiles near the user!
         this.projectiles = this.projectiles.filter((proj) => {
           if (proj.ownerId === user.id) return true;
+          if (Math.abs(proj.y - user.sim.y) > 2.8) return true;
           const dist = Math.hypot(proj.x - user.sim.x, proj.z - user.sim.z);
           return dist > waveRadius;
         });
 
-        // Push nearby unshielded rivals away from the user
+        // Push nearby unshielded rivals away from the user (with vertical separation check)
         for (const rival of allRacers) {
           if (rival.id === user.id) continue;
+          if (Math.abs(rival.sim.y - user.sim.y) > 2.4) continue;
           const dx = rival.sim.x - user.sim.x;
           const dz = rival.sim.z - user.sim.z;
           const dist = Math.hypot(dx, dz);
@@ -283,6 +295,7 @@ export class ItemWorldManager {
       }
 
       for (const racer of racers) {
+        if (Math.abs(racer.sim.y - box.position.y) > 2.4) continue;
         const dist = Math.hypot(racer.sim.x - box.position.x, racer.sim.z - box.position.z);
         if (dist <= ITEM_BOX_RADIUS) {
           box.active = false;
@@ -322,15 +335,16 @@ export class ItemWorldManager {
     // 3. Step Névoa Prisma hazards
     const remainingHazards: WorldHazard[] = [];
     for (const haz of this.hazards) {
+      haz.age += dt;
       haz.ttl -= dt;
       if (haz.ttl <= 0) continue;
 
       let triggered = false;
       for (const racer of racers) {
-        if (racer.id === haz.ownerId && haz.ttl > 9.3) continue; // brief owner grace period
+        if (racer.id === haz.ownerId && haz.age < 0.7) continue; // brief owner grace period
         const dist = Math.hypot(racer.sim.x - haz.x, racer.sim.z - haz.z);
-        const lowEnough = racer.sim.y <= haz.y + 1.8;
-        if (dist <= haz.radius && lowEnough) {
+        const verticalOk = Math.abs(racer.sim.y - haz.y) <= 2.1;
+        if (dist <= haz.radius && verticalOk) {
           triggered = true;
           if (racer.itemState.shieldTimer > 0) {
             racer.itemState.shieldTimer = 0;
@@ -352,31 +366,49 @@ export class ItemWorldManager {
 
     // 4. Step Faísca Rastreadora homing projectiles
     const remainingProjectiles: HomingProjectile[] = [];
+    const samples = this.layout.samples;
     for (const proj of this.projectiles) {
+      proj.age += dt;
       proj.ttl -= dt;
       if (proj.ttl <= 0) continue;
 
+      const projQuery = projectPointOntoTrack(this.layout, proj.x, proj.z, proj.y);
       const target = racers.find((r) => r.id === proj.targetId);
       if (target) {
-        const dx = target.sim.x - proj.x;
-        const dz = target.sim.z - proj.z;
-        const desiredYaw = Math.atan2(-dx, -dz);
+        const dxToTarget = target.sim.x - proj.x;
+        const dzToTarget = target.sim.z - proj.z;
+        const distToTarget = Math.hypot(dxToTarget, dzToTarget);
+
+        // Follow track spline while far away so projectile never cuts through walls/terrain;
+        // lock directly onto target once within close range (18m).
+        let aimX = target.sim.x;
+        let aimZ = target.sim.z;
+        if (distToTarget > 18 && samples.length > 0) {
+          const aheadIdx = (projQuery.nearestSample.index + 5) % samples.length;
+          aimX = samples[aheadIdx].point.x;
+          aimZ = samples[aheadIdx].point.z;
+        }
+
+        const desiredYaw = Math.atan2(-(aimX - proj.x), -(aimZ - proj.z));
         let diff = desiredYaw - proj.yaw;
         while (diff > Math.PI) diff -= Math.PI * 2;
         while (diff < -Math.PI) diff += Math.PI * 2;
-        proj.yaw += Math.max(-3.6 * dt, Math.min(3.6 * dt, diff));
-        proj.y += (target.sim.y + 0.6 - proj.y) * Math.min(1, dt * 8);
+        proj.yaw += Math.max(-4.2 * dt, Math.min(4.2 * dt, diff));
       }
+
+      // Hug track surface height so jumping karts (Cristal de Salto / ramps) cleanly vault over
+      const targetGroundY = projQuery.groundHeight + 0.6;
+      proj.y += (targetGroundY - proj.y) * Math.min(1, dt * 10);
 
       proj.x += -Math.sin(proj.yaw) * proj.speed * dt;
       proj.z += -Math.cos(proj.yaw) * proj.speed * dt;
 
       let hitSomeone = false;
       for (const racer of racers) {
-        if (racer.id === proj.ownerId && proj.ttl > 5.0) continue;
+        if (racer.id === proj.ownerId && proj.age < 0.5) continue;
         const dist = Math.hypot(racer.sim.x - proj.x, racer.sim.z - proj.z);
         // Players jumping high with Cristal de Salto or ramps can vault cleanly over the spark!
-        const verticalClear = racer.sim.y - (proj.y - 0.6) > 1.4;
+        const verticalClear = Math.abs(racer.sim.y - (proj.y - 0.6)) > 1.4;
         if (dist <= 1.85 && !verticalClear) {
           hitSomeone = true;
           if (racer.itemState.shieldTimer > 0) {

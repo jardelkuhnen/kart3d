@@ -1,6 +1,6 @@
 import { CHARACTERS, CHARACTERS_BY_ID } from '../../data/characters';
 import { KARTS, KARTS_BY_ID } from '../../data/karts';
-import { getTracksByCup } from '../../data/tracks';
+import { TRACKS_BY_ID, getTracksByCup } from '../../data/tracks';
 import {
   DEFAULT_BINDINGS,
   DEFAULT_SETTINGS,
@@ -24,6 +24,7 @@ export const SAVE_STORAGE_KEY = 'kart-legends-3d:save:v1';
 
 const VALID_CHARACTER_IDS = new Set<string>(Object.keys(CHARACTERS_BY_ID));
 const VALID_KART_IDS = new Set<string>(Object.keys(KARTS_BY_ID));
+const VALID_TRACK_IDS = new Set<string>(Object.keys(TRACKS_BY_ID));
 const VALID_QUALITIES = new Set<QualityLevel>(['low', 'medium', 'high']);
 const VALID_TOUCH_MODES = new Set<TouchControlsMode>(['auto', 'on', 'off']);
 
@@ -118,7 +119,7 @@ function sanitizeTimeMap(raw: unknown): Partial<Record<TrackId, number>> {
   const result: Partial<Record<TrackId, number>> = {};
   if (!raw || typeof raw !== 'object') return result;
   for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
-    if (typeof v === 'number' && Number.isFinite(v) && v > 0) {
+    if (VALID_TRACK_IDS.has(k) && typeof v === 'number' && Number.isFinite(v) && v > 0) {
       result[k as TrackId] = v;
     }
   }
@@ -173,7 +174,9 @@ export function loadSaveData(
         )
       : [];
     const tracks = Array.isArray(obj.unlockedTracks)
-      ? (obj.unlockedTracks.filter((id): id is TrackId => typeof id === 'string') as TrackId[])
+      ? obj.unlockedTracks.filter(
+          (id): id is TrackId => typeof id === 'string' && VALID_TRACK_IDS.has(id),
+        )
       : [];
 
     const trophies: Partial<Record<CupId, 'gold' | 'silver' | 'bronze'>> = {};

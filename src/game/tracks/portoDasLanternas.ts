@@ -7,6 +7,7 @@ import {
   type TrackLayoutDef,
   type TrackPropPlacement,
   type TrackVec3,
+  findNearestSample,
   getSampleAtDistance,
   offsetPointOnTrack,
   sampleTrackSpline,
@@ -44,10 +45,14 @@ const SHORTCUT_CONTROL_POINTS: readonly TrackVec3[] = [
 ];
 
 const shortcutSampled = sampleTrackSpline(SHORTCUT_CONTROL_POINTS, 36, 4.1, false);
+const shortcutFirst = shortcutSampled.samples[0].point;
+const shortcutLast = shortcutSampled.samples[shortcutSampled.samples.length - 1].point;
 const HARBOR_SHORTCUT: ShortcutPathDef = {
   id: 'porto-atalho-mercado',
   surface: 'dirt',
   halfWidth: 4.1,
+  entryS: findNearestSample(samples, shortcutFirst.x, shortcutFirst.z, shortcutFirst.y).sample.s,
+  exitS: findNearestSample(samples, shortcutLast.x, shortcutLast.z, shortcutLast.y).sample.s,
   controlPoints: SHORTCUT_CONTROL_POINTS,
   samples: shortcutSampled.samples,
 };

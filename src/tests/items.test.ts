@@ -13,9 +13,18 @@ import {
   createInitialKartState,
 } from '../game/physics/kartController';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from '../game/tracks/portoDasLanternas';
+import { TRACK_LAYOUTS } from '../game/tracks/registry';
+import { projectPointOntoTrack } from '../game/tracks/trackGeometry';
 
-function makeAdapter(id: string, rank: number, x: number, z: number, yaw = 0): ItemRacerAdapter {
-  const sim = createInitialKartState(x, 0, z, yaw);
+function makeAdapter(
+  id: string,
+  rank: number,
+  x: number,
+  z: number,
+  yaw = 0,
+  y = 0,
+): ItemRacerAdapter {
+  const sim = createInitialKartState(x, y, z, yaw);
   sim.forwardSpeed = 28;
   return {
     id,
@@ -55,7 +64,14 @@ describe('6-Item System & Position-Balanced Distribution', () => {
   it('picks up an item box on contact and respawns it after cooldown', () => {
     const manager = new ItemWorldManager(PORTO_DAS_LANTERNAS_LAYOUT);
     const firstBox = manager.boxes[0];
-    const player = makeAdapter('p1', 3, firstBox.position.x, firstBox.position.z);
+    const player = makeAdapter(
+      'p1',
+      3,
+      firstBox.position.x,
+      firstBox.position.z,
+      0,
+      firstBox.position.y - 0.8,
+    );
 
     const ev = manager.step(FIXED_TIMESTEP, [player], 'p1', () => 0.25);
     expect(ev.pickedUpByPlayer).toBe(true);
@@ -136,5 +152,49 @@ describe('6-Item System & Position-Balanced Distribution', () => {
     expect(p3.sim.vx).toBeGreaterThan(p3InitialVx);
 
     void computeKartPhysicsProfile(getKartById('trilha-raposa'));
+  });
+
+  it('places every item box above true track surface elevation across all 8 tracks (CRÍTICO-03)', () => {
+    for (const layout of Object.values(TRACK_LAYOUTS)) {
+      const manager = new ItemWorldManager(layout);
+      expect(manager.boxes.length).toBeGreaterThan(0);
+      for (const box of manager.boxes) {
+        const q = projectPointOntoTrack(layout, box.position.x, box.position.z, box.position.y);
+        expect(box.position.y).toBeGreaterThanOrEqual(q.groundHeight + 0.5);
+      }
+    }
+  });
+
+  it('checks vertical separation on item boxes, Onda de Vento, and lets jumping karts vault over Faísca Rastreadora (MÉDIO-03)', () => {
+    const manager = new ItemWorldManager(PORTO_DAS_LANTERNAS_LAYOUT);
+    const box0 = manager.boxes[0];
+
+    // Kart 6m above the item box must NOT pick it up
+    const highKart = makeAdapter('high', 3, box0.position.x, box0.position.z);
+    highKart.sim.y = box0.position.y + 6.0;
+    manager.step(FIXED_TIMESTEP, [highKart], 'high');
+    expect(box0.active).toBe(true);
+    expect(highKart.itemState.heldItem).toBeNull();
+
+    // Onda de Vento must NOT push a rival 5m vertically above the user
+    const user = makeAdapter('u1', 2, 0, 10, 0);
+    const aboveRival = makeAdapter('r2', 1, 2, 10, 0);
+    aboveRival.sim.y = 5.5;
+    user.itemState.heldItem = 'onda-de-vento';
+    manager.activateItem(user, [user, aboveRival], 'u1', emptyEvents());
+    expect(aboveRival.sim.hitTimer).toBe(0);
+    expect(aboveRival.sim.vx).toBe(0);
+
+    // Faísca Rastreadora hugs track surface height so a jumping kart (y = ground + 2.4) vaults over it
+    const shooter = makeAdapter('s1', 2, 0, 20, 0);
+    const jumper = makeAdapter('j2', 1, 0, 10, 0);
+    jumper.sim.y = 2.6; // vaulted in midair
+    shooter.itemState.heldItem = 'faisca-rastreadora';
+    manager.activateItem(shooter, [shooter, jumper], 's1', emptyEvents());
+    for (let i = 0; i < 20; i += 1) {
+      jumper.sim.y = 2.6;
+      manager.step(FIXED_TIMESTEP, [shooter, jumper], 's1');
+    }
+    expect(jumper.sim.hitTimer).toBe(0);
   });
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { sanitizeSelectionsForMode, useGameStore } from '../app/store';
 import { createInitialSaveData } from '../game/core/constants';
 import {
   createChampionship,
@@ -231,5 +232,61 @@ describe('Slice 6 — Save Persistence, Corruption Recovery, Unlocks, Championsh
     expect(practiceSim.racers).toHaveLength(1);
     expect(practiceSim.items.boxes.length).toBeGreaterThan(0);
     expect(practiceSim.tracker.totalLaps).toBe(99);
+  });
+
+  it('sanitizes locked character, kart, cup and track selections when switching out of practice mode (ALTO-03)', () => {
+    const freshSave = createInitialSaveData();
+    const lockedSelection = {
+      selectedCharacterId: 'zera' as const,
+      selectedKartId: 'lamina-glacial' as const,
+      selectedCupId: 'eclipse' as const,
+      selectedTrackId: 'fortaleza-tempestade' as const,
+    };
+
+    // In practice mode, locked selections are permitted
+    expect(sanitizeSelectionsForMode('practice', freshSave, lockedSelection)).toEqual(lockedSelection);
+
+    // Switching to Quick Race / Championship / Time Trial must revert all locked items
+    for (const officialMode of ['quick-race', 'championship', 'time-trial'] as const) {
+      const sanitized = sanitizeSelectionsForMode(officialMode, freshSave, lockedSelection);
+      expect(freshSave.unlockedCharacters).toContain(sanitized.selectedCharacterId);
+      expect(freshSave.unlockedKarts).toContain(sanitized.selectedKartId);
+      expect(sanitized.selectedCupId).toBe('aurora');
+      expect(freshSave.unlockedTracks).toContain(sanitized.selectedTrackId);
+    }
+
+    // Store integration: setMode('practice') must actually update mode and allow locked items,
+    // then setMode('quick-race') must sanitize back to unlocked items
+    const store = useGameStore.getState();
+    store.setMode('practice');
+    expect(useGameStore.getState().mode).toBe('practice');
+    useGameStore.getState().setSelectedCharacterId('zera');
+    useGameStore.getState().setSelectedKartId('lamina-glacial');
+    useGameStore.getState().setSelectedCupId('eclipse');
+    useGameStore.getState().setSelectedTrackId('fortaleza-tempestade');
+    useGameStore.getState().setMode('quick-race');
+    expect(useGameStore.getState().mode).toBe('quick-race');
+    expect(useGameStore.getState().selectedCharacterId).not.toBe('zera');
+    expect(useGameStore.getState().selectedCupId).toBe('aurora');
+  });
+
+  it('strips invalid or unknown TrackId entries when loading save data (BAIXO-04)', () => {
+    const storage = new MemoryStorage();
+    const tampered = {
+      ...createInitialSaveData(),
+      unlockedTracks: ['porto-das-lanternas', 'fake-track-999', 'unknown-circuit'],
+      bestLapTimesMs: { 'porto-das-lanternas': 28_100, 'fake-track-999': 12_000 },
+      bestRaceTimesMs: { 'porto-das-lanternas': 90_000, 'bogus-track': 45_000 },
+    };
+    storage.setItem(SAVE_STORAGE_KEY, JSON.stringify(tampered));
+
+    const loaded = loadSaveData(storage, false);
+    expect(loaded.recoveredFromCorruption).toBe(false);
+    expect(loaded.data.unlockedTracks).not.toContain('fake-track-999');
+    expect(loaded.data.unlockedTracks).not.toContain('unknown-circuit');
+    expect(loaded.data.bestLapTimesMs['porto-das-lanternas']).toBe(28_100);
+    expect((loaded.data.bestLapTimesMs as Record<string, number>)['fake-track-999']).toBeUndefined();
+    expect(loaded.data.bestRaceTimesMs['porto-das-lanternas']).toBe(90_000);
+    expect((loaded.data.bestRaceTimesMs as Record<string, number>)['bogus-track']).toBeUndefined();
   });
 });

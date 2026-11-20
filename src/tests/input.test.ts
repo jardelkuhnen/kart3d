@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_BINDINGS } from '../game/core/constants';
 import {
@@ -74,5 +75,29 @@ describe('Input Mapping (Keyboard, Remapping & Gamepad API)', () => {
     manager.triggerRecoverOnce();
     expect(manager.pollKartOnly().recover).toBe(true);
     expect(manager.pollKartOnly().recover).toBe(false);
+  });
+
+  it('does not preventDefault Space or Arrow keys outside active race gameplay (ALTO-02)', () => {
+    const manager = new InputManager(DEFAULT_BINDINGS);
+    manager.attach();
+
+    // Default (menus/settings): Space & ArrowRight must NOT be blocked
+    const spaceMenu = new KeyboardEvent('keydown', { code: 'Space', cancelable: true });
+    const arrowMenu = new KeyboardEvent('keydown', { code: 'ArrowRight', cancelable: true });
+    window.dispatchEvent(spaceMenu);
+    window.dispatchEvent(arrowMenu);
+    expect(spaceMenu.defaultPrevented).toBe(false);
+    expect(arrowMenu.defaultPrevented).toBe(false);
+
+    // Active race gameplay: Space & ArrowRight ARE captured
+    manager.setCaptureGameplayKeys(true);
+    const spaceRace = new KeyboardEvent('keydown', { code: 'Space', cancelable: true });
+    const arrowRace = new KeyboardEvent('keydown', { code: 'ArrowRight', cancelable: true });
+    window.dispatchEvent(spaceRace);
+    window.dispatchEvent(arrowRace);
+    expect(spaceRace.defaultPrevented).toBe(true);
+    expect(arrowRace.defaultPrevented).toBe(true);
+
+    manager.detach();
   });
 });

@@ -1,7 +1,10 @@
+import { useEffect, useRef } from 'react';
+import { useGameStore } from '../../app/store';
 import { getItemById } from '../../data/items';
 import { DRIFT_TIERS, SURFACE_PROPERTIES } from '../../game/core/constants';
 import type { AssetManifest, GameMode, TrackId } from '../../game/core/types';
 import type { InputManager } from '../../game/input/inputManager';
+import { formatPrimaryKey } from '../../game/input/keyLabels';
 import { resolveAssetPath } from '../../game/core/assetLoader';
 import { formatRaceTimeMs, type RacePhase } from '../../game/racing/raceManager';
 import type { FullHudSnapshot } from '../../game/racing/raceSimulation';
@@ -60,6 +63,38 @@ export function RaceHud({
   onOpenSettings,
   onExitToMenu,
 }: RaceHudProps) {
+  const bindings = useGameStore((s) => s.settings.bindings);
+  const pauseModalRef = useRef<HTMLElement | null>(null);
+  const resumeBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!paused) return undefined;
+    resumeBtnRef.current?.focus();
+    const modal = pauseModalRef.current;
+    const handleTabTrap = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab' || !modal) return;
+      const focusable = Array.from(
+        modal.querySelectorAll<HTMLElement>('button:not([disabled]), [tabindex]:not([tabindex="-1"])'),
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener('keydown', handleTabTrap);
+    return () => window.removeEventListener('keydown', handleTabTrap);
+  }, [paused]);
+
+  const useItemKeyLabel = formatPrimaryKey(bindings.useItem);
+  const recoverKeyLabel = formatPrimaryKey(bindings.recover);
+  const pauseKeyLabel = formatPrimaryKey(bindings.pause);
+
   const trackLayout = getTrackLayout(selectedTrackId);
   const trackTheme = getTrackVisualTheme(selectedTrackId);
   const isSolo = mode === 'time-trial' || mode === 'practice';
@@ -157,7 +192,11 @@ export function RaceHud({
                   height={54}
                 />
                 <span className="kl-item-label">
-                  {telemetry.rouletteActive ? 'SORTEANDO...' : `${displayItemDef.name} (SHIFT)`}
+                  {telemetry.rouletteActive
+                    ? 'SORTEANDO...'
+                    : touchControlsVisible || !useItemKeyLabel
+                      ? displayItemDef.name
+                      : `${displayItemDef.name} (${useItemKeyLabel})`}
                 </span>
               </>
             ) : (
@@ -167,32 +206,52 @@ export function RaceHud({
         )}
 
         <div className="kl-race-actions">
+          {!touchControlsVisible && (
+            <button
+              type="button"
+              className="kl-btn kl-btn-secondary"
+              data-testid="hud-recover-btn"
+              aria-label="Recuperar Kart na Pista"
+              disabled={paused || phase !== 'racing'}
+              onClick={onRecoverKart}
+            >
+              Recuperar{recoverKeyLabel ? ` (${recoverKeyLabel})` : ''}
+            </button>
+          )}
           <button
             type="button"
-            className="kl-btn kl-btn-secondary"
-            data-testid="hud-recover-btn"
-            aria-label="Recuperar Kart na Pista"
-            disabled={paused || phase !== 'racing'}
-            onClick={onRecoverKart}
-          >
-            Recuperar (R)
-          </button>
-          <button
-            type="button"
-            className="kl-btn kl-btn-secondary"
+            className="kl-btn kl-btn-secondary kl-action-mute"
             onClick={onToggleMute}
             aria-label={muted ? 'Ativar Som' : 'Silenciar Som'}
           >
             {muted ? 'Som: Mudo' : 'Som: Ligado'}
           </button>
-          <button type="button" className="kl-btn kl-btn-secondary" onClick={onRestartRace}>
+          <button
+            type="button"
+            className="kl-btn kl-btn-secondary kl-action-restart"
+            onClick={onRestartRace}
+          >
             Reiniciar
           </button>
-          <button type="button" className="kl-btn kl-btn-secondary" onClick={onTogglePause}>
-            {paused ? 'Retomar (ESC)' : 'Pausar (ESC)'}
+          <button
+            type="button"
+            className="kl-btn kl-btn-secondary kl-action-pause"
+            onClick={onTogglePause}
+          >
+            {touchControlsVisible || !pauseKeyLabel
+              ? paused
+                ? 'Retomar'
+                : 'Pausar'
+              : paused
+                ? `Retomar (${pauseKeyLabel})`
+                : `Pausar (${pauseKeyLabel})`}
           </button>
           {mode === 'practice' && (
-            <button type="button" className="kl-btn kl-btn-secondary" onClick={onExitToMenu}>
+            <button
+              type="button"
+              className="kl-btn kl-btn-secondary kl-action-end-practice"
+              onClick={onExitToMenu}
+            >
               Encerrar Treino
             </button>
           )}
@@ -221,7 +280,13 @@ export function RaceHud({
         )}
 
         {paused && (
-          <section className="kl-panel kl-modal-card" role="dialog" aria-label="Jogo Pausado">
+          <section
+            ref={pauseModalRef}
+            className="kl-panel kl-modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Jogo Pausado"
+          >
             <h2 className="kl-title">CORRIDA PAUSADA</h2>
             <p className="kl-subtitle">
               {trackName} —{' '}
@@ -231,7 +296,7 @@ export function RaceHud({
               {!isSolo && ` · ${telemetry.rank}º lugar`}
             </p>
             <div className="kl-modal-actions">
-              <button type="button" className="kl-btn" onClick={onTogglePause}>
+              <button ref={resumeBtnRef} type="button" className="kl-btn" onClick={onTogglePause}>
                 Continuar
               </button>
               <button type="button" className="kl-btn kl-btn-secondary" onClick={onRestartRace}>
@@ -250,7 +315,11 @@ export function RaceHud({
 
       {/* Bottom Bar: Driver + Lap + Timer (Left) & Speedometer + Drift/Turbo (Right) */}
       <footer className="kl-bottom-bar">
-        <section className="kl-panel kl-race-badge" aria-label="Volta e Cronômetro">
+        <section
+          className="kl-panel kl-race-badge"
+          data-testid="hud-race-badge"
+          aria-label="Volta e Cronômetro"
+        >
           <img
             src={characterIconPath}
             alt={characterName}
@@ -276,7 +345,11 @@ export function RaceHud({
           </div>
         </section>
 
-        <section className="kl-panel kl-telemetry-cluster" aria-label="Velocímetro e Drift">
+        <section
+          className="kl-panel kl-telemetry-cluster"
+          data-testid="hud-telemetry-cluster"
+          aria-label="Velocímetro e Drift"
+        >
           <div className="kl-speed-box">
             <span className="kl-speed-number" data-testid="speedometer-value">
               {telemetry.speedKmh}

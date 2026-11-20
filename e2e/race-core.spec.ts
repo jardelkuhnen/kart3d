@@ -89,7 +89,23 @@ test.describe('KART LEGENDS 3D — Core 8-Racer Quick Race Flow', () => {
     await page.getByRole('button', { name: 'Continuar' }).click();
     await expect(page.getByRole('heading', { name: 'CORRIDA PAUSADA' })).toBeHidden();
 
-    // Verify second pause/resume toggle remains synchronized under React 19 StrictMode
+    // Verify second pause/resume toggle AND Pause -> Settings -> ESC returns to Pause (ALTO-06)
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('heading', { name: 'CORRIDA PAUSADA' })).toBeVisible({
+      timeout: 3_000,
+    });
+    await page.getByRole('button', { name: 'Configurações' }).click();
+    await expect(page.getByRole('heading', { name: 'Configurações' })).toBeVisible();
+
+    // ArrowRight must adjust range slider in Settings (ALTO-02)
+    const musicSlider = page.getByLabel('Volume da Música');
+    const beforeVal = Number(await musicSlider.inputValue());
+    await musicSlider.focus();
+    await page.keyboard.press('ArrowRight');
+    const afterVal = Number(await musicSlider.inputValue());
+    expect(afterVal).toBeGreaterThan(beforeVal);
+
+    // Pressing ESC in Settings must return to Pause modal instead of unpausing race (ALTO-06)
     await page.keyboard.press('Escape');
     await expect(page.getByRole('heading', { name: 'CORRIDA PAUSADA' })).toBeVisible({
       timeout: 3_000,

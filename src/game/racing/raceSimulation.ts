@@ -120,6 +120,19 @@ export interface FullHudSnapshot {
 
 const KART_RADIUS = 1.05;
 
+function clampKartToTrackBounds(sim: KartSimState, layout: TrackLayoutDef): void {
+  const q = projectPointOntoTrack(layout, sim.x, sim.z, sim.y);
+  const maxLateral = q.wallDistance - 0.95;
+  if (Math.abs(q.lateralOffset) > maxLateral) {
+    const sample = q.surfaceSample ?? q.nearestSample;
+    const wallSign = Math.sign(q.lateralOffset) || 1;
+    const excess = Math.abs(q.lateralOffset) - maxLateral;
+    sim.x -= sample.right.x * wallSign * excess;
+    sim.z -= sample.right.z * wallSign * excess;
+    sim.lateralOffset = wallSign * maxLateral;
+  }
+}
+
 export function computeStandings(
   racers: readonly RacerEntityState[],
   layout: TrackLayoutDef,
@@ -385,6 +398,10 @@ export class RaceSimulation {
         audioEvents.playerPositionCorrected = true;
       }
 
+      if (racer.sim.recoverTimer > 0) {
+        racer.item.hazardSlowTimer = 0;
+      }
+
       if (racer.item.hazardSlowTimer > 0 && racer.sim.boostTimer <= 0) {
         racer.sim.forwardSpeed = Math.min(racer.sim.forwardSpeed, racer.profile.topSpeedMs * 0.56);
       }
@@ -396,6 +413,7 @@ export class RaceSimulation {
           racer.sim.z,
           racer.sim.yaw,
           trackQuery,
+          racer.isPlayer,
         );
         if (racer.race.finished && racer.finishTimeMs === null) {
           racer.finishTimeMs = this.tracker.raceElapsedMs;
@@ -427,10 +445,10 @@ export class RaceSimulation {
         const dz = b.sim.z - a.sim.z;
         const dist = Math.hypot(dx, dz);
         const minDist = KART_RADIUS * 2;
-        if (dist < minDist && dist > 1e-4) {
+        if (dist < minDist) {
           const overlap = minDist - dist;
-          const nx = dx / dist;
-          const nz = dz / dist;
+          const nx = dist > 1e-4 ? dx / dist : 1;
+          const nz = dist > 1e-4 ? dz / dist : 0;
           const totalMass = a.profile.massKg + b.profile.massKg;
           const shareA = b.profile.massKg / totalMass;
           const shareB = a.profile.massKg / totalMass;
@@ -439,6 +457,9 @@ export class RaceSimulation {
           a.sim.z -= nz * overlap * shareA;
           b.sim.x += nx * overlap * shareB;
           b.sim.z += nz * overlap * shareB;
+
+          clampKartToTrackBounds(a.sim, this.layout);
+          clampKartToTrackBounds(b.sim, this.layout);
 
           const bounce = 5.5;
           a.sim.vx -= nx * bounce * shareA;
@@ -488,16 +509,22 @@ export class RaceSimulation {
               const nz = dist > 0.01 ? dz / safeDist : hazard.right.z;
               racer.sim.x = hPos.x + nx * minDist;
               racer.sim.z = hPos.z + nz * minDist;
+              racer.sim.vx += nx * 8.5;
+              racer.sim.vz += nz * 8.5;
+              clampKartToTrackBounds(racer.sim, this.layout);
               if (racer.isPlayer) {
                 audioEvents.playerPositionCorrected = true;
               }
-              if (racer.item.shieldTimer > 0) {
-                racer.item.shieldTimer = 0;
-              } else {
-                racer.sim.hitTimer = Math.max(racer.sim.hitTimer, 0.75);
-                racer.sim.forwardSpeed *= 0.45;
-                if (racer.isPlayer) {
-                  audioEvents.playerCollision = true;
+              if (racer.sim.hazardHitCooldown <= 0) {
+                racer.sim.hazardHitCooldown = 0.55;
+                if (racer.item.shieldTimer > 0) {
+                  racer.item.shieldTimer = 0;
+                } else {
+                  racer.sim.hitTimer = Math.max(racer.sim.hitTimer, 0.75);
+                  racer.sim.forwardSpeed *= 0.45;
+                  if (racer.isPlayer) {
+                    audioEvents.playerCollision = true;
+                  }
                 }
               }
             }

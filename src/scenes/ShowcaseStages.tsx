@@ -3,7 +3,6 @@ import { useFrame } from '@react-three/fiber';
 import { Environment, Lightformer, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { CharacterRig } from '../game/characters/CharacterRig';
-import { disposeClonedMaterialsOnly } from '../game/core/assetLoader';
 
 export interface ShowcaseProps {
   characterModelPath: string;
@@ -29,9 +28,6 @@ export function GarageShowcaseStage({ characterModelPath, kartModelPath }: Showc
       if (obj instanceof THREE.Mesh) {
         obj.castShadow = true;
         obj.receiveShadow = true;
-        if (obj.material instanceof THREE.MeshStandardMaterial) {
-          obj.material = obj.material.clone();
-        }
       }
       if (obj.name === 'DriverMount') {
         mountOffset.copy(obj.position);
@@ -40,9 +36,6 @@ export function GarageShowcaseStage({ characterModelPath, kartModelPath }: Showc
     if (driverSeatRef.current) {
       driverSeatRef.current.position.copy(mountOffset);
     }
-    return () => {
-      disposeClonedMaterialsOnly(kartScene);
-    };
   }, [kartScene]);
 
   useFrame((state, delta) => {

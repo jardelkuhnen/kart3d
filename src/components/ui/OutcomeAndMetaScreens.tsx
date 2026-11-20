@@ -5,7 +5,14 @@ import { KARTS } from '../../data/karts';
 import { CUPS, TRACKS, getTrackById } from '../../data/tracks';
 import { DEFAULT_BINDINGS } from '../../game/core/constants';
 import type { ControlBindings, QualityLevel, TouchControlsMode } from '../../game/core/types';
+import { formatBindingShort } from '../../game/input/keyLabels';
 import { formatRaceTimeMs } from '../../game/racing/raceManager';
+
+const TROPHY_BADGE_PT: Record<'gold' | 'silver' | 'bronze', string> = {
+  gold: 'OURO',
+  silver: 'PRATA',
+  bronze: 'BRONZE',
+};
 
 const ACTION_LABELS: ReadonlyArray<{ key: keyof ControlBindings; label: string }> = [
   { key: 'accelerate', label: 'Acelerar' },
@@ -27,19 +34,54 @@ export function SettingsScreen({
   const updateSettings = useGameStore((s) => s.updateSettings);
   const closeSettings = useGameStore((s) => s.closeSettings);
   const [listeningAction, setListeningAction] = useState<keyof ControlBindings | null>(null);
+  const [conflictNotice, setConflictNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (listeningAction) return undefined;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.code === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        onPlaySfx('click');
+        closeSettings();
+      }
+    };
+    window.addEventListener('keydown', handleEscape, { capture: true });
+    return () => window.removeEventListener('keydown', handleEscape, { capture: true });
+  }, [listeningAction, closeSettings, onPlaySfx]);
 
   useEffect(() => {
     if (!listeningAction) return undefined;
     const handleKeyDown = (e: KeyboardEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      updateSettings({
-        bindings: {
-          ...settings.bindings,
-          [listeningAction]: [e.code],
-        },
-      });
+      // Cancel remapping cleanly on Escape (unless explicitly remapping pause)
+      if (e.code === 'Escape' && listeningAction !== 'pause') {
+        setListeningAction(null);
+        setConflictNotice(null);
+        onPlaySfx('click');
+        return;
+      }
+
+      const nextBindings: ControlBindings = structuredClone(settings.bindings);
+      const previousCodes = nextBindings[listeningAction];
+      let swappedLabel: string | null = null;
+
+      for (const { key, label } of ACTION_LABELS) {
+        if (key === listeningAction) continue;
+        if (nextBindings[key].includes(e.code)) {
+          const remaining = nextBindings[key].filter((c) => c !== e.code);
+          nextBindings[key] = remaining.length > 0 ? remaining : previousCodes;
+          swappedLabel = label;
+        }
+      }
+
+      nextBindings[listeningAction] = [e.code];
+      updateSettings({ bindings: nextBindings });
       setListeningAction(null);
+      setConflictNotice(
+        swappedLabel ? `Conflito resolvido: tecla trocada com "${swappedLabel}".` : null,
+      );
       onPlaySfx('confirm');
     };
     window.addEventListener('keydown', handleKeyDown, { capture: true });
@@ -109,6 +151,7 @@ export function SettingsScreen({
               <button
                 type="button"
                 className={`kl-diff-pill ${settings.audio.muted ? 'active' : ''}`}
+                aria-pressed={settings.audio.muted}
                 onClick={() => {
                   onPlaySfx('click');
                   updateSettings({
@@ -126,12 +169,13 @@ export function SettingsScreen({
 
             <div className="kl-toggle-row">
               <span>Qualidade 3D</span>
-              <div className="kl-inline-pills">
+              <div className="kl-inline-pills" role="group" aria-label="Qualidade 3D">
                 {(['low', 'medium', 'high'] as QualityLevel[]).map((q) => (
                   <button
                     key={q}
                     type="button"
                     className={`kl-diff-pill ${settings.quality === q ? 'active' : ''}`}
+                    aria-pressed={settings.quality === q}
                     data-testid={`quality-${q}`}
                     onClick={() => {
                       onPlaySfx('click');
@@ -178,12 +222,13 @@ export function SettingsScreen({
 
             <div className="kl-toggle-row">
               <span>Botões na Tela</span>
-              <div className="kl-inline-pills">
+              <div className="kl-inline-pills" role="group" aria-label="Botões na Tela">
                 {(['auto', 'on', 'off'] as TouchControlsMode[]).map((m) => (
                   <button
                     key={m}
                     type="button"
                     className={`kl-diff-pill ${settings.touch.mode === m ? 'active' : ''}`}
+                    aria-pressed={settings.touch.mode === m}
                     data-testid={`touch-mode-${m}`}
                     onClick={() => {
                       onPlaySfx('click');
@@ -201,6 +246,7 @@ export function SettingsScreen({
               <button
                 type="button"
                 className={`kl-diff-pill ${settings.touch.autoAccelerate ? 'active' : ''}`}
+                aria-pressed={settings.touch.autoAccelerate}
                 data-testid="touch-auto-accel-toggle"
                 onClick={() => {
                   onPlaySfx('click');
@@ -219,6 +265,11 @@ export function SettingsScreen({
 
           <div className="kl-garage-col">
             <div className="kl-garage-heading">Remapeamento de Teclado</div>
+            {conflictNotice && (
+              <p className="kl-notice-banner" role="status">
+                {conflictNotice}
+              </p>
+            )}
             <div className="kl-bindings-list">
               {ACTION_LABELS.map(({ key, label }) => {
                 const isListening = listeningAction === key;
@@ -228,14 +279,16 @@ export function SettingsScreen({
                     <button
                       type="button"
                       className={`kl-binding-btn ${isListening ? 'listening' : ''}`}
+                      title={formatBindingShort(settings.bindings[key])}
                       data-testid={`remap-${key}`}
                       onClick={() => {
                         onPlaySfx('click');
+                        setConflictNotice(null);
                         setListeningAction(isListening ? null : key);
                       }}
                     >
                       {isListening
-                        ? 'Pressione uma tecla...'
+                        ? 'Pressione tecla (ESC cancela)...'
                         : settings.bindings[key].join(' / ')}
                     </button>
                   </div>
@@ -579,7 +632,7 @@ export function ProgressionScreen({
                 <strong>{cup.name}</strong>
                 <span>
                   {saveData.cupTrophies[cup.id]
-                    ? `🏆 ${saveData.cupTrophies[cup.id]!.toUpperCase()}`
+                    ? `🏆 ${TROPHY_BADGE_PT[saveData.cupTrophies[cup.id]!]}`
                     : cup.unlockRequirementLabel}
                 </span>
               </div>

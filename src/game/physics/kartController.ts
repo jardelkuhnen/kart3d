@@ -49,7 +49,9 @@ export interface KartSimState {
   boostMultiplier: number;
   boostLabel: string | null;
   hitTimer: number;
+  hazardHitCooldown: number;
   recoverTimer: number;
+  groundHeight: number;
   wheelSpinAngle: number;
   suspensionOffset: number;
   suspensionVel: number;
@@ -136,7 +138,9 @@ export function createInitialKartState(
     boostMultiplier: 1,
     boostLabel: null,
     hitTimer: 0,
+    hazardHitCooldown: 0,
     recoverTimer: 0,
+    groundHeight: y,
     wheelSpinAngle: 0,
     suspensionOffset: 0,
     suspensionVel: 0,
@@ -190,7 +194,10 @@ export function beginKartRecovery(
   state.boostTimer = 0;
   state.boostMultiplier = 1;
   state.boostLabel = null;
+  state.hitTimer = 0;
+  state.hazardHitCooldown = 0;
   state.recoverTimer = 0.55;
+  state.groundHeight = pose.position.y;
   state.wallStuckTimer = 0;
   state.wallCollisionThisStep = false;
   state.visualSlipYaw = 0;
@@ -216,11 +223,13 @@ export function stepKartSimulation(
   state.boostPadCooldown = Math.max(0, state.boostPadCooldown - dt);
   state.rampCooldown = Math.max(0, state.rampCooldown - dt);
   state.hitTimer = Math.max(0, state.hitTimer - dt);
+  state.hazardHitCooldown = Math.max(0, state.hazardHitCooldown - dt);
   state.wallCollisionThisStep = false;
   state.distanceAlongTrack = trackQuery.distanceAlongTrack;
   state.lateralOffset = trackQuery.lateralOffset;
   state.onShortcut = trackQuery.onShortcut;
   state.surface = trackQuery.surface;
+  state.groundHeight = trackQuery.groundHeight;
 
   if (state.recoverTimer > 0) {
     state.recoverTimer = Math.max(0, state.recoverTimer - dt);
@@ -283,17 +292,19 @@ export function stepKartSimulation(
 
   // Longitudinal speed integration
   if (boosting) {
-    const targetBoostSpeed = profile.topSpeedMs * state.boostMultiplier;
+    const targetBoostSpeed = maxAllowedSpeed;
     state.forwardSpeed += (targetBoostSpeed - state.forwardSpeed) * Math.min(1, dt * 7.5);
   } else if (input.throttle > 0.05) {
+    const clampedThrottle = Math.min(1, input.throttle);
+    const throttleSpeedCap = maxAllowedSpeed * (0.2 + 0.8 * clampedThrottle);
     const accelScale = state.hitTimer > 0 ? profile.recoveryBoostFactor : 1;
-    const speedRatio = Math.max(0, state.forwardSpeed / Math.max(1, maxAllowedSpeed));
+    const speedRatio = Math.max(0, state.forwardSpeed / Math.max(1, throttleSpeedCap));
     const torqueCurve = 1.12 - 0.52 * Math.min(1, speedRatio);
     state.forwardSpeed +=
-      input.throttle * profile.accelMs2 * accelScale * torqueCurve * dt;
-    if (state.forwardSpeed > maxAllowedSpeed) {
-      // Smoothly bleed excess speed down on slower surfaces like grass/sand
-      state.forwardSpeed -= Math.min(state.forwardSpeed - maxAllowedSpeed, 22 * dt);
+      clampedThrottle * profile.accelMs2 * accelScale * torqueCurve * dt;
+    if (state.forwardSpeed > throttleSpeedCap) {
+      // Smoothly bleed excess speed down on slower surfaces or partial throttle (e.g. Easy/Normal AI)
+      state.forwardSpeed -= Math.min(state.forwardSpeed - throttleSpeedCap, 22 * dt);
     }
   } else if (input.brake > 0.05) {
     if (state.forwardSpeed > 0.6) {
@@ -396,12 +407,12 @@ export function stepKartSimulation(
   state.x += stepDx;
   state.z += stepDz;
 
-  const sample = trackQuery.nearestSample;
+  const sample = trackQuery.surfaceSample ?? trackQuery.nearestSample;
   const postLateral =
     trackQuery.lateralOffset + (stepDx * sample.right.x + stepDz * sample.right.z);
   const maxLateral = trackQuery.wallDistance - 0.95;
 
-  if (!trackQuery.onShortcut && Math.abs(postLateral) > maxLateral) {
+  if (Math.abs(postLateral) > maxLateral) {
     const wallSign = Math.sign(postLateral) || 1;
     const outX = sample.right.x * wallSign;
     const outZ = sample.right.z * wallSign;

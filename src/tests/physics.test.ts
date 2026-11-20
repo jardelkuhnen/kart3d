@@ -10,6 +10,7 @@ import {
   triggerKartBoost,
 } from '../game/physics/kartController';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from '../game/tracks/portoDasLanternas';
+import { TRACK_LAYOUTS } from '../game/tracks/registry';
 import {
   type TrackPointQuery,
   offsetPointOnTrack,
@@ -348,5 +349,84 @@ describe('Kart Arcade Physics & 3-Tier Drift System', () => {
 
     expect(wedged.forwardSpeed).toBeGreaterThan(5);
     expect(wedged.wallStuckTimer).toBe(0);
+  });
+
+  it('detects every boost pad along its rotated heading and enforces ascending slopes on all ramps across all 8 tracks (CRÍTICO-04)', () => {
+    for (const layout of Object.values(TRACK_LAYOUTS)) {
+      for (const pad of layout.boostPads) {
+        const fx = -Math.sin(pad.yaw);
+        const fz = -Math.cos(pad.yaw);
+        for (const frac of [-0.35, 0, 0.35]) {
+          const px = pad.position.x + fx * (pad.length * frac);
+          const pz = pad.position.z + fz * (pad.length * frac);
+          const q = projectPointOntoTrack(layout, px, pz, pad.position.y);
+          expect(q.activeBoostPad?.id, `${layout.id}/${pad.id} at frac ${frac}`).toBe(pad.id);
+        }
+        // Vertically separated overpass/underpass must not trigger the pad
+        const farAbove = projectPointOntoTrack(layout, pad.position.x, pad.position.z, pad.position.y + 6.0);
+        expect(farAbove.activeBoostPad).toBeNull();
+      }
+
+      for (const ramp of layout.ramps) {
+        const fx = -Math.sin(ramp.yaw);
+        const fz = -Math.cos(ramp.yaw);
+        const entryX = ramp.position.x - fx * (ramp.length * 0.4);
+        const entryZ = ramp.position.z - fz * (ramp.length * 0.4);
+        const exitX = ramp.position.x + fx * (ramp.length * 0.4);
+        const exitZ = ramp.position.z + fz * (ramp.length * 0.4);
+
+        const entryQ = projectPointOntoTrack(layout, entryX, entryZ, ramp.position.y);
+        const exitQ = projectPointOntoTrack(layout, exitX, exitZ, ramp.position.y + ramp.height);
+
+        expect(entryQ.activeRamp?.id, `${layout.id}/${ramp.id} entry`).toBe(ramp.id);
+        expect(exitQ.activeRamp?.id, `${layout.id}/${ramp.id} exit`).toBe(ramp.id);
+        expect(exitQ.groundHeight, `${layout.id}/${ramp.id} ascending`).toBeGreaterThan(
+          entryQ.groundHeight + ramp.height * 0.4,
+        );
+      }
+    }
+  });
+
+  it('applies lateral wall containment on shortcuts and clears hitTimer on recovery (MÉDIO-04)', () => {
+    const profile = computeKartPhysicsProfile(getKartById('trilha-raposa'));
+    const sc = PORTO_DAS_LANTERNAS_LAYOUT.shortcuts[0];
+    const mid = sc.samples[Math.floor(sc.samples.length * 0.5)];
+    const edgePos = offsetPointOnTrack(mid, sc.halfWidth + 0.5, 0);
+    const state = createInitialKartState(
+      edgePos.x,
+      edgePos.y,
+      edgePos.z,
+      yawFromTangent(mid.tangent) - 0.65,
+    );
+    state.forwardSpeed = 24;
+    state.vx = -Math.sin(state.yaw) * state.forwardSpeed;
+    state.vz = -Math.cos(state.yaw) * state.forwardSpeed;
+
+    let hitShortcutWall = false;
+    for (let i = 0; i < 25; i += 1) {
+      const q = projectPointOntoTrack(PORTO_DAS_LANTERNAS_LAYOUT, state.x, state.z, state.y);
+      stepKartSimulation(
+        state,
+        { ...NO_INPUT, throttle: 1 },
+        q,
+        profile,
+        PORTO_DAS_LANTERNAS_LAYOUT,
+        FIXED_TIMESTEP,
+      );
+      if (state.wallCollisionThisStep) hitShortcutWall = true;
+    }
+    expect(hitShortcutWall).toBe(true);
+
+    // Recovery must clear lingering hitTimer
+    state.hitTimer = 0.9;
+    stepKartSimulation(
+      state,
+      { ...NO_INPUT, recover: true },
+      makeQuery('asphalt'),
+      profile,
+      PORTO_DAS_LANTERNAS_LAYOUT,
+      FIXED_TIMESTEP,
+    );
+    expect(state.hitTimer).toBe(0);
   });
 });
