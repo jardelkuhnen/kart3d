@@ -1,0 +1,1396 @@
+
+# KART LEGENDS 3D
+# MASTER RULES — ESPECIFICAÇÃO COMPLETA
+
+Versão: 1.0
+Motor: Three.js + React Three Fiber
+Linguagem: TypeScript
+Física: Rapier Physics
+Plataforma: Navegador desktop
+Idioma: Português do Brasil
+Categoria: Corrida de kart arcade 3D
+Objetivo: Jogo original, completo, funcional e visualmente profissional.
+
+---
+
+# 1. MISSÃO PRINCIPAL
+
+Você é uma equipe completa de desenvolvimento de jogos formada por:
+
+- Diretor criativo
+- Game designer
+- Diretor de arte 3D
+- Modelador de personagens
+- Modelador de veículos
+- Artista de ambientes
+- Animador 3D
+- Engenheiro de física
+- Programador de gameplay
+- Especialista em inteligência artificial
+- Desenvolvedor React e Three.js
+- Artista de efeitos visuais
+- Designer de interfaces
+- Engenheiro de áudio
+- Especialista em otimização
+- Engenheiro de testes
+
+Sua missão é desenvolver um jogo de corrida de kart 3D original chamado:
+
+KART LEGENDS 3D
+
+O resultado precisa ser um jogo real, completo e jogável no navegador.
+
+Não entregue apenas uma demonstração técnica.
+
+Não entregue um cenário vazio.
+
+Não entregue um kart formado por caixas.
+
+Não entregue uma pista genérica.
+
+Não entregue personagens sem personalidade.
+
+Não entregue menus com botões que não funcionam.
+
+Não entregue funcionalidades simuladas.
+
+Todos os sistemas devem estar integrados.
+
+O projeto deve possuir código-fonte, assets, modelos 3D, animações, efeitos, áudio, interfaces, física, inteligência artificial, pistas, progressão, testes e build de produção.
+
+Execute o desenvolvimento em etapas internas, sem exigir novos prompts do usuário.
+
+Quando uma ferramenta necessária estiver indisponível, registre a limitação. Nunca finja que um recurso foi implementado.
+
+---
+
+# 2. REFERÊNCIA VISUAL E ORIGINALIDADE
+
+O jogo deve apresentar a qualidade de experiência esperada de um jogo moderno de corrida de kart arcade.
+
+Referência de gênero:
+
+Mario Kart World e outros jogos de corrida arcade 3D.
+
+O vídeo de referência fornecido pelo usuário deve ser analisado diretamente pela IA implementadora, caso esteja acessível.
+
+Observar:
+
+- Comportamento dos veículos
+- Sensação de velocidade
+- Movimentação da câmera
+- Curvas e derrapagens
+- Saltos e obstáculos
+- Efeitos de velocidade
+- Variedade visual dos cenários
+- Elementos interativos
+- Animações dos personagens
+- Interface durante a corrida
+- Transições cinematográficas
+
+IMPORTANTE:
+
+Não copiar personagens, nomes, pistas, músicas, modelos, interfaces ou elementos protegidos de franquias existentes.
+
+Criar identidade visual original.
+
+A inspiração deve estar na qualidade da experiência, não na reprodução de propriedade intelectual de terceiros.
+
+---
+
+# 3. TECNOLOGIAS OBRIGATÓRIAS
+
+Frontend:
+
+- React
+- TypeScript
+- Vite
+- Zustand
+
+Renderização:
+
+- Three.js
+- React Three Fiber
+- React Three Drei
+- WebGL
+- Shaders GLSL quando necessários
+
+Física:
+
+- Rapier Physics
+- @react-three/rapier
+
+Animações:
+
+- Animações GLTF
+- AnimationMixer
+- Sistema de estados de animação
+
+Áudio:
+
+- Howler.js ou Web Audio API
+
+Interface:
+
+- React
+- CSS
+- HTML semântico
+- Componentes reutilizáveis
+
+Testes:
+
+- Vitest
+- Playwright
+- TypeScript strict
+- ESLint
+
+Assets:
+
+- GLB
+- GLTF
+- FBX convertido para GLB
+- PNG
+- WebP
+- KTX2
+- Spritesheets
+- Arquivos de áudio locais
+
+PROIBIDO:
+
+Utilizar Canvas 2D como motor do jogo.
+
+O canvas interno usado pelo WebGL é permitido.
+
+O mundo deve ser efetivamente tridimensional.
+
+---
+
+# 4. REGRA ABSOLUTA SOBRE ASSETS
+
+A qualidade visual deve ser construída principalmente com assets 3D definitivos.
+
+Não utilizar geometria procedural como principal solução artística.
+
+PROIBIDO COMO RESULTADO FINAL:
+
+- Personagens feitos de esferas
+- Karts feitos de caixas
+- Árvores feitas de cones
+- Casas feitas de cubos
+- Montanhas genéricas
+- Pistas sem textura
+- Cenários vazios
+- Objetos sem acabamento
+- Modelos temporários
+- Texturas de teste
+- Sprites genéricos
+
+Cada asset importante precisa ter:
+
+1. Modelo definitivo.
+2. Material adequado.
+3. Textura quando necessária.
+4. Escala correta.
+5. Pivô correto.
+6. Colisor apropriado.
+7. Animação quando aplicável.
+8. Otimização para navegador.
+
+Priorizar assets GLB/GLTF produzidos especificamente para o jogo.
+
+É permitido utilizar assets de terceiros com licenças compatíveis, desde que sejam registrados e integrados corretamente.
+
+Não utilizar recursos comerciais sem autorização.
+
+Todos os assets necessários para jogar devem estar disponíveis localmente na build.
+
+---
+
+# 5. DIREÇÃO DE ARTE
+
+Estilo:
+
+3D estilizado premium.
+
+Características:
+
+- Personagens expressivos
+- Veículos detalhados
+- Cores vibrantes
+- Materiais bem trabalhados
+- Silhuetas reconhecíveis
+- Ambientes ricos
+- Iluminação cinematográfica
+- Efeitos visuais legíveis
+- Cenários com profundidade
+- Elementos animados
+- Identidade visual consistente
+
+Evitar visual excessivamente infantil ou genérico.
+
+O jogo deve ter personalidade própria.
+
+Cada pista precisa ser reconhecível imediatamente.
+
+Cada personagem deve possuir identidade visual distinta.
+
+Cada veículo deve ter detalhes exclusivos.
+
+---
+
+# 6. PERSONAGENS
+
+Criar oito pilotos originais.
+
+Personagens iniciais:
+
+1. Nilo — raposa exploradora.
+2. Boro — pequeno inventor.
+3. Lumi — piloto das estrelas.
+4. Kora — guardiã do bosque.
+5. Tiko — mecânico veloz.
+6. Mavi — navegadora aventureira.
+7. Runi — corredor das dunas.
+8. Zera — exploradora do gelo.
+
+Cada personagem deve possuir:
+
+- Modelo 3D exclusivo
+- Rig de animação
+- Texturas definitivas
+- Expressões faciais
+- Retrato para seleção
+- Ícone para HUD
+- Animação idle
+- Animação de direção
+- Animação de curva
+- Animação de drift
+- Reação a colisões
+- Animação de vitória
+- Animação de derrota
+- Comemoração no pódio
+
+Os personagens devem movimentar cabeça, braços e corpo conforme a situação da corrida.
+
+Não basta colocar um modelo imóvel dentro do kart.
+
+---
+
+# 7. VEÍCULOS
+
+Criar oito karts 3D originais.
+
+Cada kart deve possuir:
+
+- Chassi exclusivo
+- Rodas independentes
+- Volante
+- Assento
+- Suspensão visual
+- Escapamento
+- Materiais detalhados
+- Efeitos de aceleração
+- Efeitos de drift
+- Efeitos de colisão
+- Efeitos de turbo
+- Animações das rodas
+- Inclinação em curvas
+- Reação aos saltos
+
+Atributos:
+
+- Velocidade máxima
+- Aceleração
+- Frenagem
+- Dirigibilidade
+- Aderência
+- Massa
+- Eficiência de drift
+- Recuperação de velocidade
+
+Os atributos devem afetar efetivamente a jogabilidade.
+
+Todos os karts devem ser competitivamente viáveis.
+
+Não utilizar apenas alterações de cor para representar veículos diferentes.
+
+---
+
+# 8. FÍSICA DE CORRIDA
+
+Implementar física arcade baseada em Rapier.
+
+Sistemas obrigatórios:
+
+- Aceleração progressiva
+- Velocidade máxima
+- Frenagem
+- Marcha à ré
+- Direção responsiva
+- Atrito
+- Gravidade
+- Suspensão
+- Colisão com pista
+- Colisão entre veículos
+- Colisão com obstáculos
+- Saltos
+- Aterrissagem
+- Derrapagem
+- Recuperação após impacto
+- Controle em superfícies diferentes
+
+Superfícies:
+
+ASFALTO:
+Aderência elevada.
+
+TERRA:
+Aderência intermediária.
+
+GRAMA:
+Redução de velocidade.
+
+AREIA:
+Maior resistência ao movimento.
+
+GELO:
+Baixa aderência.
+
+Não usar física dependente de FPS.
+
+A simulação deve utilizar timestep fixo.
+
+A física deve ser divertida e previsível, não necessariamente realista.
+
+---
+
+# 9. SISTEMA DE DRIFT
+
+O drift é um dos sistemas centrais do jogo.
+
+Implementar:
+
+- Entrada em drift
+- Direção durante derrapagem
+- Acúmulo de energia
+- Feedback visual
+- Feedback sonoro
+- Liberação de miniturbo
+
+Três níveis:
+
+NÍVEL 1:
+Turbo curto.
+
+NÍVEL 2:
+Turbo intermediário.
+
+NÍVEL 3:
+Turbo prolongado.
+
+Cada nível precisa possuir efeitos distintos.
+
+Durante o drift:
+
+- Rodas mudam de orientação.
+- Kart inclina.
+- Pneus produzem fumaça.
+- Surgem faíscas.
+- Áudio reage.
+- Câmera acompanha a curva.
+
+Não implementar drift apenas como aumento artificial de velocidade.
+
+---
+
+# 10. PISTAS
+
+Criar oito pistas originais divididas em duas copas.
+
+## COPA AURORA
+
+PISTA 1 — PORTO DAS LANTERNAS
+
+Cidade costeira ao pôr do sol.
+
+Elementos:
+
+- Ruas de pedra
+- Casas estilizadas
+- Porto
+- Barcos
+- Pontes
+- Lanternas
+- Mercado
+- Túneis
+- Curvas fechadas
+- Atalhos
+
+PISTA 2 — BOSQUE DE CRISTAL
+
+Floresta fantástica.
+
+Elementos:
+
+- Árvores gigantes
+- Cristais luminosos
+- Cachoeiras
+- Pontes de madeira
+- Cavernas
+- Plantas animadas
+- Névoa
+- Caminhos alternativos
+
+PISTA 3 — VALE DOS MOINHOS
+
+Região montanhosa.
+
+Elementos:
+
+- Campos
+- Moinhos
+- Fazendas
+- Pontes
+- Rios
+- Elevações
+- Rampas
+- Túneis
+- Trechos de terra
+
+PISTA 4 — CÂNION SOLAR
+
+Deserto rochoso.
+
+Elementos:
+
+- Desfiladeiros
+- Ruínas originais
+- Dunas
+- Pontes estreitas
+- Tempestades de areia
+- Rampas
+- Atalhos
+- Grandes formações rochosas
+
+## COPA ECLIPSE
+
+PISTA 5 — CIDADE NEON
+
+Circuito urbano noturno.
+
+Elementos:
+
+- Prédios iluminados
+- Túneis
+- Viadutos
+- Painéis luminosos
+- Reflexos
+- Ruas molhadas
+- Obstáculos móveis
+
+PISTA 6 — PICO BOREAL
+
+Montanhas congeladas.
+
+Elementos:
+
+- Neve
+- Cavernas de gelo
+- Pontes congeladas
+- Penhascos
+- Aurora boreal
+- Nevasca
+- Superfícies escorregadias
+
+PISTA 7 — JARDIM CELESTE
+
+Ilhas suspensas.
+
+Elementos:
+
+- Jardins flutuantes
+- Pontes
+- Cachoeiras
+- Ruínas aéreas
+- Nuvens
+- Rampas
+- Grandes saltos
+
+PISTA 8 — FORTALEZA TEMPESTADE
+
+Castelo fantástico original.
+
+Elementos:
+
+- Torres
+- Muralhas
+- Pontes
+- Salões
+- Tempestade
+- Relâmpagos
+- Portões
+- Obstáculos dinâmicos
+- Curvas desafiadoras
+
+## REGRAS DE CONSTRUÇÃO DAS PISTAS
+
+Cada pista deve conter:
+
+- Malha 3D definitiva
+- Texturas e materiais
+- Colisores
+- Linha de largada
+- Linha de chegada
+- Checkpoints
+- Três voltas
+- Barreiras
+- Sinalização
+- Objetos decorativos
+- Áreas de recuperação
+- Atalhos
+- Rampas
+- Zonas de itens
+- Caminhos para IA
+- Minimap
+- Iluminação própria
+- Efeitos ambientais
+- Câmera de apresentação
+
+As pistas não devem ser geradas apenas por curvas matemáticas.
+
+Utilizar modelos de pista construídos e acabados.
+
+Procedural permitido somente para detalhes secundários.
+
+---
+
+# 11. INTELIGÊNCIA ARTIFICIAL
+
+Cada corrida deve possuir:
+
+1 jogador humano.
+7 adversários controlados por IA.
+
+A IA deve:
+
+- Acelerar
+- Frear
+- Fazer curvas
+- Executar drift
+- Utilizar turbo
+- Desviar de obstáculos
+- Evitar colisões
+- Ultrapassar adversários
+- Utilizar itens
+- Escolher atalhos
+- Recuperar-se de acidentes
+- Completar voltas
+
+Utilizar waypoints e linhas de corrida autoradas por pista.
+
+Criar perfis:
+
+FÁCIL:
+Adversários mais lentos e tolerantes.
+
+NORMAL:
+Competição equilibrada.
+
+DIFÍCIL:
+Adversários competitivos com boas trajetórias.
+
+Não utilizar teleporte para simular ultrapassagens.
+
+Não permitir que a IA ignore a física do jogo.
+
+Não utilizar vantagens impossíveis para aumentar artificialmente a dificuldade.
+
+---
+
+# 12. SISTEMA DE ITENS
+
+Criar seis itens originais.
+
+PULSO SOLAR:
+Aceleração temporária.
+
+BOLHA GUARDIÃ:
+Proteção contra impactos.
+
+NÉVOA PRISMA:
+Obstáculo temporário na pista.
+
+FAÍSCA RASTREADORA:
+Projétil com mecanismo de defesa.
+
+ONDA DE VENTO:
+Empurra adversários próximos.
+
+CRISTAL DE SALTO:
+Permite um salto estratégico.
+
+Cada item deve possuir:
+
+- Modelo ou sprite definitivo
+- Ícone de HUD
+- Animação
+- Efeito visual
+- Efeito sonoro
+- Regras de colisão
+- Duração
+- Cooldown
+- Balanceamento
+- Uso pela IA
+
+A distribuição deve considerar posição e situação da corrida sem garantir vitórias artificiais.
+
+---
+
+# 13. CÂMERA
+
+Criar câmera de terceira pessoa.
+
+Características:
+
+- Seguimento suave
+- Ajuste dinâmico de distância
+- Inclinação em curvas
+- Ampliação de FOV no turbo
+- Redução de vibrações
+- Proteção contra atravessar cenários
+- Suavização de movimentos
+- Transições cinematográficas
+
+Câmeras adicionais:
+
+- Apresentação da pista
+- Largada
+- Seleção de personagem
+- Seleção de kart
+- Chegada
+- Pódio
+
+A câmera deve transmitir velocidade sem comprometer a visibilidade.
+
+---
+
+# 14. EFEITOS VISUAIS
+
+Implementar efeitos definitivos:
+
+- Fumaça dos pneus
+- Poeira
+- Faíscas
+- Partículas de drift
+- Chamas de turbo estilizadas
+- Rastros de velocidade
+- Impactos
+- Explosões estilizadas
+- Respingo de água
+- Neve
+- Areia
+- Folhas
+- Efeitos de itens
+- Brilho de coleta
+- Confetes de vitória
+- Relâmpagos ambientais
+
+Utilizar:
+
+- Spritesheets
+- Partículas instanciadas
+- Shaders quando necessários
+- Materiais emissivos
+- Efeitos de pós-processamento moderados
+
+Os efeitos precisam estar integrados ao gameplay.
+
+Evitar excesso de bloom e partículas que prejudiquem a leitura da pista.
+
+---
+
+# 15. ÁUDIO
+
+Criar sistema completo de áudio.
+
+Obrigatório:
+
+- Música do menu
+- Música de corrida
+- Música de vitória
+- Música de derrota
+- Som de motor
+- Som de aceleração
+- Som de frenagem
+- Som de drift
+- Som de turbo
+- Som de colisão
+- Som de salto
+- Som de aterrissagem
+- Som de coleta de item
+- Som de utilização de item
+- Contagem regressiva
+- Som de chegada
+- Sons de interface
+- Ambiência das pistas
+
+As músicas devem ser originais ou possuir licenças compatíveis.
+
+O áudio do motor deve reagir à velocidade.
+
+Permitir ajuste separado de:
+
+- Música
+- Efeitos
+- Ambiente
+
+Tratar as restrições de autoplay dos navegadores.
+
+---
+
+# 16. INTERFACE DO JOGO
+
+Criar as seguintes telas:
+
+1. Tela de carregamento.
+2. Menu principal.
+3. Seleção de personagem.
+4. Seleção de kart.
+5. Seleção de modo.
+6. Seleção de copa.
+7. Seleção de pista.
+8. Configuração de dificuldade.
+9. Tela de corrida.
+10. Menu de pausa.
+11. Configurações.
+12. Resultados.
+13. Pódio.
+14. Progressão e desbloqueios.
+
+MODOS DE JOGO:
+
+CORRIDA RÁPIDA:
+Escolher pista e competir.
+
+CAMPEONATO:
+Competir nas pistas de uma copa.
+
+CONTRARRELÓGIO:
+Buscar o melhor tempo.
+
+TREINO:
+Explorar pistas sem adversários.
+
+HUD OBRIGATÓRIO:
+
+- Posição atual
+- Volta atual
+- Tempo de corrida
+- Velocidade
+- Item equipado
+- Indicador de drift
+- Indicador de turbo
+- Minimap
+- Contagem regressiva
+- Alertas de corrida
+
+Todos os botões devem funcionar.
+
+A interface deve ser moderna, responsiva e consistente.
+
+---
+
+# 17. CONTROLES
+
+TECLADO:
+
+W / SETA CIMA:
+Acelerar.
+
+S / SETA BAIXO:
+Frear ou dar ré.
+
+A / SETA ESQUERDA:
+Virar à esquerda.
+
+D / SETA DIREITA:
+Virar à direita.
+
+ESPAÇO:
+Drift.
+
+SHIFT:
+Utilizar item.
+
+ESC:
+Pausar.
+
+R:
+Recuperar veículo.
+
+Implementar suporte a gamepad pela Gamepad API.
+
+Permitir remapeamento de controles.
+
+Adicionar configuração de sensibilidade.
+
+Os comandos precisam funcionar durante a corrida real.
+
+---
+
+# 18. SISTEMA DE CORRIDA
+
+Cada corrida padrão deve possuir:
+
+- Oito competidores
+- Três voltas
+- Contagem regressiva
+- Checkpoints
+- Sistema de posições
+- Cronômetro
+- Detecção de chegada
+- Resultados
+- Pontuação
+
+O sistema de posições deve considerar:
+
+- Volta atual
+- Checkpoints concluídos
+- Progresso na pista
+- Distância válida ao próximo checkpoint
+
+Não calcular classificação somente pela distância à linha de chegada.
+
+Impedir cortes ilegais.
+
+Criar sistema seguro de recuperação do veículo.
+
+A recuperação não deve permitir ganhar vantagem indevida.
+
+---
+
+# 19. PROGRESSÃO
+
+Criar sistema de campeonato.
+
+Funcionalidades:
+
+- Pontuação por corrida
+- Classificação geral
+- Troféus
+- Desbloqueio de personagens
+- Desbloqueio de karts
+- Desbloqueio de pistas
+- Melhores tempos
+- Estatísticas
+
+Persistir dados no navegador utilizando localStorage.
+
+Utilizar estrutura versionada.
+
+Tratar dados ausentes ou corrompidos.
+
+O progresso deve continuar após fechar e abrir o navegador.
+
+---
+
+# 20. ARQUITETURA
+
+Estrutura recomendada:
+
+kart-legends-3d/
+  public/
+    assets/
+      characters/
+      karts/
+      tracks/
+      props/
+      items/
+      textures/
+      animations/
+      vfx/
+      ui/
+      audio/
+        music/
+        sfx/
+      fonts/
+  src/
+    app/
+    game/
+      core/
+      physics/
+      vehicles/
+      characters/
+      ai/
+      racing/
+      tracks/
+      items/
+      camera/
+      vfx/
+      audio/
+      input/
+      save/
+    components/
+      ui/
+      hud/
+    scenes/
+    shaders/
+    data/
+    styles/
+    tests/
+  scripts/
+  e2e/
+  docs/
+  package.json
+  vite.config.ts
+  tsconfig.json
+  README.md
+  ASSET_MANIFEST.md
+  LICENSES.md
+  QA_REPORT.md
+
+Separar responsabilidades.
+
+Não criar todo o jogo em um único arquivo.
+
+Utilizar TypeScript strict.
+
+Evitar código duplicado.
+
+Separar física, renderização, interface e lógica.
+
+Implementar gerenciamento de memória.
+
+Liberar recursos não utilizados.
+
+---
+
+# 21. MANIFESTO DE ASSETS
+
+Criar:
+
+public/assets/manifest.json
+
+Cada recurso deve registrar:
+
+- ID
+- Nome
+- Tipo
+- Caminho
+- Formato
+- Origem
+- Autor
+- Licença
+- Tamanho
+- Status de validação
+- Local de utilização
+
+Verificar automaticamente:
+
+- Arquivos ausentes
+- Texturas quebradas
+- Modelos inválidos
+- Animações ausentes
+- Referências incorretas
+- Licenças incompatíveis
+
+Não permitir que recursos ausentes sejam ignorados silenciosamente.
+
+---
+
+# 22. OTIMIZAÇÃO
+
+Objetivo de desempenho:
+
+60 FPS em desktop intermediário a 1080p.
+
+Perfil reduzido:
+
+Buscar pelo menos 30 FPS estáveis.
+
+Utilizar quando apropriado:
+
+- Frustum culling
+- Instancing
+- Level of Detail
+- Texture compression
+- Geometry compression
+- Object pooling
+- Shader optimization
+- Lazy loading
+- Asset caching
+- Gerenciamento de memória
+
+Não sacrificar a identidade visual para atingir números artificiais.
+
+Medir desempenho real.
+
+Não afirmar que atingiu 60 FPS sem realizar testes.
+
+Criar configurações de qualidade:
+
+BAIXA
+MÉDIA
+ALTA
+
+---
+
+# 23. TESTES AUTOMATIZADOS
+
+Implementar:
+
+Vitest:
+Testes unitários.
+
+Playwright:
+Testes de navegação e fluxo.
+
+TypeScript:
+Verificação de tipos.
+
+ESLint:
+Qualidade de código.
+
+Criar testes para:
+
+- Inicialização
+- Carregamento de assets
+- Seleção de personagem
+- Seleção de kart
+- Seleção de pista
+- Controles
+- Aceleração
+- Frenagem
+- Drift
+- Turbo
+- Colisões
+- Checkpoints
+- Voltas
+- Classificação
+- Itens
+- Inteligência artificial
+- Pausa
+- Resultados
+- Salvamento
+- Recuperação de dados
+
+Os testes devem ser realmente executados.
+
+Não declarar sucesso sem evidências.
+
+---
+
+# 24. TESTES DE JOGABILIDADE
+
+Validar:
+
+- Oito pistas
+- Oito personagens
+- Oito karts
+- Seis itens
+- Sete adversários
+- Três níveis de dificuldade
+- Todos os modos
+- Menus
+- HUD
+- Áudio
+- Efeitos
+- Animações
+- Progressão
+
+Verificar:
+
+- Colisões incorretas
+- Personagens atravessando objetos
+- IA presa em obstáculos
+- Falhas na contagem de voltas
+- Problemas de câmera
+- Texturas ausentes
+- Quedas de desempenho
+- Botões sem ação
+- Erros de carregamento
+
+Registrar problemas encontrados.
+
+Corrigir os defeitos críticos antes de declarar o projeto finalizado.
+
+---
+
+# 25. REGRAS DE EXECUÇÃO
+
+A IA deve seguir estas fases automaticamente.
+
+FASE 1:
+Analisar requisitos, ferramentas e referência disponível.
+
+FASE 2:
+Criar arquitetura e pipeline de assets.
+
+FASE 3:
+Produzir uma pista definitiva, um personagem e um kart para validar o núcleo jogável.
+
+FASE 4:
+Implementar física, controles, câmera, drift e corrida.
+
+FASE 5:
+Implementar adversários, itens, HUD e áudio.
+
+FASE 6:
+Produzir e integrar todos os demais assets, personagens, karts e pistas.
+
+FASE 7:
+Implementar menus, modos, copas e progressão.
+
+FASE 8:
+Adicionar animações, efeitos e acabamento visual.
+
+FASE 9:
+Executar testes, otimizar e corrigir falhas.
+
+FASE 10:
+Gerar build executável e documentação.
+
+Não solicitar novos prompts para avançar entre fases.
+
+Tomar decisões técnicas de forma autônoma.
+
+Não utilizar falta de tempo como justificativa para declarar uma entrega parcial como completa.
+
+Se a implementação exceder o contexto disponível, preservar o progresso no repositório e documentar exatamente a próxima etapa.
+
+---
+
+# 26. COMANDOS OBRIGATÓRIOS
+
+O projeto deve disponibilizar:
+
+npm install
+
+npm run dev
+
+npm run build
+
+npm run preview
+
+npm run typecheck
+
+npm run lint
+
+npm run test
+
+npm run test:e2e
+
+npm run validate:assets
+
+Todos os comandos declarados devem possuir implementação real.
+
+O jogo deve iniciar localmente pelo navegador.
+
+Não exigir chaves pagas para jogar.
+
+Não depender de serviços externos durante uma corrida.
+
+---
+
+# 27. CRITÉRIOS PARA CONSIDERAR O JOGO COMPLETO
+
+O projeto somente poderá ser declarado COMPLETO quando:
+
+[ ] O jogo iniciar corretamente.
+
+[ ] Os oito personagens estiverem disponíveis.
+
+[ ] Os oito karts possuírem modelos definitivos.
+
+[ ] As oito pistas estiverem finalizadas.
+
+[ ] Os adversários funcionarem.
+
+[ ] A física estiver operacional.
+
+[ ] O drift funcionar.
+
+[ ] O turbo funcionar.
+
+[ ] Os itens funcionarem.
+
+[ ] As colisões funcionarem.
+
+[ ] Os checkpoints funcionarem.
+
+[ ] A classificação funcionar.
+
+[ ] Os menus estiverem completos.
+
+[ ] O HUD estiver completo.
+
+[ ] Os efeitos estiverem integrados.
+
+[ ] As animações estiverem integradas.
+
+[ ] O áudio estiver integrado.
+
+[ ] O campeonato funcionar.
+
+[ ] O progresso for salvo.
+
+[ ] Os testes forem executados.
+
+[ ] A build estiver disponível.
+
+[ ] Os assets possuírem licenças verificadas.
+
+[ ] Não existirem placeholders finais.
+
+[ ] Não existirem referências quebradas.
+
+Se qualquer requisito obrigatório estiver pendente, declarar o projeto PARCIAL.
+
+Informar precisamente o que falta.
+
+Nunca simular uma entrega concluída.
+
+---
+
+# 28. FORMATO DA ENTREGA FINAL
+
+Entregar:
+
+1. Projeto-fonte completo.
+2. Build jogável.
+3. README com instalação.
+4. Documentação da arquitetura.
+5. Manifesto de assets.
+6. Licenças.
+7. Relatório de testes.
+8. Lista de funcionalidades implementadas.
+9. Problemas conhecidos.
+10. Instruções de execução.
+
+Se possível, incluir capturas reais e vídeo de gameplay.
+
+Não apresentar imagens conceituais como prova de implementação.
+
+---
+
+# 29. PROMPT ÚNICO DE IMPLEMENTAÇÃO
+
+Você é uma equipe profissional de desenvolvimento de jogos.
+
+Leia integralmente este arquivo e trate todas as seções como requisitos obrigatórios do projeto.
+
+Sua missão é implementar KART LEGENDS 3D, um jogo original de corrida de kart arcade 3D para navegador.
+
+Utilize:
+
+- Three.js
+- React Three Fiber
+- TypeScript
+- Rapier Physics
+- React
+- Zustand
+- Assets GLB/GLTF
+- Animações 3D
+- Efeitos visuais
+- Áudio integrado
+
+Crie um jogo completo com:
+
+- Oito personagens originais.
+- Oito karts diferentes.
+- Oito pistas detalhadas.
+- Duas copas.
+- Sete adversários com IA.
+- Física arcade.
+- Drift com três níveis de turbo.
+- Seis itens.
+- Colisões.
+- Saltos.
+- Atalhos.
+- Câmeras dinâmicas.
+- Menus completos.
+- HUD.
+- Campeonato.
+- Contrarrelógio.
+- Treino.
+- Progressão.
+- Salvamento.
+- Música e efeitos sonoros.
+- Testes automatizados.
+- Build executável.
+
+REGRAS ABSOLUTAS:
+
+Não criar um jogo genérico.
+
+Não utilizar Canvas 2D como motor.
+
+Não utilizar cubos ou cápsulas como personagens finais.
+
+Não utilizar veículos genéricos.
+
+Não criar pistas vazias.
+
+Não utilizar placeholders na entrega final.
+
+Não substituir assets definitivos por geometria procedural.
+
+Não criar botões sem funcionalidade.
+
+Não fingir que os sistemas estão implementados.
+
+Não afirmar que testes foram executados sem executá-los.
+
+Não copiar conteúdo protegido de jogos existentes.
+
+Crie ou integre modelos, texturas, sprites, animações e áudios reais com licenças adequadas.
+
+Implemente os sistemas de maneira modular.
+
+Execute as fases automaticamente.
+
+Valide os recursos.
+
+Execute testes.
+
+Corrija problemas.
+
+Gere a build de produção.
+
+Entregue um jogo verdadeiramente jogável no navegador.
+
+Caso alguma ferramenta necessária esteja indisponível, informe a limitação e não declare o projeto completo.
+
+O resultado esperado não é uma demonstração.
+
+O resultado esperado é um jogo de corrida de kart 3D original, funcional, detalhado e com qualidade de produto.
+
+INICIE A IMPLEMENTAÇÃO AGORA.
+
+---
+
+# 30. PRINCÍPIO FINAL
+
+A prioridade é entregar um jogo real.
+
+QUALIDADE VISUAL > GEOMETRIA GENÉRICA.
+
+GAMEPLAY FUNCIONAL > DEMONSTRAÇÃO TÉCNICA.
+
+ASSETS DEFINITIVOS > PLACEHOLDERS.
+
+TESTES REAIS > PROMESSAS.
+
+ORIGINALIDADE > CÓPIA.
+
+PROJETO EXECUTÁVEL > APRESENTAÇÃO.
+
+Nunca confundir quantidade de código com qualidade de jogo.
+
+Nunca confundir um cenário 3D com um jogo completo.
+
+Nunca confundir uma animação de kart com física de corrida.
+
+Nunca confundir uma demonstração com um produto final.
+
+O projeto somente estará concluído quando seus requisitos forem implementados e verificados.
