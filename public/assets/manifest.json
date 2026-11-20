@@ -1,0 +1,180 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-20T01:35:58.140Z",
+  "project": "KART LEGENDS 3D",
+  "assets": [
+    {
+      "id": "tex-asphalt-albedo",
+      "name": "Textura de Asfalto (Albedo)",
+      "type": "texture",
+      "path": "/assets/textures/asphalt_albedo.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 267635,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CalibrationStage",
+        "TrackSurfaces"
+      ]
+    },
+    {
+      "id": "tex-asphalt-roughness",
+      "name": "Textura de Asfalto (Rugosidade)",
+      "type": "texture",
+      "path": "/assets/textures/asphalt_roughness.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 117710,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CalibrationStage",
+        "TrackSurfaces"
+      ]
+    },
+    {
+      "id": "tex-curb-albedo",
+      "name": "Textura de Zebra de Curva",
+      "type": "texture",
+      "path": "/assets/textures/curb_albedo.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 33750,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CalibrationStage",
+        "TrackCurbs"
+      ]
+    },
+    {
+      "id": "tex-start-line-albedo",
+      "name": "Faixa Quadriculada de Largada",
+      "type": "texture",
+      "path": "/assets/textures/start_line_albedo.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 59335,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CalibrationStage",
+        "StartGantry",
+        "TrackStartLine"
+      ]
+    },
+    {
+      "id": "tex-chevron-sign-albedo",
+      "name": "Placa Direcional de Curva",
+      "type": "texture",
+      "path": "/assets/textures/chevron_sign_albedo.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 3086,
+      "validationStatus": "validated",
+      "usedIn": [
+        "ChevronBoardProp",
+        "TrackSigns"
+      ]
+    },
+    {
+      "id": "prop-start-gantry",
+      "name": "Pórtico de Largada Metálico",
+      "type": "prop",
+      "path": "/assets/props/start_gantry.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF (@gltf-transform/core)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 139488,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CalibrationStage",
+        "AllTracks"
+      ],
+      "requiredNodes": [
+        "StartGantryRoot",
+        "StartBanner",
+        "SignalHousing"
+      ]
+    },
+    {
+      "id": "prop-chevron-board",
+      "name": "Sinalizador Direcional de Curva",
+      "type": "prop",
+      "path": "/assets/props/chevron_board.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF (@gltf-transform/core)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 11280,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CalibrationStage",
+        "TrackCorners"
+      ],
+      "requiredNodes": [
+        "ChevronBoardRoot",
+        "ChevronPanel"
+      ]
+    },
+    {
+      "id": "prop-boost-pad",
+      "name": "Placa de Impulso Luminosa",
+      "type": "prop",
+      "path": "/assets/props/boost_pad.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF (@gltf-transform/core)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 36860,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CalibrationStage",
+        "TrackBoostPads"
+      ],
+      "requiredNodes": [
+        "BoostPadRoot",
+        "BoostDeck"
+      ]
+    },
+    {
+      "id": "sfx-ui-click",
+      "name": "Som de Clique de Interface",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ui_click.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 2026,
+      "validationStatus": "validated",
+      "usedIn": [
+        "UISystem"
+      ]
+    },
+    {
+      "id": "sfx-ui-confirm",
+      "name": "Som de Confirmação de Interface",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ui_confirm.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 5502,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CalibrationStage",
+        "UISystem"
+      ]
+    }
+  ]
+}
