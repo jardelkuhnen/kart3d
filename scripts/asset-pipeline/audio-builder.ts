@@ -296,23 +296,12 @@ export async function generateDefeatThemeOgg(outPath: string): Promise<number> {
   return encodeWavToOgg(synthesizeNotesToWav(notes, 1.4), outPath);
 }
 
-export async function generateAmbienceCoastalOgg(outPath: string): Promise<number> {
-  // Gentle multi-layered surf & coastal breeze swell (4s seamless loop)
-  const duration = 4.0;
-  const sampleRate = 44100;
-  const totalSamples = Math.floor(duration * sampleRate);
-  const mix = new Float32Array(totalSamples);
-  let lp = 0;
-
-  for (let i = 0; i < totalSamples; i += 1) {
-    const t = i / sampleRate;
-    const swell = 0.35 + 0.25 * Math.sin((t / duration) * Math.PI * 2);
-    const white = Math.sin(i * 12.9898) * 43758.5453;
-    const noise = (white - Math.floor(white)) * 2 - 1;
-    lp = lp * 0.96 + noise * 0.04;
-    mix[i] = lp * swell * 1.4;
-  }
-
+function encodeFloatLoopToOgg(
+  mix: Float32Array,
+  sampleRate: number,
+  outPath: string,
+): Promise<number> {
+  const totalSamples = mix.length;
   const dataSize = totalSamples * 2;
   const wav = Buffer.alloc(44 + dataSize);
   wav.write('RIFF', 0);
@@ -329,9 +318,72 @@ export async function generateAmbienceCoastalOgg(outPath: string): Promise<numbe
   wav.write('data', 36);
   wav.writeUInt32LE(dataSize, 40);
   for (let i = 0; i < totalSamples; i += 1) {
-    wav.writeInt16LE(Math.max(-32767, Math.min(32767, Math.round(Math.tanh(mix[i]) * 26000))), 44 + i * 2);
+    wav.writeInt16LE(
+      Math.max(-32767, Math.min(32767, Math.round(Math.tanh(mix[i]) * 26000))),
+      44 + i * 2,
+    );
   }
   return encodeWavToOgg(wav, outPath);
+}
+
+function synthesizeBiomeAmbience(
+  outPath: string,
+  config: { lpFactor: number; lfoCycles: number; chimeFreqA?: number; chimeFreqB?: number; gain: number },
+): Promise<number> {
+  const duration = 4.0;
+  const sampleRate = 44100;
+  const totalSamples = Math.floor(duration * sampleRate);
+  const mix = new Float32Array(totalSamples);
+  let lp = 0;
+
+  for (let i = 0; i < totalSamples; i += 1) {
+    const t = i / sampleRate;
+    const swell = 0.38 + 0.24 * Math.sin((t / duration) * Math.PI * 2 * config.lfoCycles);
+    const white = Math.sin(i * 12.9898) * 43758.5453;
+    const noise = (white - Math.floor(white)) * 2 - 1;
+    lp = lp * config.lpFactor + noise * (1 - config.lpFactor);
+
+    let shimmer = 0;
+    if (config.chimeFreqA && config.chimeFreqB) {
+      const env = Math.max(0, Math.sin((t / duration) * Math.PI * 2)) ** 2;
+      shimmer =
+        (Math.sin(t * Math.PI * 2 * config.chimeFreqA) * 0.03 +
+          Math.sin(t * Math.PI * 2 * config.chimeFreqB) * 0.02) *
+        env;
+    }
+
+    mix[i] = lp * swell * config.gain + shimmer;
+  }
+
+  return encodeFloatLoopToOgg(mix, sampleRate, outPath);
+}
+
+export function generateAmbienceCoastalOgg(outPath: string): Promise<number> {
+  return synthesizeBiomeAmbience(outPath, { lpFactor: 0.96, lfoCycles: 1, gain: 1.4 });
+}
+
+export function generateAmbienceForestOgg(outPath: string): Promise<number> {
+  return synthesizeBiomeAmbience(outPath, {
+    lpFactor: 0.92,
+    lfoCycles: 2,
+    chimeFreqA: 740,
+    chimeFreqB: 1108.73,
+    gain: 1.15,
+  });
+}
+
+export function generateAmbienceValleyOgg(outPath: string): Promise<number> {
+  return synthesizeBiomeAmbience(outPath, {
+    lpFactor: 0.94,
+    lfoCycles: 1,
+    chimeFreqA: 587.33,
+    chimeFreqB: 880,
+    gain: 1.05,
+  });
+}
+
+export function generateAmbienceCanyonOgg(outPath: string): Promise<number> {
+  return synthesizeBiomeAmbience(outPath, { lpFactor: 0.975, lfoCycles: 1, gain: 1.55 });
 }
 
 export async function generateRaceSfxLibrary(sfxDir: string): Promise<Record<string, number>> {

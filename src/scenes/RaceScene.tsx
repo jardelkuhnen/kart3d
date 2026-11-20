@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { useGameStore } from '../app/store';
 import { CHARACTERS, getCharacterById } from '../data/characters';
 import { getKartById } from '../data/karts';
+import { getTrackById } from '../data/tracks';
 import { GameAudioEngine } from '../game/audio/audioEngine';
 import { RaceCamera } from '../game/camera/RaceCamera';
 import { disposeObject3D, resolveAssetPath } from '../game/core/assetLoader';
@@ -14,8 +15,17 @@ import type { CharacterId, KartId } from '../game/core/types';
 import { InputManager } from '../game/input/inputManager';
 import { RaceProgressTracker, type RacePhase } from '../game/racing/raceManager';
 import { type FullHudSnapshot, RaceSimulation } from '../game/racing/raceSimulation';
-import { PORTO_DAS_LANTERNAS_LAYOUT } from '../game/tracks/portoDasLanternas';
-import { yawFromTangent } from '../game/tracks/trackGeometry';
+import {
+  AURORA_TRACK_IDS,
+  FALLBACK_TRACK_GLB_PATHS,
+  getTrackLayout,
+  getTrackVisualTheme,
+} from '../game/tracks/registry';
+import {
+  type TrackLayoutDef,
+  type TrackVisualTheme,
+  yawFromTangent,
+} from '../game/tracks/trackGeometry';
 import type { LiveKartPose } from '../game/vehicles/KartEntity';
 import { RacerMeshInstance } from '../game/vehicles/RacerMeshInstance';
 
@@ -34,46 +44,66 @@ export interface RaceSceneProps {
   onPauseToggle: () => void;
 }
 
-function CoastalSunsetSky() {
+function TrackSkyEnvironment({ theme }: { theme: TrackVisualTheme }) {
   return (
     <group>
-      <color attach="background" args={['#2b6cb0']} />
-      <fog attach="fog" args={['#f6ad55', 110, 320]} />
+      <color attach="background" args={[theme.skyHorizonColor]} />
+      <fog attach="fog" args={[theme.fogColor, theme.fogNear, theme.fogFar]} />
       <mesh scale={[-1, 1, 1]}>
         <sphereGeometry args={[360, 20, 14]} />
-        <meshBasicMaterial side={THREE.BackSide} color="#3b82f6" fog={false} />
+        <meshBasicMaterial side={THREE.BackSide} color={theme.skyTopColor} fog={false} />
       </mesh>
-      <mesh position={[-240, 64, -180]}>
+      <mesh position={[theme.sunPosition[0], theme.sunPosition[1], theme.sunPosition[2]]}>
         <sphereGeometry args={[18, 14, 14]} />
-        <meshBasicMaterial color="#fde68a" fog={false} />
+        <meshBasicMaterial color={theme.sunColor} fog={false} />
       </mesh>
     </group>
   );
 }
 
-function PortoTrackWorld({ trackModelPath }: { trackModelPath: string }) {
+const SHADOW_CASTER_PREFIXES = [
+  'House_',
+  'Lighthouse_',
+  'Boat_',
+  'Palm_',
+  'Cypress_',
+  'Market_',
+  'TrackStartGantry',
+  'Chevron_',
+  'GiantTree_',
+  'Crystal_',
+  'Waterfall_',
+  'Windmill_',
+  'Barn_',
+  'Pine_',
+  'MesaArch_',
+  'RuinPillar_',
+  'Cactus_',
+  'Rock_',
+];
+
+function TrackWorld({
+  layout,
+  trackModelPath,
+}: {
+  layout: TrackLayoutDef;
+  trackModelPath: string;
+}) {
   const gltf = useGLTF(trackModelPath);
   const trackScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
   const boatNodesRef = useRef<THREE.Object3D[]>([]);
+  const windmillNodesRef = useRef<THREE.Object3D[]>([]);
 
   useEffect(() => {
     const boats: THREE.Object3D[] = [];
-    const shadowCasterPrefixes = [
-      'House_',
-      'Lighthouse_',
-      'Boat_',
-      'Palm_',
-      'Cypress_',
-      'Market_',
-      'TrackStartGantry',
-      'Chevron_',
-    ];
+    const windmills: THREE.Object3D[] = [];
+
     trackScene.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         let shouldCast = false;
         let curr: THREE.Object3D | null = obj;
         while (curr) {
-          if (shadowCasterPrefixes.some((p) => curr!.name.startsWith(p))) {
+          if (SHADOW_CASTER_PREFIXES.some((p) => curr!.name.startsWith(p))) {
             shouldCast = true;
             break;
           }
@@ -85,25 +115,36 @@ function PortoTrackWorld({ trackModelPath }: { trackModelPath: string }) {
       if (obj.name.startsWith('Boat_')) {
         boats.push(obj);
       }
+      if (obj.name.startsWith('WindmillBlades_')) {
+        windmills.push(obj);
+      }
     });
     boatNodesRef.current = boats;
+    windmillNodesRef.current = windmills;
     return () => {
       disposeObject3D(trackScene);
       boatNodesRef.current = [];
+      windmillNodesRef.current = [];
     };
   }, [trackScene]);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
     const boats = boatNodesRef.current;
     for (let i = 0; i < boats.length; i += 1) {
       boats[i].position.y = -1.4 + Math.sin(t * 1.6 + i * 1.4) * 0.18;
       boats[i].rotation.z = Math.sin(t * 1.2 + i) * 0.04;
     }
+
+    const windmills = windmillNodesRef.current;
+    const spinStep = Math.min(delta, 0.05) * 1.35;
+    for (let i = 0; i < windmills.length; i += 1) {
+      windmills[i].rotation.z += spinStep;
+    }
   });
 
   const wallColliders = useMemo(() => {
-    const samples = PORTO_DAS_LANTERNAS_LAYOUT.samples;
+    const samples = layout.samples;
     const step = 6;
     const segments: Array<{
       key: string;
@@ -120,7 +161,7 @@ function PortoTrackWorld({ trackModelPath }: { trackModelPath: string }) {
       const midY = (curr.point.y + next.point.y) * 0.5;
       const midZ = (curr.point.z + next.point.z) * 0.5;
       const rotY = yawFromTangent(curr.tangent);
-      const wallOffset = PORTO_DAS_LANTERNAS_LAYOUT.wallMargin + 0.45;
+      const wallOffset = layout.wallMargin + 0.45;
 
       for (const side of [-1, 1] as const) {
         segments.push({
@@ -136,7 +177,7 @@ function PortoTrackWorld({ trackModelPath }: { trackModelPath: string }) {
       }
     }
     return segments;
-  }, []);
+  }, [layout]);
 
   return (
     <group>
@@ -163,9 +204,11 @@ interface DynamicWorldItemsState {
 }
 
 function WorldItemsRenderer({
+  layout,
   simRef,
   paused,
 }: {
+  layout: TrackLayoutDef;
   simRef: React.MutableRefObject<RaceSimulation>;
   paused: boolean;
 }) {
@@ -183,9 +226,8 @@ function WorldItemsRenderer({
   const spinGroupRef = useRef<THREE.Group | null>(null);
 
   const boxClones = useMemo(
-    () =>
-      PORTO_DAS_LANTERNAS_LAYOUT.itemBoxZones.flat().map(() => itemBoxGltf.scene.clone(true)),
-    [itemBoxGltf.scene],
+    () => layout.itemBoxZones.flat().map(() => itemBoxGltf.scene.clone(true)),
+    [itemBoxGltf.scene, layout],
   );
   const hazardClones = useMemo(
     () => Array.from({ length: 8 }, () => nevoaGltf.scene.clone(true)),
@@ -311,15 +353,20 @@ function RaceWorldContent({
   const manifest = useGameStore((s) => s.manifest);
   const selectedCharacterId = useGameStore((s) => s.selectedCharacterId);
   const selectedKartId = useGameStore((s) => s.selectedKartId);
+  const selectedTrackId = useGameStore((s) => s.selectedTrackId);
   const difficulty = useGameStore((s) => s.difficulty);
   const settings = useGameStore((s) => s.settings);
+
+  const trackDef = getTrackById(selectedTrackId);
+  const layout = getTrackLayout(selectedTrackId);
+  const visualTheme = getTrackVisualTheme(selectedTrackId);
 
   const trackModelPath = useMemo(
     () =>
       manifest
-        ? resolveAssetPath(manifest, 'track-porto-das-lanternas')
-        : '/assets/tracks/porto_das_lanternas.glb',
-    [manifest],
+        ? resolveAssetPath(manifest, trackDef.modelAssetId)
+        : FALLBACK_TRACK_GLB_PATHS[selectedTrackId],
+    [manifest, trackDef.modelAssetId, selectedTrackId],
   );
 
   // Align visual GLB models 1:1 with RaceSimulation's 8-racer roster order
@@ -340,11 +387,11 @@ function RaceWorldContent({
     }));
   }, [manifest, selectedCharacterId, selectedKartId]);
 
-  const startSlot = PORTO_DAS_LANTERNAS_LAYOUT.startGridSlots[0];
+  const startSlot = layout.startGridSlots[0];
 
   const simRef = useRef(
     new RaceSimulation(
-      PORTO_DAS_LANTERNAS_LAYOUT,
+      layout,
       selectedCharacterId,
       selectedKartId,
       difficulty,
@@ -374,7 +421,7 @@ function RaceWorldContent({
   // Expose live phase tracker ref for RaceCamera (synced in useEffect)
   const trackerRef = useRef(
     new RaceProgressTracker(
-      PORTO_DAS_LANTERNAS_LAYOUT,
+      layout,
       DEFAULT_LAPS,
       phaseRequest !== 'intro',
     ),
@@ -402,10 +449,10 @@ function RaceWorldContent({
     return () => manager.detach();
   }, []);
 
-  // Re-initialize full 8-racer simulation on restart or difficulty/mode reset
+  // Re-initialize full 8-racer simulation on track/character/kart/difficulty/mode reset
   useEffect(() => {
     const freshSim = new RaceSimulation(
-      PORTO_DAS_LANTERNAS_LAYOUT,
+      layout,
       selectedCharacterId,
       selectedKartId,
       difficulty,
@@ -414,8 +461,8 @@ function RaceWorldContent({
     );
     if (phaseRequest === 'countdown') {
       freshSim.startCountdown();
-      audioEngine.playMusic('music-race-aurora');
-      audioEngine.playAmbience('sfx-ambience-coastal');
+      audioEngine.playMusic(visualTheme.musicAssetId);
+      audioEngine.playAmbience(visualTheme.ambienceAssetId);
     } else if (phaseRequest === 'intro') {
       audioEngine.stopRaceAudio();
     }
@@ -423,6 +470,19 @@ function RaceWorldContent({
     simRef.current = freshSim;
     trackerRef.current = freshSim.tracker;
     clockRef.current.reset();
+
+    poseRef.current = {
+      x: startSlot.position.x,
+      y: startSlot.position.y,
+      z: startSlot.position.z,
+      yaw: startSlot.yaw,
+      visualSlipYaw: 0,
+      forwardSpeed: 0,
+      boostActive: false,
+      driftActive: false,
+      steerAngle: 0,
+      groundHeight: startSlot.position.y,
+    };
 
     if (playerRapierRef.current) {
       playerRapierRef.current.setTranslation(
@@ -442,13 +502,18 @@ function RaceWorldContent({
     phaseRequest,
     selectedCharacterId,
     selectedKartId,
+    selectedTrackId,
     difficulty,
+    layout,
+    visualTheme.musicAssetId,
+    visualTheme.ambienceAssetId,
     audioEngine,
     onStageSync,
     onTelemetry,
     startSlot.position.x,
     startSlot.position.y,
     startSlot.position.z,
+    startSlot.yaw,
   ]);
 
   useFrame((_state, delta) => {
@@ -546,13 +611,15 @@ function RaceWorldContent({
 
   return (
     <>
-      <CoastalSunsetSky />
-      <ambientLight intensity={0.62} color="#fde68a" />
-      <hemisphereLight args={['#93c5fd', '#78350f', 0.45]} />
+      <TrackSkyEnvironment theme={visualTheme} />
+      <ambientLight intensity={0.58} color={visualTheme.sunColor} />
+      <hemisphereLight
+        args={[visualTheme.hemiSkyColor, visualTheme.hemiGroundColor, visualTheme.hemiIntensity * 0.55]}
+      />
       <directionalLight
         position={[-95, 78, -60]}
-        intensity={2.1}
-        color="#ffedd5"
+        intensity={visualTheme.sunIntensity}
+        color={visualTheme.sunColor}
         castShadow
         shadow-mapSize-width={512}
         shadow-mapSize-height={512}
@@ -564,11 +631,11 @@ function RaceWorldContent({
         shadow-camera-bottom={-95}
       />
 
-      <Environment resolution={64} frames={1}>
+      <Environment key={selectedTrackId} resolution={64} frames={1}>
         <Lightformer
           form="rect"
           intensity={2.4}
-          color="#fed7aa"
+          color={visualTheme.envPrimaryColor}
           position={[-40, 24, -40]}
           scale={[60, 20, 1]}
           rotation={[Math.PI / 5, Math.PI / 4, 0]}
@@ -576,14 +643,14 @@ function RaceWorldContent({
         <Lightformer
           form="ring"
           intensity={1.4}
-          color="#60a5fa"
+          color={visualTheme.envSecondaryColor}
           position={[30, 18, 25]}
           scale={20}
         />
         <Lightformer
           form="rect"
           intensity={0.9}
-          color="#fb923c"
+          color={visualTheme.hemiGroundColor}
           position={[0, -10, 0]}
           scale={[60, 60, 1]}
           rotation={[-Math.PI / 2, 0, 0]}
@@ -591,8 +658,8 @@ function RaceWorldContent({
       </Environment>
 
       <Physics gravity={[0, -28, 0]} timeStep={FIXED_TIMESTEP}>
-        <PortoTrackWorld trackModelPath={trackModelPath} />
-        <WorldItemsRenderer simRef={simRef} paused={paused} />
+        <TrackWorld key={selectedTrackId} layout={layout} trackModelPath={trackModelPath} />
+        <WorldItemsRenderer key={`items-${selectedTrackId}`} layout={layout} simRef={simRef} paused={paused} />
         {racerAssetList.map((racerAsset, idx) => (
           <RacerMeshInstance
             key={idx}
@@ -613,7 +680,7 @@ function RaceWorldContent({
         ))}
       </Physics>
 
-      <RaceCamera layout={PORTO_DAS_LANTERNAS_LAYOUT} poseRef={poseRef} trackerRef={trackerRef} />
+      <RaceCamera layout={layout} poseRef={poseRef} trackerRef={trackerRef} />
     </>
   );
 }
@@ -645,7 +712,9 @@ for (const charPath of Object.values(FALLBACK_CHARACTER_PATHS)) {
 for (const kartPath of Object.values(FALLBACK_KART_PATHS)) {
   useGLTF.preload(kartPath);
 }
-useGLTF.preload('/assets/tracks/porto_das_lanternas.glb');
+for (const trackId of AURORA_TRACK_IDS) {
+  useGLTF.preload(FALLBACK_TRACK_GLB_PATHS[trackId]);
+}
 useGLTF.preload('/assets/props/item_box.glb');
 useGLTF.preload('/assets/items/nevoa_prisma.glb');
 useGLTF.preload('/assets/items/faisca_rastreadora.glb');

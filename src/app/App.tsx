@@ -7,7 +7,7 @@ import { getTrackById } from '../data/tracks';
 import { GameAudioEngine } from '../game/audio/audioEngine';
 import { loadAssetManifest, resolveAssetPath } from '../game/core/assetLoader';
 import { DEFAULT_LAPS, DEFAULT_SETTINGS, TOTAL_RACERS } from '../game/core/constants';
-import type { CharacterId, Difficulty, KartId } from '../game/core/types';
+import type { CharacterId, Difficulty, KartId, TrackId } from '../game/core/types';
 import type { RacePhase } from '../game/racing/raceManager';
 import type { FullHudSnapshot } from '../game/racing/raceSimulation';
 import { RaceScene, type RaceStageSync } from '../scenes/RaceScene';
@@ -76,6 +76,7 @@ export function App() {
   const setManifestError = useGameStore((s) => s.setManifestError);
   const setSelectedCharacterId = useGameStore((s) => s.setSelectedCharacterId);
   const setSelectedKartId = useGameStore((s) => s.setSelectedKartId);
+  const setSelectedTrackId = useGameStore((s) => s.setSelectedTrackId);
   const setDifficulty = useGameStore((s) => s.setDifficulty);
   const updateSettings = useGameStore((s) => s.updateSettings);
   const setScreen = useGameStore((s) => s.setScreen);
@@ -139,6 +140,15 @@ export function App() {
       setSelectedKartId(id);
     },
     [audioEngine, setSelectedKartId],
+  );
+
+  const handleSelectTrack = useCallback(
+    (id: TrackId) => {
+      audioEngine.unlock();
+      audioEngine.playSfx('sfx-ui-click');
+      setSelectedTrackId(id);
+    },
+    [audioEngine, setSelectedTrackId],
   );
 
   const handleSelectDifficulty = useCallback(
@@ -224,11 +234,13 @@ export function App() {
             paused={paused}
             selectedCharacterId={selectedCharacterId}
             selectedKartId={selectedKartId}
+            selectedTrackId={selectedTrackId}
             difficulty={difficulty}
             muted={settings.audio.muted}
             telemetry={telemetry}
             onSelectCharacter={handleSelectCharacter}
             onSelectKart={handleSelectKart}
+            onSelectTrack={handleSelectTrack}
             onSelectDifficulty={handleSelectDifficulty}
             onStartRace={handleStartRace}
             onRestartRace={handleRestartRace}

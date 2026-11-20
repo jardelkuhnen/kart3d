@@ -5,9 +5,15 @@ import { Document } from '@gltf-transform/core';
 import { CHARACTERS_BY_ID } from '../src/data/characters';
 import { KARTS_BY_ID } from '../src/data/karts';
 import type { AssetManifest, AssetManifestEntry } from '../src/game/core/types';
+import { BOSQUE_DE_CRISTAL_LAYOUT } from '../src/game/tracks/bosqueDeCristal';
+import { CANION_SOLAR_LAYOUT } from '../src/game/tracks/canionSolar';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from '../src/game/tracks/portoDasLanternas';
+import { VALE_DOS_MOINHOS_LAYOUT } from '../src/game/tracks/valeDosMoinhos';
 import {
+  generateAmbienceCanyonOgg,
   generateAmbienceCoastalOgg,
+  generateAmbienceForestOgg,
+  generateAmbienceValleyOgg,
   generateDefeatThemeOgg,
   generateMenuThemeOgg,
   generateRaceMusicOgg,
@@ -45,7 +51,7 @@ import {
   createCurbTexture,
   createItemIconPng,
 } from './asset-pipeline/texture-builder';
-import { buildPortoDasLanternasGlb } from './asset-pipeline/track-builder';
+import { type TrackBiome, buildTrackGlb } from './asset-pipeline/track-builder';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -577,32 +583,80 @@ async function main(): Promise<void> {
     });
   }
 
-  // 5. Definitive Track GLB (Slice 1: Porto das Lanternas)
-  const portoSize = await buildPortoDasLanternasGlb(
-    PORTO_DAS_LANTERNAS_LAYOUT,
-    path.join(PUBLIC_DIR, 'assets/tracks/porto_das_lanternas.glb'),
-  );
-  entries.push({
-    id: 'track-porto-das-lanternas',
-    name: 'Pista 1 — Porto das Lanternas',
-    type: 'track',
-    path: '/assets/tracks/porto_das_lanternas.glb',
-    format: 'glb',
-    origin: 'Pipeline local GLTF de pistas (track-builder.ts)',
-    author: 'Kart Legends 3D Pipeline',
-    license: 'Original-Project-License',
-    sizeBytes: portoSize,
-    validationStatus: 'validated',
-    usedIn: ['RaceScene', 'PortoDasLanternas'],
-    requiredNodes: [
-      'TrackRoot',
-      'MainRoadMesh',
-      'LeftStoneWall',
-      'RightStoneWall',
-      'TrackStartGantry',
-      'SceneryGroup',
-    ],
-  });
+  // 5. Copa Aurora Track GLBs (Porto das Lanternas, Bosque de Cristal, Vale dos Moinhos, Cânion Solar)
+  const auroraTrackSpecs: Array<{
+    id: string;
+    name: string;
+    file: string;
+    biome: TrackBiome;
+    layout: typeof PORTO_DAS_LANTERNAS_LAYOUT;
+    usedInComponent: string;
+    extraNodes?: string[];
+  }> = [
+    {
+      id: 'track-porto-das-lanternas',
+      name: 'Pista 1 — Porto das Lanternas',
+      file: 'porto_das_lanternas.glb',
+      biome: 'porto',
+      layout: PORTO_DAS_LANTERNAS_LAYOUT,
+      usedInComponent: 'PortoDasLanternas',
+    },
+    {
+      id: 'track-bosque-de-cristal',
+      name: 'Pista 2 — Bosque de Cristal',
+      file: 'bosque_de_cristal.glb',
+      biome: 'bosque',
+      layout: BOSQUE_DE_CRISTAL_LAYOUT,
+      usedInComponent: 'BosqueDeCristal',
+    },
+    {
+      id: 'track-vale-dos-moinhos',
+      name: 'Pista 3 — Vale dos Moinhos',
+      file: 'vale_dos_moinhos.glb',
+      biome: 'vale',
+      layout: VALE_DOS_MOINHOS_LAYOUT,
+      usedInComponent: 'ValeDosMoinhos',
+      extraNodes: ['WindmillBlades_0'],
+    },
+    {
+      id: 'track-canion-solar',
+      name: 'Pista 4 — Cânion Solar',
+      file: 'canion_solar.glb',
+      biome: 'canion',
+      layout: CANION_SOLAR_LAYOUT,
+      usedInComponent: 'CanionSolar',
+    },
+  ];
+
+  for (const trackSpec of auroraTrackSpecs) {
+    const trackSize = await buildTrackGlb(
+      trackSpec.layout,
+      trackSpec.biome,
+      path.join(PUBLIC_DIR, 'assets/tracks', trackSpec.file),
+    );
+    entries.push({
+      id: trackSpec.id,
+      name: trackSpec.name,
+      type: 'track',
+      path: `/assets/tracks/${trackSpec.file}`,
+      format: 'glb',
+      origin: 'Pipeline local GLTF de pistas (track-builder.ts)',
+      author: 'Kart Legends 3D Pipeline',
+      license: 'Original-Project-License',
+      sizeBytes: trackSize,
+      validationStatus: 'validated',
+      usedIn: ['RaceScene', trackSpec.usedInComponent],
+      requiredNodes: [
+        'TrackRoot',
+        'MainRoadMesh',
+        'LeftStoneWall',
+        'RightStoneWall',
+        'TrackStartGantry',
+        'SceneryGroup',
+        ...(trackSpec.extraNodes ?? []),
+      ],
+    });
+  }
 
   // 6. Item Box & 6 Original Items GLBs
   const itemBoxSize = await buildItemBoxGlb(path.join(PUBLIC_DIR, 'assets/props/item_box.glb'));
@@ -783,22 +837,59 @@ async function main(): Promise<void> {
     });
   }
 
-  const ambienceSize = await generateAmbienceCoastalOgg(
-    path.join(sfxDir, 'ambience_coastal.ogg'),
-  );
-  entries.push({
-    id: 'sfx-ambience-coastal',
-    name: 'Ambiência — Costa e Ondas',
-    type: 'audio-sfx',
-    path: '/assets/audio/sfx/ambience_coastal.ogg',
-    format: 'ogg',
-    origin: 'Síntese PCM local + ffmpeg Opus',
-    author: 'Kart Legends 3D Audio',
-    license: 'Original-Project-License',
-    sizeBytes: ambienceSize,
-    validationStatus: 'validated',
-    usedIn: ['AudioEngine', 'PortoDasLanternas'],
-  });
+  const ambienceSpecs: Array<{
+    id: string;
+    name: string;
+    file: string;
+    trackRef: string;
+    gen: (out: string) => Promise<number>;
+  }> = [
+    {
+      id: 'sfx-ambience-coastal',
+      name: 'Ambiência — Costa e Ondas',
+      file: 'ambience_coastal.ogg',
+      trackRef: 'PortoDasLanternas',
+      gen: generateAmbienceCoastalOgg,
+    },
+    {
+      id: 'sfx-ambience-forest',
+      name: 'Ambiência — Bosque e Cascata',
+      file: 'ambience_forest.ogg',
+      trackRef: 'BosqueDeCristal',
+      gen: generateAmbienceForestOgg,
+    },
+    {
+      id: 'sfx-ambience-valley',
+      name: 'Ambiência — Brisa do Vale',
+      file: 'ambience_valley.ogg',
+      trackRef: 'ValeDosMoinhos',
+      gen: generateAmbienceValleyOgg,
+    },
+    {
+      id: 'sfx-ambience-canyon',
+      name: 'Ambiência — Ventos do Cânion',
+      file: 'ambience_canyon.ogg',
+      trackRef: 'CanionSolar',
+      gen: generateAmbienceCanyonOgg,
+    },
+  ];
+
+  for (const amb of ambienceSpecs) {
+    const ambienceSize = await amb.gen(path.join(sfxDir, amb.file));
+    entries.push({
+      id: amb.id,
+      name: amb.name,
+      type: 'audio-sfx',
+      path: `/assets/audio/sfx/${amb.file}`,
+      format: 'ogg',
+      origin: 'Síntese PCM local + ffmpeg Opus',
+      author: 'Kart Legends 3D Audio',
+      license: 'Original-Project-License',
+      sizeBytes: ambienceSize,
+      validationStatus: 'validated',
+      usedIn: ['AudioEngine', amb.trackRef],
+    });
+  }
 
   const manifest: AssetManifest = {
     version: 1,

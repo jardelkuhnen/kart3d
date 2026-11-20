@@ -1,6 +1,6 @@
 # ASSET MANIFEST — KART LEGENDS 3D
 
-Gerado automaticamente por `npm run assets:build` em 2026-11-20T02:28:05.840Z.
+Gerado automaticamente por `npm run assets:build` em 2026-11-20T02:38:54.656Z.
 
 | ID | Nome | Tipo | Caminho | Formato | Origem | Licença | Tamanho (bytes) | Status | Uso |
 | --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- |
@@ -50,7 +50,10 @@ Gerado automaticamente por `npm run assets:build` em 2026-11-20T02:28:05.840Z.
 | `kart-brisa-corsaria` | Kart Brisa Corsária | `kart` | `/assets/karts/brisa_corsaria.glb` | `glb` | Pipeline local GLTF de veículos (kart-builder.ts) | `Original-Project-License` | 137772 | `validated` | RaceScene, KartSelect, RacerMeshInstance |
 | `kart-escorpiao-dourado` | Kart Escorpião Dourado | `kart` | `/assets/karts/escorpiao_dourado.glb` | `glb` | Pipeline local GLTF de veículos (kart-builder.ts) | `Original-Project-License` | 128164 | `validated` | RaceScene, KartSelect, RacerMeshInstance |
 | `kart-lamina-glacial` | Kart Lâmina Glacial | `kart` | `/assets/karts/lamina_glacial.glb` | `glb` | Pipeline local GLTF de veículos (kart-builder.ts) | `Original-Project-License` | 135244 | `validated` | RaceScene, KartSelect, RacerMeshInstance |
-| `track-porto-das-lanternas` | Pista 1 — Porto das Lanternas | `track` | `/assets/tracks/porto_das_lanternas.glb` | `glb` | Pipeline local GLTF de pistas (track-builder.ts) | `Original-Project-License` | 1135732 | `validated` | RaceScene, PortoDasLanternas |
+| `track-porto-das-lanternas` | Pista 1 — Porto das Lanternas | `track` | `/assets/tracks/porto_das_lanternas.glb` | `glb` | Pipeline local GLTF de pistas (track-builder.ts) | `Original-Project-License` | 1226952 | `validated` | RaceScene, PortoDasLanternas |
+| `track-bosque-de-cristal` | Pista 2 — Bosque de Cristal | `track` | `/assets/tracks/bosque_de_cristal.glb` | `glb` | Pipeline local GLTF de pistas (track-builder.ts) | `Original-Project-License` | 1219712 | `validated` | RaceScene, BosqueDeCristal |
+| `track-vale-dos-moinhos` | Pista 3 — Vale dos Moinhos | `track` | `/assets/tracks/vale_dos_moinhos.glb` | `glb` | Pipeline local GLTF de pistas (track-builder.ts) | `Original-Project-License` | 1199076 | `validated` | RaceScene, ValeDosMoinhos |
+| `track-canion-solar` | Pista 4 — Cânion Solar | `track` | `/assets/tracks/canion_solar.glb` | `glb` | Pipeline local GLTF de pistas (track-builder.ts) | `Original-Project-License` | 1211908 | `validated` | RaceScene, CanionSolar |
 | `prop-item-box` | Caixa de Item Prismática | `prop` | `/assets/props/item_box.glb` | `glb` | Pipeline local GLTF (item-builder.ts) | `Original-Project-License` | 15008 | `validated` | RaceScene, ItemBoxes |
 | `item-pulso-solar` | Item 3D — Pulso Solar | `item` | `/assets/items/pulso_solar.glb` | `glb` | Pipeline local GLTF (item-builder.ts) | `Original-Project-License` | 12792 | `validated` | RaceScene, ItemSystem |
 | `item-bolha-guardia` | Item 3D — Bolha Guardiã | `item` | `/assets/items/bolha_guardia.glb` | `glb` | Pipeline local GLTF (item-builder.ts) | `Original-Project-License` | 23516 | `validated` | RaceScene, ItemSystem |
@@ -65,14 +68,17 @@ Gerado automaticamente por `npm run assets:build` em 2026-11-20T02:28:05.840Z.
 | `music-victory` | Música — Vitória | `audio-music` | `/assets/audio/music/victory_fanfare.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 21027 | `validated` | AudioEngine |
 | `music-defeat` | Música — Derrota / Consolação | `audio-music` | `/assets/audio/music/defeat_theme.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 21744 | `validated` | AudioEngine |
 | `sfx-countdown-beep` | Contagem Regressiva (Beep) | `audio-sfx` | `/assets/audio/sfx/countdown_beep.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 4216 | `validated` | AudioEngine, RaceScene |
+| `sfx-jump-launch` | Impulso de Salto | `audio-sfx` | `/assets/audio/sfx/jump_launch.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 3604 | `validated` | AudioEngine, RaceScene |
+| `sfx-land-thud` | Aterrissagem | `audio-sfx` | `/assets/audio/sfx/land_thud.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 3234 | `validated` | AudioEngine, RaceScene |
+| `sfx-countdown-go` | Contagem Regressiva (Largada) | `audio-sfx` | `/assets/audio/sfx/countdown_go.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 6986 | `validated` | AudioEngine, RaceScene |
 | `sfx-item-pickup` | Coleta de Item | `audio-sfx` | `/assets/audio/sfx/item_pickup.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 4528 | `validated` | AudioEngine, RaceScene |
 | `sfx-collision-hit` | Impacto de Colisão | `audio-sfx` | `/assets/audio/sfx/collision_hit.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 5120 | `validated` | AudioEngine, RaceScene |
 | `sfx-turbo-boost` | Disparo de Turbo | `audio-sfx` | `/assets/audio/sfx/turbo_boost.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 6809 | `validated` | AudioEngine, RaceScene |
 | `sfx-item-use` | Utilização de Item | `audio-sfx` | `/assets/audio/sfx/item_use.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 4239 | `validated` | AudioEngine, RaceScene |
-| `sfx-jump-launch` | Impulso de Salto | `audio-sfx` | `/assets/audio/sfx/jump_launch.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 3604 | `validated` | AudioEngine, RaceScene |
-| `sfx-land-thud` | Aterrissagem | `audio-sfx` | `/assets/audio/sfx/land_thud.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 3234 | `validated` | AudioEngine, RaceScene |
 | `sfx-drift-spark` | Faísca de Drift | `audio-sfx` | `/assets/audio/sfx/drift_spark.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 3464 | `validated` | AudioEngine, RaceScene |
-| `sfx-countdown-go` | Contagem Regressiva (Largada) | `audio-sfx` | `/assets/audio/sfx/countdown_go.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 6986 | `validated` | AudioEngine, RaceScene |
 | `sfx-lap-complete` | Volta Concluída | `audio-sfx` | `/assets/audio/sfx/lap_complete.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 9459 | `validated` | AudioEngine, RaceScene |
 | `sfx-race-finish` | Chegada da Corrida | `audio-sfx` | `/assets/audio/sfx/race_finish.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 12941 | `validated` | AudioEngine, RaceScene |
-| `sfx-ambience-coastal` | Ambiência — Costa e Ondas | `audio-sfx` | `/assets/audio/sfx/ambience_coastal.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 42061 | `validated` | AudioEngine, PortoDasLanternas |
+| `sfx-ambience-coastal` | Ambiência — Costa e Ondas | `audio-sfx` | `/assets/audio/sfx/ambience_coastal.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 42169 | `validated` | AudioEngine, PortoDasLanternas |
+| `sfx-ambience-forest` | Ambiência — Bosque e Cascata | `audio-sfx` | `/assets/audio/sfx/ambience_forest.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 42912 | `validated` | AudioEngine, BosqueDeCristal |
+| `sfx-ambience-valley` | Ambiência — Brisa do Vale | `audio-sfx` | `/assets/audio/sfx/ambience_valley.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 42219 | `validated` | AudioEngine, ValeDosMoinhos |
+| `sfx-ambience-canyon` | Ambiência — Ventos do Cânion | `audio-sfx` | `/assets/audio/sfx/ambience_canyon.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 42184 | `validated` | AudioEngine, CanionSolar |

@@ -2,7 +2,7 @@
 
 Jogo original de corrida de kart arcade 3D para navegador, construído com **React**, **TypeScript (strict)**, **Three.js / React Three Fiber**, **Rapier Physics**, **Zustand** e **Howler.js**.
 
-> **Status Atual:** Slice 3 concluído (Todos os 8 personagens originais animados com 9 clipes GLTF, 8 retratos e ícones de HUD únicos, 8 modelos GLB estruturalmente distintos de karts com física diferenciada por atributos e seletor interativo de elenco/garagem).
+> **Status Atual:** Slice 4 concluído (Copa Aurora completa com todas as 4 pistas distintas — *Porto das Lanternas*, *Bosque de Cristal*, *Vale dos Moinhos* com moinhos animados e *Cânion Solar* — com biomas visuais, superfícies dedicadas, atalhos, rampas, ambiência sonora própria e seletor interativo).
 
 ## Requisitos de Ambiente
 

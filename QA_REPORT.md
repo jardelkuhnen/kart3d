@@ -1,6 +1,6 @@
 # QA REPORT — KART LEGENDS 3D
 
-**Status Geral do Projeto:** **PARCIAL** (Slices 0, 1, 2 e 3 de 8 concluídos e verificados; Slices 4–7 em andamento).
+**Status Geral do Projeto:** **PARCIAL** (Slices 0, 1, 2, 3 e 4 de 8 concluídos e verificados; Slices 5–7 em andamento).
 
 ---
 
@@ -72,3 +72,24 @@
 - **8 Personagens Originais (`character-builder.ts` + `texture-builder.ts`)**: *Nilo*, *Boro*, *Lumi*, *Kora*, *Tiko*, *Mavi*, *Runi* e *Zera*, cada um com silhueta e acessórios próprios, retrato de seleção PNG, ícone de HUD PNG e os 9 clipes de animação GLTF (`idle`, `drive`, `turnLeft`, `turnRight`, `drift`, `hit`, `victory`, `defeat`, `podium`).
 - **8 Karts Distintos (`kart-builder.ts` + `RacerMeshInstance.tsx`)**: *Trilha Raposa*, *Engrenagem Turbo*, *Cometa Estelar*, *Raiz Veloz*, *Chave-Mestra GT*, *Brisa Corsária*, *Escorpião Dourado* e *Lâmina Glacial*, preservando seus materiais PBR próprios em cena sem sobrescrita cromática genérica e sincronizando todos os 8 pilotos/karts na corrida (`RaceScene.tsx`).
 - **Garagem Interativa (`RaceHud.tsx` + `App.tsx`)**: Seleção de qualquer um dos 8 pilotos e 8 karts diretamente na tela inicial com comparação em tempo real de 6 barras de atributos combinados (kart + bônus do piloto).
+
+---
+
+## Slice 4 — Copa Aurora Completa (Bosque de Cristal, Vale dos Moinhos, Cânion Solar)
+
+### Verificações Executadas
+
+| Comando | Resultado | Observações |
+| :--- | :--- | :--- |
+| `npm run assets:build` | PASS | 78 recursos gerados em `public/assets/` (adicionadas as pistas `bosque_de_cristal.glb`, `vale_dos_moinhos.glb`, `canion_solar.glb` e 3 ambiências OGG por bioma) |
+| `npm run validate:assets` | PASS | 78 ativos verificados, 0 erros, 0 arquivos órfãos (`WindmillBlades_0` auditado em `vale_dos_moinhos.glb`) |
+| `npm run typecheck` | PASS | `tsc --noEmit` (strict) com 0 erros |
+| `npm run lint` | PASS | `eslint .` com 0 erros e 0 avisos |
+| `npm run test` | PASS | Vitest: 11 arquivos, 35 testes aprovados em 2.79 s (incluindo `tracks-aurora.test.ts` verificando folga mínima >= 18 m sem autointerseção, checkpoints, rampas, atalhos, GLBs e simulação de 8 karts em todas as 4 pistas) |
+| `npm run build` | PASS | Build de produção Vite gerada em `dist/` (598 módulos em 732 ms) |
+| `npm run test:e2e` | PASS | Playwright (Chrome + ANGLE Metal GPU): 3/3 aprovados em 23.4 s (`boot.spec.ts` em 5.5 s, `race-core.spec.ts` em 11.1 s, `tracks-aurora.spec.ts` em 20.0 s alternando pistas da Copa Aurora e correndo em *Vale dos Moinhos* com 0 erros) |
+
+### Escopo Entregue no Slice 4
+
+- **Pistas 2, 3 e 4 (`bosqueDeCristal.ts`, `valeDosMoinhos.ts`, `canionSolar.ts` + `registry.ts`)**: splines fechadas distintas sem autointerseção, elevações próprias, pontes, cavernas/túneis, atalhos, trechos de terra/grama/areia integrados à física e 12 marcos cênicos instanciados em GLB (`giant-tree`, `crystal-cluster`, `waterfall-cliff`, `mushroom-lamp`, `windmill` com pás animadas, `barn`, `hay-bale`, `pine-tree`, `mesa-arch`, `ruin-pillar`, `cactus`, `sun-totem`).
+- **Iluminação, Minimapa e Áudio Dinâmico (`RaceScene.tsx` + `RaceHud.tsx`)**: céu, neblina, sol, cubemaps IBL e trilha ambiente OGG trocados dinamicamente conforme a pista escolhida, além do seletor das 4 pistas da Copa Aurora na tela de preparação.

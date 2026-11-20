@@ -1,6 +1,7 @@
 import { CHARACTERS, getCharacterById } from '../../data/characters';
 import { getItemById } from '../../data/items';
 import { KARTS, getKartById } from '../../data/karts';
+import { getTrackById } from '../../data/tracks';
 import { DIFFICULTY_CONFIG, DRIFT_TIERS, SURFACE_PROPERTIES } from '../../game/core/constants';
 import type {
   AssetManifest,
@@ -8,11 +9,16 @@ import type {
   Difficulty,
   KartAttributes,
   KartId,
+  TrackId,
 } from '../../game/core/types';
 import { resolveAssetPath } from '../../game/core/assetLoader';
 import { formatRaceTimeMs, type RacePhase } from '../../game/racing/raceManager';
 import type { FullHudSnapshot } from '../../game/racing/raceSimulation';
-import { PORTO_DAS_LANTERNAS_LAYOUT } from '../../game/tracks/portoDasLanternas';
+import {
+  AURORA_TRACK_IDS,
+  getTrackLayout,
+  getTrackVisualTheme,
+} from '../../game/tracks/registry';
 import { Minimap } from './Minimap';
 
 const STAT_ROWS: Array<{ key: keyof KartAttributes; label: string }> = [
@@ -35,11 +41,13 @@ export interface RaceHudProps {
   paused: boolean;
   selectedCharacterId: CharacterId;
   selectedKartId: KartId;
+  selectedTrackId: TrackId;
   difficulty: Difficulty;
   muted: boolean;
   telemetry: FullHudSnapshot;
   onSelectCharacter: (id: CharacterId) => void;
   onSelectKart: (id: KartId) => void;
+  onSelectTrack: (id: TrackId) => void;
   onSelectDifficulty: (difficulty: Difficulty) => void;
   onStartRace: () => void;
   onRestartRace: () => void;
@@ -60,11 +68,13 @@ export function RaceHud({
   paused,
   selectedCharacterId,
   selectedKartId,
+  selectedTrackId,
   difficulty,
   muted,
   telemetry,
   onSelectCharacter,
   onSelectKart,
+  onSelectTrack,
   onSelectDifficulty,
   onStartRace,
   onRestartRace,
@@ -73,6 +83,8 @@ export function RaceHud({
 }: RaceHudProps) {
   const selectedCharacter = getCharacterById(selectedCharacterId);
   const selectedKart = getKartById(selectedKartId);
+  const trackLayout = getTrackLayout(selectedTrackId);
+  const trackTheme = getTrackVisualTheme(selectedTrackId);
   const driftTierColor =
     telemetry.driftTier > 0
       ? DRIFT_TIERS[telemetry.driftTier - 1].sparkColor
@@ -102,7 +114,7 @@ export function RaceHud({
           </div>
 
           {phase !== 'intro' && (
-            <Minimap layout={PORTO_DAS_LANTERNAS_LAYOUT} racers={telemetry.minimapRacers} />
+            <Minimap layout={trackLayout} racers={telemetry.minimapRacers} />
           )}
         </div>
 
@@ -158,12 +170,32 @@ export function RaceHud({
       <div className="kl-center-stage">
         {phase === 'intro' && (
           <section className="kl-panel kl-launch-card" aria-label="Iniciar Corrida">
-            <span className="kl-brand-badge">SLICE 3 · ELENCO & GARAGEM (8 PILOTOS · 8 KARTS)</span>
+            <span className="kl-brand-badge">SLICE 4 · COPA AURORA (4 PISTAS · 8 PILOTOS · 8 KARTS)</span>
             <h1 className="kl-title">KART LEGENDS 3D</h1>
             <p className="kl-subtitle">
-              {trackName} · Piloto: <strong>{characterName}</strong> ({selectedCharacter.title}) ·
+              Pista: <strong>{trackName}</strong> · Piloto: <strong>{characterName}</strong> ·
               Kart: <strong>{kartName}</strong>
             </p>
+
+            <div className="kl-track-picker" role="group" aria-label="Copa Aurora — Escolha a Pista">
+              {AURORA_TRACK_IDS.map((trackId) => {
+                const tr = getTrackById(trackId);
+                const active = trackId === selectedTrackId;
+                return (
+                  <button
+                    key={trackId}
+                    type="button"
+                    className={`kl-track-btn ${active ? 'active' : ''}`}
+                    aria-pressed={active}
+                    data-testid={`track-option-${trackId}`}
+                    onClick={() => onSelectTrack(trackId)}
+                  >
+                    <span className="kl-track-btn-name">{tr.name}</span>
+                    <span className="kl-track-btn-theme">{tr.theme}</span>
+                  </button>
+                );
+              })}
+            </div>
 
             <div className="kl-garage-grid">
               <div className="kl-garage-col" role="group" aria-label="Escolha o Piloto">
@@ -322,7 +354,7 @@ export function RaceHud({
 
         {telemetry.onShortcut && phase === 'racing' && !paused && (
           <div className="kl-alert-banner shortcut" role="status">
-            ATALHO DO PORTO!
+            {trackTheme.shortcutBannerLabel}!
           </div>
         )}
 

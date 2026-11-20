@@ -5,6 +5,7 @@ import type { AssetManifest, AudioSettings } from '../core/types';
 export type MusicTrackId =
   | 'music-menu'
   | 'music-race-aurora'
+  | 'music-race-eclipse'
   | 'music-victory'
   | 'music-defeat';
 
@@ -23,7 +24,15 @@ export type SfxId =
   | 'sfx-lap-complete'
   | 'sfx-race-finish';
 
-export type AmbienceId = 'sfx-ambience-coastal';
+export type AmbienceId =
+  | 'sfx-ambience-coastal'
+  | 'sfx-ambience-forest'
+  | 'sfx-ambience-valley'
+  | 'sfx-ambience-canyon'
+  | 'sfx-ambience-neon'
+  | 'sfx-ambience-boreal'
+  | 'sfx-ambience-sky'
+  | 'sfx-ambience-storm';
 
 interface EngineSynthNodes {
   ctx: AudioContext;

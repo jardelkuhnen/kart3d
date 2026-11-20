@@ -36,6 +36,15 @@ function quatX(pitch: number): [number, number, number, number] {
   return [Math.sin(half), 0, 0, Math.cos(half)];
 }
 
+function quatZ(roll: number): [number, number, number, number] {
+  const half = roll * 0.5;
+  return [0, 0, Math.sin(half), Math.cos(half)];
+}
+
+function quatFromDirYaw(x: number, z: number): number {
+  return Math.atan2(x, z);
+}
+
 function buildUvBox(
   width: number,
   height: number,
@@ -270,17 +279,92 @@ function instantiatePrototype(
   return instance;
 }
 
+export type TrackBiome = 'porto' | 'bosque' | 'vale' | 'canion';
+
+interface BiomePalette {
+  curbA: [number, number, number];
+  curbB: [number, number, number];
+  wallColor: [number, number, number, number];
+  rampColor: [number, number, number, number];
+  tunnelColor: [number, number, number, number];
+  tunnelLight: [number, number, number];
+  foliageColor: [number, number, number, number];
+  baseSurface: 'grass' | 'sand';
+  waterColor: [number, number, number, number];
+  hasWaterPlane: boolean;
+}
+
+const BIOME_PALETTES: Record<TrackBiome, BiomePalette> = {
+  porto: {
+    curbA: [232, 62, 50],
+    curbB: [248, 246, 240],
+    wallColor: [0.88, 0.84, 0.78, 1],
+    rampColor: [0.94, 0.62, 0.16, 1],
+    tunnelColor: [0.34, 0.31, 0.36, 1],
+    tunnelLight: [1.0, 0.65, 0.18],
+    foliageColor: [0.18, 0.58, 0.26, 1],
+    baseSurface: 'grass',
+    waterColor: [0.22, 0.68, 0.88, 1],
+    hasWaterPlane: true,
+  },
+  bosque: {
+    curbA: [45, 212, 191],
+    curbB: [236, 253, 245],
+    wallColor: [0.32, 0.45, 0.38, 1],
+    rampColor: [0.12, 0.72, 0.54, 1],
+    tunnelColor: [0.16, 0.24, 0.36, 1],
+    tunnelLight: [0.25, 0.92, 0.96],
+    foliageColor: [0.09, 0.48, 0.32, 1],
+    baseSurface: 'grass',
+    waterColor: [0.18, 0.82, 0.78, 1],
+    hasWaterPlane: true,
+  },
+  vale: {
+    curbA: [234, 179, 8],
+    curbB: [254, 249, 195],
+    wallColor: [0.68, 0.62, 0.54, 1],
+    rampColor: [0.85, 0.52, 0.16, 1],
+    tunnelColor: [0.42, 0.38, 0.34, 1],
+    tunnelLight: [1.0, 0.85, 0.42],
+    foliageColor: [0.16, 0.56, 0.24, 1],
+    baseSurface: 'grass',
+    waterColor: [0.24, 0.7, 0.92, 1],
+    hasWaterPlane: true,
+  },
+  canion: {
+    curbA: [234, 88, 12],
+    curbB: [254, 243, 199],
+    wallColor: [0.76, 0.38, 0.22, 1],
+    rampColor: [0.95, 0.56, 0.14, 1],
+    tunnelColor: [0.58, 0.26, 0.16, 1],
+    tunnelLight: [1.0, 0.58, 0.12],
+    foliageColor: [0.24, 0.54, 0.24, 1],
+    baseSurface: 'sand',
+    waterColor: [0.86, 0.62, 0.32, 1],
+    hasWaterPlane: false,
+  },
+};
+
 export async function buildPortoDasLanternasGlb(
   layout: TrackLayoutDef,
   outPath: string,
 ): Promise<number> {
+  return buildTrackGlb(layout, 'porto', outPath);
+}
+
+export async function buildTrackGlb(
+  layout: TrackLayoutDef,
+  biome: TrackBiome,
+  outPath: string,
+): Promise<number> {
+  const palette = BIOME_PALETTES[biome];
   const doc = new Document();
   const root = doc.createNode('TrackRoot');
   doc.createScene('Scene').addChild(root);
 
   // Textures
   const asphalt = createAsphaltTextures(512);
-  const curbPng = createCurbTexture(256, [232, 62, 50], [248, 246, 240]);
+  const curbPng = createCurbTexture(256, palette.curbA, palette.curbB);
   const startLinePng = createCheckeredStartTexture(512);
   const chevronPng = createChevronSignTexture(256);
   const boostPadPng = createBoostPadTexture(256);
@@ -293,7 +377,7 @@ export async function buildPortoDasLanternasGlb(
 
   // Materials
   const roadMat = createPbrMaterial(doc, {
-    name: 'PortoRoadAsphalt',
+    name: `${biome}_RoadAsphalt`,
     baseColorTexturePng: asphalt.albedo,
     roughnessTexturePng: asphalt.roughness,
     roughnessFactor: 0.88,
@@ -301,15 +385,15 @@ export async function buildPortoDasLanternasGlb(
   });
 
   const curbMat = createPbrMaterial(doc, {
-    name: 'PortoCurb',
+    name: `${biome}_Curb`,
     baseColorTexturePng: curbPng,
     roughnessFactor: 0.7,
   });
 
   const stoneWallMat = createPbrMaterial(doc, {
-    name: 'CoastalStoneWall',
+    name: `${biome}_StoneWall`,
     baseColorTexturePng: cobblePng,
-    baseColorFactor: [0.88, 0.84, 0.78, 1],
+    baseColorFactor: palette.wallColor,
     roughnessFactor: 0.82,
   });
 
@@ -320,26 +404,27 @@ export async function buildPortoDasLanternasGlb(
   });
 
   const dirtMat = createPbrMaterial(doc, {
-    name: 'HarborDirtMat',
+    name: `${biome}_DirtMat`,
     baseColorTexturePng: dirtPng,
     roughnessFactor: 0.92,
   });
 
   const sandMat = createPbrMaterial(doc, {
-    name: 'CoastalSandMat',
+    name: `${biome}_SandMat`,
     baseColorTexturePng: sandPng,
     roughnessFactor: 0.9,
   });
 
   const grassMat = createPbrMaterial(doc, {
-    name: 'CoastalGrassMat',
+    name: `${biome}_GrassMat`,
     baseColorTexturePng: grassPng,
     roughnessFactor: 0.94,
   });
 
   const waterMat = createPbrMaterial(doc, {
-    name: 'BayWaterMat',
+    name: `${biome}_WaterMat`,
     baseColorTexturePng: waterPng,
+    baseColorFactor: palette.waterColor,
     roughnessFactor: 0.18,
     metallicFactor: 0.15,
   });
@@ -384,7 +469,7 @@ export async function buildPortoDasLanternasGlb(
   const lanternGlowMat = createPbrMaterial(doc, {
     name: 'LanternWarmGlow',
     baseColorFactor: [1, 0.82, 0.35, 1],
-    emissiveFactor: [1.0, 0.65, 0.18],
+    emissiveFactor: palette.tunnelLight,
     roughnessFactor: 0.2,
   });
 
@@ -396,9 +481,9 @@ export async function buildPortoDasLanternasGlb(
   });
 
   const rampMat = createPbrMaterial(doc, {
-    name: 'BoardwalkRampMat',
-    baseColorFactor: [0.94, 0.62, 0.16, 1],
-    emissiveFactor: [0.18, 0.08, 0.0],
+    name: `${biome}_RampMat`,
+    baseColorFactor: palette.rampColor,
+    emissiveFactor: [0.16, 0.08, 0.0],
     roughnessFactor: 0.55,
   });
 
@@ -410,8 +495,8 @@ export async function buildPortoDasLanternasGlb(
   });
 
   const leafMat = createPbrMaterial(doc, {
-    name: 'CoastalFoliage',
-    baseColorFactor: [0.18, 0.58, 0.26, 1],
+    name: `${biome}_Foliage`,
+    baseColorFactor: palette.foliageColor,
     roughnessFactor: 0.82,
   });
 
@@ -429,12 +514,12 @@ export async function buildPortoDasLanternasGlb(
   });
 
   const rockMat = createPbrMaterial(doc, {
-    name: 'CoastalCliffRock',
-    baseColorFactor: [0.46, 0.42, 0.39, 1],
+    name: `${biome}_Rock`,
+    baseColorFactor: biome === 'canion' ? [0.74, 0.34, 0.2, 1] : [0.46, 0.42, 0.39, 1],
     roughnessFactor: 0.92,
   });
 
-  // 1. Main road ribbon, curbs & outer coastal stone walls
+  // 1. Main road ribbon, curbs & outer walls
   const mainPoints = layout.samples.map((s) => s.point);
   const { road, leftCurb, rightCurb } = buildRoadRibbon(mainPoints, layout.halfWidth, 1.15, true);
   addMeshToNode(doc, root, 'MainRoadMesh', road, roadMat);
@@ -446,7 +531,23 @@ export async function buildPortoDasLanternasGlb(
   addMeshToNode(doc, root, 'LeftStoneWall', leftWallGeom, stoneWallMat);
   addMeshToNode(doc, root, 'RightStoneWall', rightWallGeom, stoneWallMat);
 
-  // Start/finish checkered line strip (UVs mapped cleanly across road width & depth)
+  // Visual surface overlay patches on road stretches (e.g. Forest Dirt Trail / Canyon Sand Wash)
+  for (const zone of layout.surfaceZones) {
+    if (zone.lateralMin > -layout.halfWidth && zone.lateralMax < layout.halfWidth) continue;
+    const zonePts = layout.samples
+      .filter((s) => {
+        const ds = Math.abs(s.s - zone.centerS);
+        return Math.min(ds, layout.totalLength - ds) <= zone.length * 0.5;
+      })
+      .map((s) => ({ x: s.point.x, y: s.point.y + 0.02, z: s.point.z }));
+    if (zonePts.length >= 4) {
+      const { road: patchGeom } = buildRoadRibbon(zonePts, layout.halfWidth - 0.15, 0.1, false);
+      const patchMat = zone.surface === 'sand' ? sandMat : dirtMat;
+      addMeshToNode(doc, root, `SurfacePatch_${zone.id}`, patchGeom, patchMat);
+    }
+  }
+
+  // Start/finish checkered line strip
   const cp0 = layout.checkpoints[0];
   const startStrip = addMeshToNode(
     doc,
@@ -458,46 +559,83 @@ export async function buildPortoDasLanternasGlb(
   startStrip.setTranslation([cp0.position.x, cp0.position.y + 0.025, cp0.position.z]);
   startStrip.setRotation(quatY(cp0.yaw));
 
-  // 2. Dirt Harbor Shortcut Ribbon
+  // 2. Shortcut Ribbons
   for (const shortcut of layout.shortcuts) {
     const scPts = shortcut.samples.map((s) => s.point);
     const { road: scRoad } = buildRoadRibbon(scPts, shortcut.halfWidth, 0.45, false);
-    addMeshToNode(doc, root, `Shortcut_${shortcut.id}`, scRoad, dirtMat);
+    const scMat = shortcut.surface === 'sand' ? sandMat : shortcut.surface === 'grass' ? grassMat : dirtMat;
+    addMeshToNode(doc, root, `Shortcut_${shortcut.id}`, scRoad, scMat);
   }
 
-  // 3. Coastal Bay Water & Land Terraces (top surfaces kept cleanly below road Y = 0!)
-  const waterPlane = addMeshToNode(
-    doc,
-    root,
-    'BayWaterPlane',
-    buildUvBox(640, 0.2, 640, 24, 24),
-    waterMat,
-  );
-  waterPlane.setTranslation([-40, -1.85, -10]);
+  // 3. Biome Terrain Floor & Water Plane (safely beneath minimum road height)
+  const minRoadY = layout.samples.reduce((min, s) => Math.min(min, s.point.y), Infinity);
+  const floorTopY = minRoadY - 0.8;
 
-  // Sculpted island landmasses & sandy cove sitting neatly beneath road/curb decks
-  const landSpecs: Array<{
-    name: string;
-    pos: [number, number, number];
-    size: [number, number, number];
-    uv: [number, number];
-    mat: typeof grassMat;
-  }> = [
-    { name: 'LandStartSouth', pos: [15, -1.45, 45], size: [120, 2.0, 155], uv: [14, 18], mat: grassMat },
-    { name: 'LandHarborWest', pos: [-145, -1.45, 55], size: [145, 2.0, 175], uv: [16, 20], mat: grassMat },
-    { name: 'LandNorthRidge', pos: [-95, -1.45, -145], size: [195, 2.0, 95], uv: [22, 12], mat: grassMat },
-    { name: 'LandEastHeadland', pos: [95, -1.45, 95], size: [110, 2.0, 130], uv: [14, 16], mat: grassMat },
-    { name: 'SandCoveBeach', pos: [-168, -1.25, 5], size: [58, 2.0, 105], uv: [8, 14], mat: sandMat },
-  ];
-  for (const land of landSpecs) {
-    const node = addMeshToNode(
+  if (palette.hasWaterPlane) {
+    const waterPlane = addMeshToNode(
       doc,
       root,
-      land.name,
-      buildUvBox(land.size[0], land.size[1], land.size[2], land.uv[0], land.uv[1]),
-      land.mat,
+      'BayWaterPlane',
+      buildUvBox(680, 0.2, 680, 26, 26),
+      waterMat,
     );
-    node.setTranslation(land.pos);
+    waterPlane.setTranslation([0, floorTopY - 0.9, 0]);
+  }
+
+  if (biome === 'porto') {
+    const landSpecs: Array<{
+      name: string;
+      pos: [number, number, number];
+      size: [number, number, number];
+      uv: [number, number];
+      mat: typeof grassMat;
+    }> = [
+      { name: 'LandStartSouth', pos: [15, -1.45, 45], size: [120, 2.0, 155], uv: [14, 18], mat: grassMat },
+      { name: 'LandHarborWest', pos: [-145, -1.45, 55], size: [145, 2.0, 175], uv: [16, 20], mat: grassMat },
+      { name: 'LandNorthRidge', pos: [-95, -1.45, -145], size: [195, 2.0, 95], uv: [22, 12], mat: grassMat },
+      { name: 'LandEastHeadland', pos: [95, -1.45, 95], size: [110, 2.0, 130], uv: [14, 16], mat: grassMat },
+      { name: 'SandCoveBeach', pos: [-168, -1.25, 5], size: [58, 2.0, 105], uv: [8, 14], mat: sandMat },
+    ];
+    for (const land of landSpecs) {
+      const node = addMeshToNode(
+        doc,
+        root,
+        land.name,
+        buildUvBox(land.size[0], land.size[1], land.size[2], land.uv[0], land.uv[1]),
+        land.mat,
+      );
+      node.setTranslation(land.pos);
+    }
+  } else {
+    const baseMat = palette.baseSurface === 'sand' ? sandMat : grassMat;
+    const basin = addMeshToNode(
+      doc,
+      root,
+      'BiomeGroundBasin',
+      buildUvBox(640, 1.4, 640, 28, 28),
+      baseMat,
+    );
+    basin.setTranslation([0, floorTopY - 0.7, 0]);
+
+    if (biome === 'bosque' || biome === 'vale') {
+      // Decorative water channel cutting cleanly underneath bridgeRange
+      const bridgeMid = layout.bridgeRange
+        ? layout.samples.find(
+            (s) => s.s >= (layout.bridgeRange!.sStart + layout.bridgeRange!.sEnd) * 0.5,
+          )
+        : null;
+      if (bridgeMid) {
+        const riverStrip = addMeshToNode(
+          doc,
+          root,
+          'RiverChannelPlane',
+          buildUvBox(46, 0.25, 260, 4, 18),
+          waterMat,
+        );
+        riverStrip.setTranslation([bridgeMid.point.x, floorTopY + 0.12, bridgeMid.point.z]);
+        riverStrip.setRotation(quatY(quatFromDirYaw(bridgeMid.right.x, bridgeMid.right.z)));
+      }
+    }
   }
 
   // 4. Bridge support columns under bridgeRange
@@ -508,15 +646,13 @@ export async function buildPortoDasLanternasGlb(
     const pierGeom = buildLatheMesh(
       [
         { x: 1.5, y: 0 },
-        { x: 1.2, y: 8.5 },
+        { x: 1.2, y: 14.5 },
       ],
       10,
     );
-    const pierMesh = doc.createMesh('BridgePierMesh');
     const tmpHolder = doc.createNode('tmp');
     addMeshToNode(doc, tmpHolder, 'tmpPier', pierGeom, stoneWallMat);
     const createdMesh = tmpHolder.listChildren()[0].getMesh()!;
-    pierMesh.addPrimitive(createdMesh.listPrimitives()[0]);
     tmpHolder.dispose();
 
     for (let i = 0; i < bridgeSamples.length; i += 5) {
@@ -525,7 +661,7 @@ export async function buildPortoDasLanternasGlb(
         const pier = doc.createNode(`BridgePier_${i}_${side}`).setMesh(createdMesh);
         pier.setTranslation([
           s.point.x + s.right.x * side * (layout.halfWidth + 0.5),
-          -2.2,
+          s.point.y - 14.4,
           s.point.z + s.right.z * side * (layout.halfWidth + 0.5),
         ]);
         root.addChild(pier);
@@ -533,7 +669,7 @@ export async function buildPortoDasLanternasGlb(
     }
   }
 
-  // 5. Coastal Rock Tunnel
+  // 5. Tunnel Shell & Light Strip
   if (layout.tunnelRange) {
     const tunnel = buildTunnelArch(
       layout.samples,
@@ -542,8 +678,8 @@ export async function buildPortoDasLanternasGlb(
       layout.halfWidth + 3.0,
     );
     const tunnelMat = createPbrMaterial(doc, {
-      name: 'CoastalTunnelRock',
-      baseColorFactor: [0.34, 0.31, 0.36, 1],
+      name: `${biome}_TunnelRock`,
+      baseColorFactor: palette.tunnelColor,
       roughnessFactor: 0.9,
       doubleSided: true,
     });
@@ -927,6 +1063,263 @@ export async function buildPortoDasLanternasGlb(
     },
   ];
 
+  // Additional Copa Aurora biome prototypes (Bosque de Cristal, Vale dos Moinhos, Cânion Solar)
+  const crystalMatCyan = createPbrMaterial(doc, {
+    name: 'CrystalGlowCyan',
+    baseColorFactor: [0.35, 0.92, 0.98, 1],
+    emissiveFactor: [0.22, 0.72, 0.88],
+    roughnessFactor: 0.2,
+    metallicFactor: 0.25,
+  });
+  const crystalMatMagenta = createPbrMaterial(doc, {
+    name: 'CrystalGlowMagenta',
+    baseColorFactor: [0.85, 0.42, 0.96, 1],
+    emissiveFactor: [0.6, 0.22, 0.78],
+    roughnessFactor: 0.22,
+    metallicFactor: 0.25,
+  });
+  const giantTreeParts = [
+    {
+      mesh: makeMesh(
+        'GiantTreeTrunk',
+        buildLatheMesh(
+          [
+            { x: 1.85, y: 0 },
+            { x: 1.25, y: 3.0 },
+            { x: 1.05, y: 9.0 },
+            { x: 1.35, y: 11.2 },
+          ],
+          10,
+        ),
+        woodMat,
+      ),
+    },
+    {
+      mesh: makeMesh(
+        'GiantTreeCanopy',
+        buildLatheMesh(
+          [
+            { x: 0.6, y: 9.2 },
+            { x: 4.8, y: 11.4 },
+            { x: 4.1, y: 14.0 },
+            { x: 2.2, y: 16.5 },
+            { x: 0.2, y: 17.6 },
+          ],
+          10,
+        ),
+        leafMat,
+      ),
+    },
+  ];
+
+  const crystalSpireMesh = [
+    makeMesh(
+      'CrystalSpireCyan',
+      buildLatheMesh(
+        [
+          { x: 0.85, y: 0 },
+          { x: 0.72, y: 2.4 },
+          { x: 0.05, y: 4.6 },
+        ],
+        6,
+      ),
+      crystalMatCyan,
+    ),
+    makeMesh(
+      'CrystalSpireMagenta',
+      buildLatheMesh(
+        [
+          { x: 0.78, y: 0 },
+          { x: 0.65, y: 2.1 },
+          { x: 0.05, y: 4.1 },
+        ],
+        6,
+      ),
+      crystalMatMagenta,
+    ),
+  ];
+
+  const waterfallParts = [
+    { mesh: makeMesh('CliffMass', buildBoxBeveled(18, 22, 10, 0.3), rockMat), translation: [0, 10.5, 0] as [number, number, number] },
+    { mesh: makeMesh('WaterfallCurtain', buildUvBox(8.5, 20.5, 0.8, 2, 5), waterMat), translation: [0, 10.2, 5.1] as [number, number, number] },
+  ];
+
+  const mushroomCapMaterials = [crystalMatCyan, crystalMatMagenta, lanternGlowMat];
+  const mushroomStemMesh = makeMesh(
+    'MushroomStem',
+    buildLatheMesh(
+      [
+        { x: 0.28, y: 0 },
+        { x: 0.16, y: 1.2 },
+        { x: 0.2, y: 2.4 },
+      ],
+      8,
+    ),
+    stuccoMaterials[0],
+  );
+  const mushroomCapMeshes = mushroomCapMaterials.map((capMat, i) =>
+    makeMesh(
+      `MushroomCap_${i}`,
+      buildLatheMesh(
+        [
+          { x: 0.92, y: 0 },
+          { x: 0.85, y: 0.38 },
+          { x: 0.1, y: 0.72 },
+        ],
+        10,
+      ),
+      capMat,
+    ),
+  );
+
+  // Windmill tower parts + reusable blade mesh for animated WindmillBlades_<n>
+  const windmillTowerMesh = makeMesh(
+    'WindmillTower',
+    buildLatheMesh(
+      [
+        { x: 2.8, y: 0 },
+        { x: 2.2, y: 4.5 },
+        { x: 1.75, y: 9.2 },
+      ],
+      10,
+    ),
+    stuccoMaterials[0],
+  );
+  const windmillCapMesh = makeMesh(
+    'WindmillRoofCap',
+    buildLatheMesh(
+      [
+        { x: 2.0, y: 9.0 },
+        { x: 0.05, y: 11.4 },
+      ],
+      10,
+    ),
+    terracottaMat,
+  );
+  const windmillSailMesh = makeMesh('WindmillSailArm', buildBoxBeveled(0.95, 4.6, 0.16, 0.03), sailMat);
+  let windmillCounter = 0;
+
+  // Rural barn & hay bale & alpine pine
+  const barnParts = [
+    { mesh: makeMesh('BarnBody', buildBoxBeveled(8.6, 5.2, 7.2, 0.12), lighthouseRedMat), translation: [0, 2.6, 0] as [number, number, number] },
+    { mesh: makeMesh('BarnRoof', roofPrism, woodMat), translation: [0, 5.2, 0] as [number, number, number], scale: [1.12, 1.1, 1.12] as [number, number, number] },
+    { mesh: makeMesh('BarnTrimDoor', buildBoxBeveled(2.8, 3.2, 0.2, 0.03), stuccoMaterials[0]), translation: [0, 1.6, 3.65] as [number, number, number] },
+  ];
+  const hayMat = createPbrMaterial(doc, {
+    name: 'GoldenHay',
+    baseColorFactor: [0.92, 0.75, 0.28, 1],
+    roughnessFactor: 0.92,
+  });
+  const hayBaleParts = [
+    {
+      mesh: makeMesh(
+        'HayCylinder',
+        buildLatheMesh(
+          [
+            { x: 0.05, y: 0 },
+            { x: 0.85, y: 0 },
+            { x: 0.85, y: 1.35 },
+            { x: 0.05, y: 1.35 },
+          ],
+          10,
+        ),
+        hayMat,
+      ),
+      rotation: quatZ(Math.PI * 0.5),
+      translation: [0.68, 0.85, 0] as [number, number, number],
+    },
+  ];
+  const pineTreeParts = [
+    { mesh: makeMesh('PineTrunk', buildLatheMesh([{ x: 0.4, y: 0 }, { x: 0.25, y: 2.8 }], 8), woodMat) },
+    {
+      mesh: makeMesh(
+        'PineNeedles',
+        buildLatheMesh(
+          [
+            { x: 2.2, y: 2.2 },
+            { x: 0.8, y: 4.5 },
+            { x: 1.75, y: 4.4 },
+            { x: 0.5, y: 6.8 },
+            { x: 1.25, y: 6.7 },
+            { x: 0.05, y: 9.2 },
+          ],
+          9,
+        ),
+        leafMat,
+      ),
+    },
+  ];
+
+  // Cânion Solar props: Mesa Arch, Ruin Pillar, Cactus, Sun Totem
+  const mesaArchParts = [
+    { mesh: makeMesh('ArchPierL', buildBoxBeveled(4.6, 13.5, 4.4, 0.25), rockMat), translation: [-12.5, 6.7, 0] as [number, number, number] },
+    { mesh: makeMesh('ArchPierR', buildBoxBeveled(4.6, 13.5, 4.4, 0.25), rockMat), translation: [12.5, 6.7, 0] as [number, number, number] },
+    { mesh: makeMesh('ArchSpanTop', buildBoxBeveled(30.0, 3.6, 4.6, 0.35), rockMat), translation: [0, 14.2, 0] as [number, number, number] },
+  ];
+  const ruinPillarParts = [
+    { mesh: makeMesh('RuinBase', buildBoxBeveled(3.4, 1.4, 3.4, 0.1), terracottaMat), translation: [0, 0.7, 0] as [number, number, number] },
+    { mesh: makeMesh('RuinColumn', buildBoxBeveled(2.2, 8.2, 2.2, 0.12), rockMat), translation: [0, 5.2, 0] as [number, number, number] },
+    { mesh: makeMesh('RuinCap', buildBoxBeveled(3.1, 0.9, 3.1, 0.1), terracottaMat), translation: [0, 9.6, 0] as [number, number, number] },
+  ];
+  const cactusMat = createPbrMaterial(doc, {
+    name: 'DesertSaguaro',
+    baseColorFactor: [0.18, 0.56, 0.26, 1],
+    roughnessFactor: 0.8,
+  });
+  const cactusParts = [
+    {
+      mesh: makeMesh(
+        'CactusBody',
+        buildTubeAlongPath(
+          [
+            { x: 0, y: 0, z: 0 },
+            { x: 0, y: 3.8, z: 0 },
+          ],
+          0.34,
+          8,
+          true,
+        ),
+        cactusMat,
+      ),
+    },
+    {
+      mesh: makeMesh(
+        'CactusArmL',
+        buildTubeAlongPath(
+          [
+            { x: 0, y: 1.7, z: 0 },
+            { x: -0.95, y: 1.9, z: 0 },
+            { x: -1.0, y: 3.1, z: 0 },
+          ],
+          0.24,
+          8,
+          true,
+        ),
+        cactusMat,
+      ),
+    },
+    {
+      mesh: makeMesh(
+        'CactusArmR',
+        buildTubeAlongPath(
+          [
+            { x: 0, y: 2.1, z: 0 },
+            { x: 0.9, y: 2.3, z: 0 },
+            { x: 0.95, y: 3.4, z: 0 },
+          ],
+          0.22,
+          8,
+          true,
+        ),
+        cactusMat,
+      ),
+    },
+  ];
+  const sunTotemParts = [
+    { mesh: makeMesh('TotemPost', buildBoxBeveled(0.95, 3.8, 0.95, 0.08), rockMat), translation: [0, 1.9, 0] as [number, number, number] },
+    { mesh: makeMesh('TotemGem', buildBoxBeveled(0.75, 0.75, 0.75, 0.05), lanternGlowMat), translation: [0, 4.1, 0] as [number, number, number] },
+  ];
+
   layout.scenery.forEach((item, index) => {
     const p = { x: item.position.x, y: item.position.y, z: item.position.z, yaw: item.yaw, scale: item.scale };
     switch (item.kind) {
@@ -969,6 +1362,82 @@ export async function buildPortoDasLanternasGlb(
         break;
       case 'lighthouse':
         instantiatePrototype(doc, sceneryGroup, `Lighthouse_${index}`, lighthouseParts, p);
+        break;
+      case 'giant-tree':
+        instantiatePrototype(doc, sceneryGroup, `GiantTree_${index}`, giantTreeParts, p);
+        break;
+      case 'crystal-cluster': {
+        const cMesh = crystalSpireMesh[(item.variant ?? 0) % crystalSpireMesh.length];
+        instantiatePrototype(
+          doc,
+          sceneryGroup,
+          `Crystal_${index}`,
+          [
+            { mesh: cMesh, scale: [1.1, 1.35, 1.1] },
+            { mesh: cMesh, translation: [1.0, 0, 0.5], rotation: quatZ(-0.28), scale: [0.85, 0.95, 0.85] },
+            { mesh: cMesh, translation: [-0.9, 0, -0.4], rotation: quatZ(0.32), scale: [0.75, 0.85, 0.75] },
+          ],
+          p,
+        );
+        break;
+      }
+      case 'waterfall-cliff':
+        instantiatePrototype(doc, sceneryGroup, `Waterfall_${index}`, waterfallParts, p);
+        break;
+      case 'mushroom-lamp': {
+        const capMesh = mushroomCapMeshes[(item.variant ?? 0) % mushroomCapMeshes.length];
+        instantiatePrototype(
+          doc,
+          sceneryGroup,
+          `Mushroom_${index}`,
+          [
+            { mesh: mushroomStemMesh },
+            { mesh: capMesh, translation: [0, 2.3, 0] },
+          ],
+          p,
+        );
+        break;
+      }
+      case 'windmill': {
+        const wmRoot = instantiatePrototype(
+          doc,
+          sceneryGroup,
+          `Windmill_${index}`,
+          [{ mesh: windmillTowerMesh }, { mesh: windmillCapMesh }],
+          p,
+        );
+        const bladeHub = doc.createNode(`WindmillBlades_${windmillCounter++}`);
+        bladeHub.setTranslation([0, 7.6, 2.15]);
+        wmRoot.addChild(bladeHub);
+        for (let b = 0; b < 4; b += 1) {
+          const armAngle = (b * Math.PI) / 2;
+          const armNode = doc.createNode(`WindmillArm_${index}_${b}`).setMesh(windmillSailMesh);
+          armNode.setRotation(quatZ(armAngle));
+          armNode.setTranslation([Math.sin(-armAngle) * 2.4, Math.cos(-armAngle) * 2.4, 0]);
+          bladeHub.addChild(armNode);
+        }
+        break;
+      }
+      case 'barn':
+        instantiatePrototype(doc, sceneryGroup, `Barn_${index}`, barnParts, p);
+        break;
+      case 'hay-bale':
+        instantiatePrototype(doc, sceneryGroup, `Hay_${index}`, hayBaleParts, p);
+        break;
+      case 'pine-tree':
+        instantiatePrototype(doc, sceneryGroup, `Pine_${index}`, pineTreeParts, p);
+        break;
+      case 'mesa-arch':
+        instantiatePrototype(doc, sceneryGroup, `MesaArch_${index}`, mesaArchParts, p);
+        break;
+      case 'ruin-pillar':
+        instantiatePrototype(doc, sceneryGroup, `RuinPillar_${index}`, ruinPillarParts, p);
+        break;
+      case 'cactus':
+        instantiatePrototype(doc, sceneryGroup, `Cactus_${index}`, cactusParts, p);
+        break;
+      case 'sun-totem':
+        instantiatePrototype(doc, sceneryGroup, `SunTotem_${index}`, sunTotemParts, p);
         break;
     }
   });

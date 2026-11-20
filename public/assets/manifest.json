@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-20T02:28:05.840Z",
+  "generatedAt": "2026-11-20T02:38:54.656Z",
   "project": "KART LEGENDS 3D",
   "assets": [
     {
@@ -1035,11 +1035,84 @@
       "origin": "Pipeline local GLTF de pistas (track-builder.ts)",
       "author": "Kart Legends 3D Pipeline",
       "license": "Original-Project-License",
-      "sizeBytes": 1135732,
+      "sizeBytes": 1226952,
       "validationStatus": "validated",
       "usedIn": [
         "RaceScene",
         "PortoDasLanternas"
+      ],
+      "requiredNodes": [
+        "TrackRoot",
+        "MainRoadMesh",
+        "LeftStoneWall",
+        "RightStoneWall",
+        "TrackStartGantry",
+        "SceneryGroup"
+      ]
+    },
+    {
+      "id": "track-bosque-de-cristal",
+      "name": "Pista 2 — Bosque de Cristal",
+      "type": "track",
+      "path": "/assets/tracks/bosque_de_cristal.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de pistas (track-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 1219712,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "BosqueDeCristal"
+      ],
+      "requiredNodes": [
+        "TrackRoot",
+        "MainRoadMesh",
+        "LeftStoneWall",
+        "RightStoneWall",
+        "TrackStartGantry",
+        "SceneryGroup"
+      ]
+    },
+    {
+      "id": "track-vale-dos-moinhos",
+      "name": "Pista 3 — Vale dos Moinhos",
+      "type": "track",
+      "path": "/assets/tracks/vale_dos_moinhos.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de pistas (track-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 1199076,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "ValeDosMoinhos"
+      ],
+      "requiredNodes": [
+        "TrackRoot",
+        "MainRoadMesh",
+        "LeftStoneWall",
+        "RightStoneWall",
+        "TrackStartGantry",
+        "SceneryGroup",
+        "WindmillBlades_0"
+      ]
+    },
+    {
+      "id": "track-canion-solar",
+      "name": "Pista 4 — Cânion Solar",
+      "type": "track",
+      "path": "/assets/tracks/canion_solar.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de pistas (track-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 1211908,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "CanionSolar"
       ],
       "requiredNodes": [
         "TrackRoot",
@@ -1292,6 +1365,54 @@
       ]
     },
     {
+      "id": "sfx-jump-launch",
+      "name": "Impulso de Salto",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/jump_launch.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 3604,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-land-thud",
+      "name": "Aterrissagem",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/land_thud.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 3234,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-countdown-go",
+      "name": "Contagem Regressiva (Largada)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/countdown_go.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 6986,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
       "id": "sfx-item-pickup",
       "name": "Coleta de Item",
       "type": "audio-sfx",
@@ -1356,38 +1477,6 @@
       ]
     },
     {
-      "id": "sfx-jump-launch",
-      "name": "Impulso de Salto",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/jump_launch.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 3604,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
-      "id": "sfx-land-thud",
-      "name": "Aterrissagem",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/land_thud.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 3234,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
       "id": "sfx-drift-spark",
       "name": "Faísca de Drift",
       "type": "audio-sfx",
@@ -1397,22 +1486,6 @@
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
       "sizeBytes": 3464,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
-      "id": "sfx-countdown-go",
-      "name": "Contagem Regressiva (Largada)",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/countdown_go.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 6986,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1460,11 +1533,59 @@
       "origin": "Síntese PCM local + ffmpeg Opus",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 42061,
+      "sizeBytes": 42169,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
         "PortoDasLanternas"
+      ]
+    },
+    {
+      "id": "sfx-ambience-forest",
+      "name": "Ambiência — Bosque e Cascata",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_forest.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 42912,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "BosqueDeCristal"
+      ]
+    },
+    {
+      "id": "sfx-ambience-valley",
+      "name": "Ambiência — Brisa do Vale",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_valley.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 42219,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "ValeDosMoinhos"
+      ]
+    },
+    {
+      "id": "sfx-ambience-canyon",
+      "name": "Ambiência — Ventos do Cânion",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_canyon.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 42184,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "CanionSolar"
       ]
     }
   ]

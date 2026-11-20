@@ -1,3 +1,4 @@
+import type { AmbienceId, MusicTrackId } from '../audio/audioEngine';
 import type { SurfaceType, TrackId } from '../core/types';
 
 export interface TrackVec3 {
@@ -67,21 +68,54 @@ export interface ShortcutPathDef {
   samples: readonly TrackSplineSample[];
 }
 
+export type TrackPropKind =
+  | 'house'
+  | 'lighthouse'
+  | 'boat'
+  | 'market-stall'
+  | 'lantern-post'
+  | 'cypress-tree'
+  | 'palm-tree'
+  | 'chevron-board'
+  | 'rock-pillar'
+  | 'giant-tree'
+  | 'crystal-cluster'
+  | 'waterfall-cliff'
+  | 'mushroom-lamp'
+  | 'windmill'
+  | 'barn'
+  | 'hay-bale'
+  | 'pine-tree'
+  | 'mesa-arch'
+  | 'ruin-pillar'
+  | 'cactus'
+  | 'sun-totem';
+
 export interface TrackPropPlacement {
-  kind:
-    | 'house'
-    | 'lighthouse'
-    | 'boat'
-    | 'market-stall'
-    | 'lantern-post'
-    | 'cypress-tree'
-    | 'palm-tree'
-    | 'chevron-board'
-    | 'rock-pillar';
+  kind: TrackPropKind;
   position: TrackVec3;
   yaw: number;
   scale: number;
   variant?: number;
+}
+
+export interface TrackVisualTheme {
+  skyTopColor: string;
+  skyHorizonColor: string;
+  fogColor: string;
+  fogNear: number;
+  fogFar: number;
+  sunColor: string;
+  sunPosition: readonly [number, number, number];
+  sunIntensity: number;
+  hemiSkyColor: string;
+  hemiGroundColor: string;
+  hemiIntensity: number;
+  envPrimaryColor: string;
+  envSecondaryColor: string;
+  musicAssetId: MusicTrackId;
+  ambienceAssetId: AmbienceId;
+  shortcutBannerLabel: string;
 }
 
 export interface TrackLayoutDef {
@@ -91,6 +125,8 @@ export interface TrackLayoutDef {
   sampleCount: number;
   halfWidth: number;
   wallMargin: number;
+  defaultRoadSurface: SurfaceType;
+  offroadSurface: SurfaceType;
   totalLength: number;
   samples: readonly TrackSplineSample[];
   checkpoints: readonly CheckpointDef[];
@@ -328,12 +364,10 @@ export function projectPointOntoTrack(
 
   if (!onShortcut) {
     const absLat = Math.abs(lateralOffset);
-    if (absLat <= layout.halfWidth) {
-      surface = 'asphalt';
-    } else if (absLat <= layout.halfWidth + 1.3) {
-      surface = 'asphalt'; // Raised curb edge
+    if (absLat <= layout.halfWidth + 1.3) {
+      surface = layout.defaultRoadSurface;
     } else {
-      surface = 'grass';
+      surface = layout.offroadSurface;
     }
 
     for (const zone of layout.surfaceZones) {
@@ -410,5 +444,205 @@ export function getCheckpointPose(
   return {
     position: { x: cp.position.x, y: cp.position.y + 0.35, z: cp.position.z },
     yaw: cp.yaw,
+  };
+}
+
+export interface TrackAssemblyInput {
+  id: TrackId;
+  name: string;
+  controlPoints: readonly TrackVec3[];
+  sampleCount?: number;
+  halfWidth?: number;
+  wallMargin?: number;
+  defaultRoadSurface?: SurfaceType;
+  offroadSurface?: SurfaceType;
+  boostPadSpecs: readonly { id: string; sFraction: number; lateral: number }[];
+  rampSpecs: readonly {
+    id: string;
+    sFraction: number;
+    lateral: number;
+    width: number;
+    length: number;
+    height: number;
+    launchImpulse: number;
+  }[];
+  surfaceZoneSpecs?: readonly {
+    id: string;
+    surface: SurfaceType;
+    sFraction: number;
+    length: number;
+    lateralMin: number;
+    lateralMax: number;
+  }[];
+  shortcuts: readonly {
+    id: string;
+    surface: SurfaceType;
+    halfWidth: number;
+    controlPoints: readonly TrackVec3[];
+    sampleCount?: number;
+  }[];
+  bridgeFractionRange: { start: number; end: number } | null;
+  tunnelFractionRange: { start: number; end: number } | null;
+  itemRowFractions?: readonly number[];
+  chevronFractions?: readonly number[];
+  introCameraPoints: readonly TrackVec3[];
+  buildScenery: (ctx: {
+    samples: readonly TrackSplineSample[];
+    totalLength: number;
+    halfWidth: number;
+    wallMargin: number;
+  }) => TrackPropPlacement[];
+}
+
+export function assembleTrackLayout(input: TrackAssemblyInput): TrackLayoutDef {
+  const sampleCount = input.sampleCount ?? 260;
+  const halfWidth = input.halfWidth ?? 8.2;
+  const wallMargin = input.wallMargin ?? halfWidth + 2.8;
+  const { samples, totalLength } = sampleTrackSpline(
+    input.controlPoints,
+    sampleCount,
+    halfWidth,
+    true,
+  );
+
+  const shortcuts: ShortcutPathDef[] = input.shortcuts.map((sc) => {
+    const sampled = sampleTrackSpline(sc.controlPoints, sc.sampleCount ?? 36, sc.halfWidth, false);
+    return {
+      id: sc.id,
+      surface: sc.surface,
+      halfWidth: sc.halfWidth,
+      controlPoints: sc.controlPoints,
+      samples: sampled.samples,
+    };
+  });
+
+  const checkpointCount = 12;
+  const checkpoints: CheckpointDef[] = Array.from({ length: checkpointCount }, (_, idx) => {
+    const s = (idx / checkpointCount) * totalLength;
+    const sample = getSampleAtDistance(samples, totalLength, s);
+    return {
+      index: idx,
+      t: sample.t,
+      s: sample.s,
+      position: sample.point,
+      tangent: sample.tangent,
+      right: sample.right,
+      yaw: yawFromTangent(sample.tangent),
+      width: halfWidth * 2.2,
+    };
+  });
+
+  const boostPads: BoostPadDef[] = input.boostPadSpecs.map((spec) => {
+    const sample = getSampleAtDistance(samples, totalLength, spec.sFraction * totalLength);
+    return {
+      id: spec.id,
+      s: sample.s,
+      lateralOffset: spec.lateral,
+      position: offsetPointOnTrack(sample, spec.lateral, 0.02),
+      yaw: yawFromTangent(sample.tangent),
+      width: 2.8,
+      length: 4.4,
+    };
+  });
+
+  const ramps: RampDef[] = input.rampSpecs.map((spec) => {
+    const sample = getSampleAtDistance(samples, totalLength, spec.sFraction * totalLength);
+    return {
+      id: spec.id,
+      s: sample.s,
+      lateralOffset: spec.lateral,
+      position: offsetPointOnTrack(sample, spec.lateral, 0),
+      yaw: yawFromTangent(sample.tangent),
+      width: spec.width,
+      length: spec.length,
+      height: spec.height,
+      launchImpulse: spec.launchImpulse,
+    };
+  });
+
+  const surfaceZones: SurfaceZoneDef[] = (input.surfaceZoneSpecs ?? []).map((z) => ({
+    id: z.id,
+    surface: z.surface,
+    centerS: totalLength * z.sFraction,
+    length: z.length,
+    lateralMin: z.lateralMin,
+    lateralMax: z.lateralMax,
+  }));
+
+  const startGridSlots = Array.from({ length: 8 }, (_, slotIdx) => {
+    const row = Math.floor(slotIdx / 2);
+    const col = slotIdx % 2 === 0 ? -1 : 1;
+    const sBehind = (totalLength - 8 - row * 4.4) % totalLength;
+    const sample = getSampleAtDistance(samples, totalLength, sBehind);
+    return {
+      position: offsetPointOnTrack(sample, col * 2.5, 0.35),
+      yaw: yawFromTangent(sample.tangent),
+    };
+  });
+
+  const rowFracs = input.itemRowFractions ?? [0.16, 0.48, 0.72];
+  const itemBoxZones: TrackVec3[][] = rowFracs.map((frac) => {
+    const sample = getSampleAtDistance(samples, totalLength, frac * totalLength);
+    return [-4.2, -1.4, 1.4, 4.2].map((lat) => offsetPointOnTrack(sample, lat, 1.0));
+  });
+
+  const aiWaypoints: TrackVec3[] = Array.from({ length: 36 }, (_, idx) => {
+    const sample = getSampleAtDistance(samples, totalLength, (idx / 36) * totalLength);
+    return sample.point;
+  });
+
+  const scenery: TrackPropPlacement[] = input.buildScenery({
+    samples,
+    totalLength,
+    halfWidth,
+    wallMargin,
+  });
+
+  for (const frac of input.chevronFractions ?? []) {
+    const sample = getSampleAtDistance(samples, totalLength, frac * totalLength);
+    const nextSample = getSampleAtDistance(samples, totalLength, (frac + 0.03) * totalLength);
+    const turnCross = sample.tangent.x * nextSample.tangent.z - sample.tangent.z * nextSample.tangent.x;
+    const outerSide = turnCross > 0 ? -1 : 1;
+    scenery.push({
+      kind: 'chevron-board',
+      position: offsetPointOnTrack(sample, outerSide * (wallMargin + 0.8), 0),
+      yaw: yawFromTangent(sample.tangent) + (turnCross > 0 ? -0.35 : 0.35),
+      scale: 1.15,
+    });
+  }
+
+  return {
+    id: input.id,
+    name: input.name,
+    controlPoints: input.controlPoints,
+    sampleCount,
+    halfWidth,
+    wallMargin,
+    defaultRoadSurface: input.defaultRoadSurface ?? 'asphalt',
+    offroadSurface: input.offroadSurface ?? 'grass',
+    totalLength,
+    samples,
+    checkpoints,
+    surfaceZones,
+    boostPads,
+    ramps,
+    shortcuts,
+    tunnelRange: input.tunnelFractionRange
+      ? {
+          sStart: totalLength * input.tunnelFractionRange.start,
+          sEnd: totalLength * input.tunnelFractionRange.end,
+        }
+      : null,
+    bridgeRange: input.bridgeFractionRange
+      ? {
+          sStart: totalLength * input.bridgeFractionRange.start,
+          sEnd: totalLength * input.bridgeFractionRange.end,
+        }
+      : null,
+    itemBoxZones,
+    aiWaypoints,
+    introCameraPoints: input.introCameraPoints,
+    startGridSlots,
+    scenery,
   };
 }

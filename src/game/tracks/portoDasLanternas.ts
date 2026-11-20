@@ -253,6 +253,8 @@ export const PORTO_DAS_LANTERNAS_LAYOUT: TrackLayoutDef = {
   sampleCount: SAMPLE_COUNT,
   halfWidth: HALF_WIDTH,
   wallMargin: WALL_MARGIN,
+  defaultRoadSurface: 'asphalt',
+  offroadSurface: 'grass',
   totalLength,
   samples,
   checkpoints,
