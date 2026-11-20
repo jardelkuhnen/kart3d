@@ -423,10 +423,11 @@ export function projectPointOntoTrack(
   // Check boost pads
   let activeBoostPad: BoostPadDef | null = null;
   for (const pad of layout.boostPads) {
+    if (yHint !== undefined && Math.abs(yHint - pad.position.y) > 4.0) continue;
     const dx = x - pad.position.x;
     const dz = z - pad.position.z;
-    const cos = Math.cos(-pad.yaw);
-    const sin = Math.sin(-pad.yaw);
+    const cos = Math.cos(pad.yaw);
+    const sin = Math.sin(pad.yaw);
     const lx = dx * cos - dz * sin;
     const lz = dx * sin + dz * cos;
     if (Math.abs(lx) <= pad.width * 0.55 && Math.abs(lz) <= pad.length * 0.55) {
@@ -438,10 +439,11 @@ export function projectPointOntoTrack(
   // Check jump ramps (also elevates effective ground height across the ramp slope!)
   let activeRamp: RampDef | null = null;
   for (const ramp of layout.ramps) {
+    if (yHint !== undefined && Math.abs(yHint - ramp.position.y) > 4.5) continue;
     const dx = x - ramp.position.x;
     const dz = z - ramp.position.z;
-    const cos = Math.cos(-ramp.yaw);
-    const sin = Math.sin(-ramp.yaw);
+    const cos = Math.cos(ramp.yaw);
+    const sin = Math.sin(ramp.yaw);
     const lx = dx * cos - dz * sin;
     const lz = dx * sin + dz * cos;
     if (Math.abs(lx) <= ramp.width * 0.55 && Math.abs(lz) <= ramp.length * 0.55) {

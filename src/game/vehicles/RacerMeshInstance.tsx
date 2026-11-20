@@ -4,7 +4,7 @@ import { useGLTF } from '@react-three/drei';
 import { BallCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { CharacterRig } from '../characters/CharacterRig';
-import { disposeObject3D } from '../core/assetLoader';
+import { disposeClonedMaterialsOnly } from '../core/assetLoader';
 import { DRIFT_TIERS } from '../core/constants';
 import type { CharacterAnimState } from '../core/types';
 import type { RaceSimulation, RacerEntityState } from '../racing/raceSimulation';
@@ -73,7 +73,7 @@ export function RacerMeshInstance({
 
   const [animState, setAnimState] = useState<CharacterAnimState>('idle');
   const lastAnimRef = useRef<CharacterAnimState>('idle');
-  const [steerForRig, setSteerForRig] = useState(0);
+  const liveSteerRef = useRef(0);
   const isPlayer = racerIndex === 0;
 
   useEffect(() => {
@@ -118,7 +118,7 @@ export function RacerMeshInstance({
     }
 
     return () => {
-      disposeObject3D(kartScene);
+      disposeClonedMaterialsOnly(kartScene);
     };
   }, [kartScene, isPlayer]);
 
@@ -205,10 +205,11 @@ export function RacerMeshInstance({
       nextAnim = 'idle';
     }
 
+    liveSteerRef.current = sim.steerAngle;
+
     if (nextAnim !== lastAnimRef.current) {
       lastAnimRef.current = nextAnim;
       setAnimState(nextAnim);
-      setSteerForRig(sim.steerAngle);
     }
 
     const t = state.clock.elapsedTime;
@@ -271,7 +272,7 @@ export function RacerMeshInstance({
             <CharacterRig
               modelPath={characterModelPath}
               animState={animState}
-              steerAngle={steerForRig}
+              steerAngleRef={liveSteerRef}
             />
           </group>
         </group>

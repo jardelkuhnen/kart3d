@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { Environment, Lightformer, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { CharacterRig } from '../game/characters/CharacterRig';
-import { disposeObject3D } from '../game/core/assetLoader';
+import { disposeClonedMaterialsOnly } from '../game/core/assetLoader';
 
 export interface ShowcaseProps {
   characterModelPath: string;
@@ -41,20 +41,23 @@ export function GarageShowcaseStage({ characterModelPath, kartModelPath }: Showc
       driverSeatRef.current.position.copy(mountOffset);
     }
     return () => {
-      disposeObject3D(kartScene);
+      disposeClonedMaterialsOnly(kartScene);
     };
   }, [kartScene]);
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05);
     if (turntableRef.current) {
-      turntableRef.current.rotation.y += dt * 0.55;
+      turntableRef.current.rotation.y += dt * 0.48;
     }
     if (camTargetRef.current && lookVecRef.current) {
       state.camera.position.lerp(camTargetRef.current, 1 - Math.exp(-5.5 * dt));
       const persp = state.camera as THREE.PerspectiveCamera;
-      persp.fov += (44 - persp.fov) * (1 - Math.exp(-5.5 * dt));
-      persp.updateProjectionMatrix();
+      const nextFov = persp.fov + (42 - persp.fov) * (1 - Math.exp(-5.5 * dt));
+      if (Math.abs(nextFov - persp.fov) > 0.01) {
+        persp.fov = nextFov;
+        persp.updateProjectionMatrix();
+      }
       state.camera.lookAt(lookVecRef.current);
     }
   });
@@ -63,21 +66,22 @@ export function GarageShowcaseStage({ characterModelPath, kartModelPath }: Showc
     <>
       <color attach="background" args={['#091024']} />
       <fog attach="fog" args={['#091024', 18, 48]} />
-      <ambientLight intensity={0.8} color="#e0f2fe" />
-      <directionalLight position={[6, 9, 6]} intensity={2.3} color="#fef3c7" castShadow />
+      <ambientLight intensity={0.85} color="#e0f2fe" />
+      <directionalLight position={[5, 9, 6]} intensity={2.45} color="#fff7ed" castShadow />
+      <directionalLight position={[-6, 5, -4]} intensity={1.15} color="#7dd3fc" />
       <pointLight position={[-4, 3, -3]} intensity={1.8} color="#38bdf8" />
 
       <Environment resolution={64} frames={1}>
         <Lightformer
           form="rect"
-          intensity={2.2}
+          intensity={2.4}
           color="#bae6fd"
           position={[-4, 5, 4]}
           scale={[10, 6, 1]}
         />
         <Lightformer
           form="ring"
-          intensity={1.6}
+          intensity={1.8}
           color="#fbbf24"
           position={[4, 4, -4]}
           scale={8}
@@ -90,8 +94,8 @@ export function GarageShowcaseStage({ characterModelPath, kartModelPath }: Showc
         <meshStandardMaterial color="#0f172a" roughness={0.35} metalness={0.55} />
       </mesh>
 
-      {/* Illuminated Rotating Pedestal */}
-      <group ref={turntableRef}>
+      {/* Illuminated Rotating Pedestal (starts angled 3/4 front toward camera so driver face & nose shine) */}
+      <group ref={turntableRef} rotation={[0, Math.PI * 0.78, 0]}>
         <mesh position={[0, -0.1, 0]} receiveShadow>
           <cylinderGeometry args={[2.35, 2.5, 0.2, 40]} />
           <meshStandardMaterial color="#1e293b" metalness={0.75} roughness={0.28} />
@@ -123,6 +127,7 @@ const CONFETTI_COLORS = ['#fbbf24', '#38bdf8', '#ec4899', '#34d399', '#a78bfa'];
 export function PodiumCeremonyStage({ entries }: { entries: readonly PodiumRacerStageEntry[] }) {
   const confettiRef = useRef<THREE.InstancedMesh | null>(null);
   const dummyRef = useRef<THREE.Object3D | null>(null);
+  const podiumCamTargetRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 3.2, 8.2));
   const particlesRef = useRef<
     Array<{ x: number; y: number; z: number; fall: number; spin: number; phase: number }>
   >([]);
@@ -155,11 +160,14 @@ export function PodiumCeremonyStage({ entries }: { entries: readonly PodiumRacer
     const dt = Math.min(delta, 0.05);
     const t = state.clock.elapsedTime;
     const camX = Math.sin(t * 0.25) * 2.2;
-    const targetCam = new THREE.Vector3(camX, 3.2, 8.2);
-    state.camera.position.lerp(targetCam, 1 - Math.exp(-3.5 * dt));
+    podiumCamTargetRef.current.set(camX, 3.2, 8.2);
+    state.camera.position.lerp(podiumCamTargetRef.current, 1 - Math.exp(-3.5 * dt));
     const persp = state.camera as THREE.PerspectiveCamera;
-    persp.fov += (48 - persp.fov) * (1 - Math.exp(-4 * dt));
-    persp.updateProjectionMatrix();
+    const nextFov = persp.fov + (48 - persp.fov) * (1 - Math.exp(-4 * dt));
+    if (Math.abs(nextFov - persp.fov) > 0.01) {
+      persp.fov = nextFov;
+      persp.updateProjectionMatrix();
+    }
     state.camera.lookAt(0, 1.85, 0);
 
     const mesh = confettiRef.current;

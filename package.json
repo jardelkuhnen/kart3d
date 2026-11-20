@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "validate:assets": "tsx scripts/validate-assets.ts",
-    "assets:build": "tsx scripts/build-assets.ts"
+    "assets:build": "tsx scripts/build-assets.ts",
+    "assets:blender": "/Applications/Blender.app/Contents/MacOS/Blender --background --python scripts/blender/build_items_and_props.py && /Applications/Blender.app/Contents/MacOS/Blender --background --python scripts/blender/build_karts.py && /Applications/Blender.app/Contents/MacOS/Blender --background --python scripts/blender/build_characters.py && tsx scripts/export-track-layouts.ts && /Applications/Blender.app/Contents/MacOS/Blender --background --python scripts/blender/build_tracks.py && rm -rf scripts/blender/.cache && tsx scripts/sync-manifest.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
