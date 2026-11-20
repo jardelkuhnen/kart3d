@@ -38,6 +38,8 @@ interface ParticlePool {
   life: Float32Array;
   maxLife: Float32Array;
   size: Float32Array;
+  wasAlive: Uint8Array;
+  spawnedThisFrame: boolean;
   colorBuf: Float32Array;
   uvOffsets: Float32Array;
   dummy: THREE.Object3D;
@@ -61,6 +63,8 @@ function createPool(capacity: number): ParticlePool {
     life: new Float32Array(capacity),
     maxLife: new Float32Array(capacity),
     size: new Float32Array(capacity),
+    wasAlive: new Uint8Array(capacity),
+    spawnedThisFrame: false,
     colorBuf: new Float32Array(capacity * 3),
     uvOffsets: new Float32Array(capacity * 2),
     dummy: new THREE.Object3D(),
@@ -96,6 +100,8 @@ function spawnParticle(
   pool.life[idx] = ttl;
   pool.maxLife[idx] = ttl;
   pool.size[idx] = size;
+  pool.wasAlive[idx] = 1;
+  pool.spawnedThisFrame = true;
 
   pool.color.set(hex);
   const cBase = idx * 3;
@@ -150,11 +156,13 @@ export function RaceVfxSystem({
   quality,
   simRef,
   paused,
+  reducedMotion = false,
 }: {
   trackId: TrackId;
   quality: QualityLevel;
   simRef: React.MutableRefObject<RaceSimulation>;
   paused: boolean;
+  reducedMotion?: boolean;
 }) {
   const preset = QUALITY_PRESETS[quality];
   const weather = BIOME_WEATHER_CONFIG[trackId];
@@ -217,11 +225,13 @@ export function RaceVfxSystem({
     const speedNorm = Math.max(0, (Math.abs(pSim.forwardSpeed) - 24) / 18);
     const boostBonus = pSim.boostTimer > 0 ? 0.85 : 0;
     speedIntensityRef.current =
-      preset.enableSpeedLines && !paused && sim.phase === 'racing'
+      preset.enableSpeedLines && !reducedMotion && !paused && sim.phase === 'racing'
         ? Math.min(1, Math.max(speedNorm * 0.65, boostBonus))
         : 0;
 
     if (!pool || !mesh || !cellAttr || !colorAttr || paused) return;
+
+    pool.spawnedThisFrame = false;
 
     const surfStyle = SURFACE_PARTICLE_STYLE[pSim.surface];
     const movingFast = Math.abs(pSim.forwardSpeed) > 10 && pSim.grounded;
@@ -342,18 +352,33 @@ export function RaceVfxSystem({
       );
     }
 
-    // 4. Advance active pooled particles in-place
+    // 4. Advance active pooled particles in-place; skip idle dead slots & avoid unnecessary GPU uploads
     const { dummy } = pool;
+    let matrixDirty = false;
     for (let i = 0; i < pool.capacity; i += 1) {
       if (pool.life[i] <= 0) {
-        dummy.position.set(0, -999, 0);
-        dummy.scale.setScalar(0.0001);
-        dummy.updateMatrix();
-        mesh.setMatrixAt(i, dummy.matrix);
+        if (pool.wasAlive[i]) {
+          pool.wasAlive[i] = 0;
+          dummy.position.set(0, -999, 0);
+          dummy.scale.setScalar(0.0001);
+          dummy.updateMatrix();
+          mesh.setMatrixAt(i, dummy.matrix);
+          matrixDirty = true;
+        }
         continue;
       }
 
       pool.life[i] -= dt;
+      if (pool.life[i] <= 0) {
+        pool.wasAlive[i] = 0;
+        dummy.position.set(0, -999, 0);
+        dummy.scale.setScalar(0.0001);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+        matrixDirty = true;
+        continue;
+      }
+
       pool.px[i] += pool.vx[i] * dt;
       pool.py[i] += pool.vy[i] * dt;
       pool.pz[i] += pool.vz[i] * dt;
@@ -365,11 +390,16 @@ export function RaceVfxSystem({
       dummy.quaternion.copy(state.camera.quaternion);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
+      matrixDirty = true;
     }
 
-    mesh.instanceMatrix.needsUpdate = true;
-    cellAttr.needsUpdate = true;
-    colorAttr.needsUpdate = true;
+    if (matrixDirty) {
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    if (pool.spawnedThisFrame) {
+      cellAttr.needsUpdate = true;
+      colorAttr.needsUpdate = true;
+    }
   });
 
   return (
@@ -383,7 +413,9 @@ export function RaceVfxSystem({
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </instancedMesh>
 
-      {preset.enableSpeedLines && <SpeedLinesOverlay intensityRef={speedIntensityRef} />}
+      {preset.enableSpeedLines && !reducedMotion && (
+        <SpeedLinesOverlay intensityRef={speedIntensityRef} />
+      )}
     </group>
   );
 }

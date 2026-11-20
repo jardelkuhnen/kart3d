@@ -3,6 +3,11 @@ import path from 'node:path';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { validateManifestSchema } from '../game/core/assetLoader';
+import {
+  buildOptimizedTrackGroup,
+  extractInstancedPrimitives,
+  getOrBuildBakedLodGeometry,
+} from '../game/core/sceneOptimizer';
 import { AVAILABLE_TRACK_IDS } from '../game/tracks/registry';
 import {
   BIOME_WEATHER_CONFIG,
@@ -110,5 +115,34 @@ describe('Slice 7 — VFX Pool Config, Quality Presets & Speed Lines Shader', ()
     // Standard 8-byte PNG signature
     expect(Array.from(bytes.subarray(0, 8))).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
     expect(bytes.length).toBeGreaterThan(1024);
+  });
+
+  it('batches static track meshes, bakes single-draw-call LOD geometry, and extracts instanced prop specs (MÉDIO-05)', () => {
+    const root = new THREE.Group();
+    const sharedMat = new THREE.MeshStandardMaterial({ color: '#ff8800' });
+    for (let i = 0; i < 12; i += 1) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), sharedMat);
+      m.name = `House_${i}`;
+      m.position.set(i * 2, 0, 0);
+      root.add(m);
+    }
+    const boat = new THREE.Group();
+    boat.name = 'Boat_0';
+    boat.add(new THREE.Mesh(new THREE.BoxGeometry(2, 1, 3), sharedMat));
+    root.add(boat);
+
+    const opt = buildOptimizedTrackGroup(root, ['House_'], 72);
+    expect(opt.originalMeshCount).toBe(12);
+    expect(opt.drawCallCount).toBe(1);
+    expect(opt.boats).toHaveLength(1);
+    opt.dispose();
+
+    const lodGeo = getOrBuildBakedLodGeometry(root);
+    expect(lodGeo).not.toBeNull();
+    expect(lodGeo?.attributes.color).toBeDefined();
+
+    const specs = extractInstancedPrimitives(root);
+    expect(specs.length).toBe(13);
+    sharedMat.dispose();
   });
 });

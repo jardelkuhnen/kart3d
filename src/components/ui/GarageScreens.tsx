@@ -4,8 +4,9 @@ import { KARTS, getKartById } from '../../data/karts';
 import { CUPS, getTracksByCup } from '../../data/tracks';
 import { resolveAssetPath } from '../../game/core/assetLoader';
 import { publicUrl } from '../../game/core/publicUrl';
-import { DIFFICULTY_CONFIG } from '../../game/core/constants';
+import { DIFFICULTY_CONFIG, SURFACE_PROPERTIES } from '../../game/core/constants';
 import type { Difficulty, KartAttributes } from '../../game/core/types';
+import { formatDrivingBindingsSummary } from '../../game/input/keyLabels';
 import { formatRaceTimeMs } from '../../game/racing/raceManager';
 import { isCupUnlocked } from '../../game/save/saveManager';
 
@@ -408,7 +409,7 @@ export function TrackSelectScreen({
 
         <p className="kl-subtitle">
           Selecionada: <strong>{currentTrack?.name}</strong> — Superfícies:{' '}
-          {currentTrack?.availableSurfaces.join(', ')}
+          {currentTrack?.availableSurfaces.map((s) => SURFACE_PROPERTIES[s].label).join(', ')}
         </p>
 
         <div className="kl-screen-footer">
@@ -452,6 +453,7 @@ export function DifficultySelectScreen({
   const selectedKartId = useGameStore((s) => s.selectedKartId);
   const selectedCupId = useGameStore((s) => s.selectedCupId);
   const selectedTrackId = useGameStore((s) => s.selectedTrackId);
+  const bindings = useGameStore((s) => s.settings.bindings);
   const setDifficulty = useGameStore((s) => s.setDifficulty);
   const setScreen = useGameStore((s) => s.setScreen);
   const startNewChampionship = useGameStore((s) => s.startNewChampionship);
@@ -462,6 +464,7 @@ export function DifficultySelectScreen({
   const tracks = getTracksByCup(selectedCupId);
   const track = tracks.find((t) => t.id === selectedTrackId) ?? tracks[0];
   const isSolo = mode === 'time-trial' || mode === 'practice';
+  const keySummary = formatDrivingBindingsSummary(bindings);
 
   return (
     <section className="kl-screen-center" aria-label="Configuração de Dificuldade">
@@ -518,10 +521,10 @@ export function DifficultySelectScreen({
         )}
 
         <div className="kl-controls-summary">
-          <span>WASD / Setas: Dirigir</span>
-          <span>ESPAÇO: Drift 3 Níveis</span>
-          <span>SHIFT: Usar Item</span>
-          <span>R: Recuperar</span>
+          <span>{keySummary.drive}: Dirigir</span>
+          <span>{keySummary.drift}: Drift 3 Níveis</span>
+          <span>{keySummary.useItem}: Usar Item</span>
+          <span>{keySummary.recover}: Recuperar</span>
         </div>
 
         <div className="kl-screen-footer">

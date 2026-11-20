@@ -184,6 +184,7 @@ export interface TrackLayoutDef {
 
 export interface TrackPointQuery {
   nearestSample: TrackSplineSample;
+  surfaceSample?: TrackSplineSample;
   lateralOffset: number;
   distanceAlongTrack: number;
   groundHeight: number;
@@ -390,13 +391,13 @@ export function projectPointOntoTrack(
   // Check if the racer is currently on an explicit shortcut path
   for (const shortcut of layout.shortcuts) {
     const sc = findNearestSample(shortcut.samples, x, z, yHint);
-    if (Math.abs(sc.lateral) <= shortcut.halfWidth + 1.2 && sc.distSq < main.distSq + 25) {
+    if (Math.abs(sc.lateral) <= shortcut.halfWidth + 2.6 && sc.distSq < main.distSq + 25) {
       onShortcut = true;
       activeSample = sc.sample;
       lateralOffset = sc.lateral;
       groundHeight = sc.sample.point.y;
       surface = shortcut.surface;
-      wallDistance = shortcut.halfWidth + 2.4;
+      wallDistance = shortcut.halfWidth + 1.8;
       break;
     }
   }
@@ -461,6 +462,7 @@ export function projectPointOntoTrack(
 
   return {
     nearestSample: main.sample,
+    surfaceSample: activeSample,
     lateralOffset,
     distanceAlongTrack: main.sample.s,
     groundHeight,

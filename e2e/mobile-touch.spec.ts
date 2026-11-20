@@ -2,7 +2,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
 
-const SCREENSHOTS_DIR = path.resolve(process.cwd(), 'docs/screenshots');
+const SCREENSHOTS_DIR =
+  process.env.UPDATE_SCREENSHOTS === '1'
+    ? path.resolve(process.cwd(), 'docs/screenshots')
+    : path.resolve(process.cwd(), 'test-results/screenshots');
 
 test.use({
   viewport: { width: 844, height: 390 },
@@ -58,7 +61,7 @@ test.describe('KART LEGENDS 3D — Slice 8 Mobile Touch, Viewport, iOS PWA & Erg
     });
     expect(mobileEnv.viewportMeta).toContain('viewport-fit=cover');
     expect(mobileEnv.iosCapable).toBe('yes');
-    expect(mobileEnv.manifestHref).toBe('/manifest.webmanifest');
+    expect(mobileEnv.manifestHref).toMatch(/\/manifest\.webmanifest$/);
     expect(mobileEnv.touchAction).toBe('none');
     expect(mobileEnv.userSelect).toBe('none');
 
@@ -88,6 +91,60 @@ test.describe('KART LEGENDS 3D — Slice 8 Mobile Touch, Viewport, iOS PWA & Erg
     await expect(page.getByTestId('touch-btn-brake')).toBeVisible();
     await expect(page.getByTestId('touch-btn-recover')).toBeVisible();
     await expect(page.getByTestId('touch-auto-accel-badge')).toBeVisible();
+    // Topbar Recover button is hidden when touch controls are visible (ALTO-05)
+    await expect(page.getByTestId('hud-recover-btn')).toHaveCount(0);
+
+    // Verify ZERO HUD/Touch overlaps across landscape 844x390, compact landscape 667x375, and portrait 390x844 (ALTO-05)
+    const checkNoOverlap = async (label: string) => {
+      const result = await page.evaluate(() => {
+        const rectOf = (sel: string) => {
+          const el = document.querySelector(sel);
+          if (!el) return null;
+          const r = el.getBoundingClientRect();
+          return r.width > 0 && r.height > 0
+            ? { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width }
+            : null;
+        };
+        const intersects = (
+          a: { left: number; right: number; top: number; bottom: number } | null,
+          b: { left: number; right: number; top: number; bottom: number } | null,
+        ) => {
+          if (!a || !b) return false;
+          return a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1;
+        };
+        const steer = rectOf('[data-testid="touch-steer-pad"]');
+        const actions = rectOf('[data-testid="touch-action-cluster"]');
+        const badge = rectOf('[data-testid="hud-race-badge"]');
+        const telemetry = rectOf('[data-testid="hud-telemetry-cluster"]');
+        const itemSlot = rectOf('[data-testid="item-slot"]');
+        const portraitHint = rectOf('.kl-portrait-hint');
+        const raceActions = rectOf('.kl-race-actions');
+        return {
+          steerVsActions: intersects(steer, actions),
+          telemetryVsActions: intersects(telemetry, actions),
+          badgeVsSteer: intersects(badge, steer),
+          badgeVsTelemetry: intersects(badge, telemetry),
+          hintVsItem: intersects(portraitHint, itemSlot),
+          actionsOverflowRight: raceActions ? raceActions.right > window.innerWidth + 2 : false,
+        };
+      });
+      expect(result.steerVsActions, `${label}: steerVsActions`).toBe(false);
+      expect(result.telemetryVsActions, `${label}: telemetryVsActions`).toBe(false);
+      expect(result.badgeVsSteer, `${label}: badgeVsSteer`).toBe(false);
+      expect(result.badgeVsTelemetry, `${label}: badgeVsTelemetry`).toBe(false);
+      expect(result.hintVsItem, `${label}: hintVsItem`).toBe(false);
+      expect(result.actionsOverflowRight, `${label}: actionsOverflowRight`).toBe(false);
+    };
+
+    await checkNoOverlap('landscape 844x390');
+    await page.setViewportSize({ width: 667, height: 375 });
+    await page.waitForTimeout(100);
+    await checkNoOverlap('compact landscape 667x375');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(100);
+    await checkNoOverlap('portrait 390x844');
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.waitForTimeout(100);
 
     // Auto-accelerate launches the kart past 35 km/h without any keyboard presses
     await expect

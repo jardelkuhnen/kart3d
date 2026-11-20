@@ -9,22 +9,32 @@ export interface RaceCameraProps {
   layout: TrackLayoutDef;
   poseRef: React.MutableRefObject<LiveKartPose>;
   trackerRef: React.MutableRefObject<RaceProgressTracker>;
+  resetToken?: number;
 }
 
-export function RaceCamera({ layout, poseRef, trackerRef }: RaceCameraProps) {
+export function RaceCamera({ layout, poseRef, trackerRef, resetToken = 0 }: RaceCameraProps) {
   const smoothPosRef = useRef(new THREE.Vector3(0, 6, 52));
   const smoothLookRef = useRef(new THREE.Vector3(0, 1.5, 34));
+  const targetPosRef = useRef(new THREE.Vector3());
+  const targetLookRef = useRef(new THREE.Vector3());
   const introTimeRef = useRef(0);
   const finishAngleRef = useRef(0);
   const prevPhaseRef = useRef<RacePhase>('intro');
+  const prevResetTokenRef = useRef(resetToken);
 
   useFrame((state, rawDelta) => {
     const dt = Math.min(rawDelta, 0.05);
     const pose = poseRef.current;
     const phase = trackerRef.current.phase;
-    const justEnteredCountdown = phase === 'countdown' && prevPhaseRef.current !== 'countdown';
+    const tokenChanged = resetToken !== prevResetTokenRef.current;
+    prevResetTokenRef.current = resetToken;
+    const justEnteredCountdown =
+      phase === 'countdown' && (prevPhaseRef.current !== 'countdown' || tokenChanged);
     prevPhaseRef.current = phase;
     const perspCam = state.camera as THREE.PerspectiveCamera;
+    const targetPos = targetPosRef.current;
+    const targetLook = targetLookRef.current;
+    let nextFov: number;
 
     if (phase === 'intro') {
       introTimeRef.current = (introTimeRef.current + dt * 0.14) % 1;
@@ -34,24 +44,20 @@ export function RaceCamera({ layout, poseRef, trackerRef }: RaceCameraProps) {
         (introTimeRef.current + 0.18) % 1,
         true,
       );
-      smoothPosRef.current.lerp(
-        new THREE.Vector3(camPt.x, camPt.y, camPt.z),
-        1 - Math.exp(-3.5 * dt),
-      );
-      smoothLookRef.current.lerp(
-        new THREE.Vector3(lookPt.x * 0.5, 2.5, lookPt.z * 0.5),
-        1 - Math.exp(-3.5 * dt),
-      );
-      perspCam.fov += (54 - perspCam.fov) * (1 - Math.exp(-4 * dt));
+      targetPos.set(camPt.x, camPt.y, camPt.z);
+      targetLook.set(lookPt.x * 0.5, 2.5, lookPt.z * 0.5);
+      smoothPosRef.current.lerp(targetPos, 1 - Math.exp(-3.5 * dt));
+      smoothLookRef.current.lerp(targetLook, 1 - Math.exp(-3.5 * dt));
+      nextFov = perspCam.fov + (54 - perspCam.fov) * (1 - Math.exp(-4 * dt));
     } else if (phase === 'finished') {
       finishAngleRef.current += dt * 0.85;
       const orbitX = pose.x + Math.sin(finishAngleRef.current) * 6.5;
       const orbitZ = pose.z + Math.cos(finishAngleRef.current) * 6.5;
-      const targetPos = new THREE.Vector3(orbitX, pose.y + 2.4, orbitZ);
-      const targetLook = new THREE.Vector3(pose.x, pose.y + 1.1, pose.z);
+      targetPos.set(orbitX, pose.y + 2.4, orbitZ);
+      targetLook.set(pose.x, pose.y + 1.1, pose.z);
       smoothPosRef.current.lerp(targetPos, 1 - Math.exp(-4 * dt));
       smoothLookRef.current.lerp(targetLook, 1 - Math.exp(-5 * dt));
-      perspCam.fov += (52 - perspCam.fov) * (1 - Math.exp(-5 * dt));
+      nextFov = perspCam.fov + (52 - perspCam.fov) * (1 - Math.exp(-5 * dt));
     } else {
       const speedNorm = Math.min(1, Math.max(0, pose.forwardSpeed / 36));
       const cameraYaw = pose.yaw + pose.visualSlipYaw * 0.35;
@@ -68,12 +74,8 @@ export function RaceCamera({ layout, poseRef, trackerRef }: RaceCameraProps) {
       const rawCamZ = pose.z - forwardZ * followDist;
       const rawCamY = Math.max(pose.groundHeight + 1.4, pose.y + followHeight);
 
-      const targetPos = new THREE.Vector3(rawCamX, rawCamY, rawCamZ);
-      const targetLook = new THREE.Vector3(
-        pose.x + forwardX * 6.0,
-        pose.y + 1.35,
-        pose.z + forwardZ * 6.0,
-      );
+      targetPos.set(rawCamX, rawCamY, rawCamZ);
+      targetLook.set(pose.x + forwardX * 6.0, pose.y + 1.35, pose.z + forwardZ * 6.0);
 
       if (justEnteredCountdown) {
         smoothPosRef.current.copy(targetPos);
@@ -84,10 +86,13 @@ export function RaceCamera({ layout, poseRef, trackerRef }: RaceCameraProps) {
       }
 
       const targetFov = pose.boostActive ? 68 : 56 + speedNorm * 6;
-      perspCam.fov += (targetFov - perspCam.fov) * (1 - Math.exp(-7 * dt));
+      nextFov = perspCam.fov + (targetFov - perspCam.fov) * (1 - Math.exp(-7 * dt));
     }
 
-    perspCam.updateProjectionMatrix();
+    if (Math.abs(nextFov - perspCam.fov) > 0.01) {
+      perspCam.fov = nextFov;
+      perspCam.updateProjectionMatrix();
+    }
     perspCam.position.copy(smoothPosRef.current);
     perspCam.lookAt(smoothLookRef.current);
 

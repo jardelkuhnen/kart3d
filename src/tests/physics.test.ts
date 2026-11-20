@@ -386,4 +386,47 @@ describe('Kart Arcade Physics & 3-Tier Drift System', () => {
       }
     }
   });
+
+  it('applies lateral wall containment on shortcuts and clears hitTimer on recovery (MÉDIO-04)', () => {
+    const profile = computeKartPhysicsProfile(getKartById('trilha-raposa'));
+    const sc = PORTO_DAS_LANTERNAS_LAYOUT.shortcuts[0];
+    const mid = sc.samples[Math.floor(sc.samples.length * 0.5)];
+    const edgePos = offsetPointOnTrack(mid, sc.halfWidth + 0.5, 0);
+    const state = createInitialKartState(
+      edgePos.x,
+      edgePos.y,
+      edgePos.z,
+      yawFromTangent(mid.tangent) - 0.65,
+    );
+    state.forwardSpeed = 24;
+    state.vx = -Math.sin(state.yaw) * state.forwardSpeed;
+    state.vz = -Math.cos(state.yaw) * state.forwardSpeed;
+
+    let hitShortcutWall = false;
+    for (let i = 0; i < 25; i += 1) {
+      const q = projectPointOntoTrack(PORTO_DAS_LANTERNAS_LAYOUT, state.x, state.z, state.y);
+      stepKartSimulation(
+        state,
+        { ...NO_INPUT, throttle: 1 },
+        q,
+        profile,
+        PORTO_DAS_LANTERNAS_LAYOUT,
+        FIXED_TIMESTEP,
+      );
+      if (state.wallCollisionThisStep) hitShortcutWall = true;
+    }
+    expect(hitShortcutWall).toBe(true);
+
+    // Recovery must clear lingering hitTimer
+    state.hitTimer = 0.9;
+    stepKartSimulation(
+      state,
+      { ...NO_INPUT, recover: true },
+      makeQuery('asphalt'),
+      profile,
+      PORTO_DAS_LANTERNAS_LAYOUT,
+      FIXED_TIMESTEP,
+    );
+    expect(state.hitTimer).toBe(0);
+  });
 });

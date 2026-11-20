@@ -206,4 +206,108 @@ describe('8-Racer Physics AI, Collisions & Standings', () => {
       expect(Math.abs(scInput.steer), `${layout.id} aligned on shortcut`).toBeLessThan(0.6);
     }
   });
+
+  it('separates identically positioned karts, clamps wall collisions, and applies moving-hazard hit cooldown (MÉDIO-01)', () => {
+    const sim = new RaceSimulation(
+      TRACK_LAYOUTS['cidade-neon'],
+      'nilo',
+      'trilha-raposa',
+      'normal',
+      3,
+      true,
+    );
+    sim.tracker.phase = 'racing';
+
+    // 1. Exact same coordinates (dist === 0) must still separate deterministically
+    const s0 = TRACK_LAYOUTS['cidade-neon'].samples[5];
+    sim.racers[0].sim.x = s0.point.x;
+    sim.racers[0].sim.y = s0.point.y;
+    sim.racers[0].sim.z = s0.point.z;
+    sim.racers[1].sim.x = s0.point.x;
+    sim.racers[1].sim.y = s0.point.y;
+    sim.racers[1].sim.z = s0.point.z;
+
+    sim.step(FIXED_TIMESTEP, {
+      throttle: 0,
+      brake: 0,
+      steer: 0,
+      drift: false,
+      useItem: false,
+      recover: false,
+    });
+    const sep = Math.hypot(
+      sim.racers[1].sim.x - sim.racers[0].sim.x,
+      sim.racers[1].sim.z - sim.racers[0].sim.z,
+    );
+    expect(sep).toBeGreaterThan(1.5);
+
+    // 2. Moving hazard hit triggers cooldown so rapid back-to-back frames do not repeatedly slash speed
+    const mh = TRACK_LAYOUTS['cidade-neon'].movingHazards[0];
+    sim.player.sim.x = mh.position.x;
+    sim.player.sim.y = mh.position.y;
+    sim.player.sim.z = mh.position.z;
+    sim.player.sim.forwardSpeed = 30;
+    sim.player.sim.hazardHitCooldown = 0;
+
+    const ev1 = sim.step(FIXED_TIMESTEP, {
+      throttle: 0,
+      brake: 0,
+      steer: 0,
+      drift: false,
+      useItem: false,
+      recover: false,
+    });
+    expect(ev1.playerCollision).toBe(true);
+    expect(sim.player.sim.hazardHitCooldown).toBeGreaterThan(0.3);
+
+    // Put player back on hazard next frame: cooldown must suppress duplicate collision burst
+    sim.player.sim.x = mh.position.x;
+    sim.player.sim.z = mh.position.z;
+    const speedAfterFirst = sim.player.sim.forwardSpeed;
+    const ev2 = sim.step(FIXED_TIMESTEP, {
+      throttle: 0,
+      brake: 0,
+      steer: 0,
+      drift: false,
+      useItem: false,
+      recover: false,
+    });
+    expect(ev2.playerCollision).toBe(false);
+    expect(sim.player.sim.forwardSpeed).toBeGreaterThanOrEqual(speedAfterFirst * 0.85);
+  });
+
+  it('caps Easy AI straight-line top speed strictly below Hard AI (MÉDIO-02)', () => {
+    const runStraight = (throttle: number) => {
+      const sim = new RaceSimulation(
+        PORTO_DAS_LANTERNAS_LAYOUT,
+        'nilo',
+        'trilha-raposa',
+        'normal',
+        3,
+        true,
+        'practice',
+      );
+      sim.tracker.phase = 'racing';
+      const s0 = PORTO_DAS_LANTERNAS_LAYOUT.samples[0];
+      sim.player.sim.x = s0.point.x;
+      sim.player.sim.y = s0.point.y;
+      sim.player.sim.z = s0.point.z;
+      sim.player.sim.yaw = yawFromTangent(s0.tangent);
+      for (let i = 0; i < 240; i += 1) {
+        sim.step(FIXED_TIMESTEP, {
+          throttle,
+          brake: 0,
+          steer: 0,
+          drift: false,
+          useItem: false,
+          recover: false,
+        });
+      }
+      return sim.player.sim.forwardSpeed;
+    };
+
+    const easyTop = runStraight(0.84);
+    const hardTop = runStraight(1.0);
+    expect(hardTop).toBeGreaterThan(easyTop + 2.5);
+  });
 });

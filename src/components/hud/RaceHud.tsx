@@ -1,7 +1,10 @@
+import { useEffect, useRef } from 'react';
+import { useGameStore } from '../../app/store';
 import { getItemById } from '../../data/items';
 import { DRIFT_TIERS, SURFACE_PROPERTIES } from '../../game/core/constants';
 import type { AssetManifest, GameMode, TrackId } from '../../game/core/types';
 import type { InputManager } from '../../game/input/inputManager';
+import { formatPrimaryKey } from '../../game/input/keyLabels';
 import { resolveAssetPath } from '../../game/core/assetLoader';
 import { formatRaceTimeMs, type RacePhase } from '../../game/racing/raceManager';
 import type { FullHudSnapshot } from '../../game/racing/raceSimulation';
@@ -60,6 +63,38 @@ export function RaceHud({
   onOpenSettings,
   onExitToMenu,
 }: RaceHudProps) {
+  const bindings = useGameStore((s) => s.settings.bindings);
+  const pauseModalRef = useRef<HTMLElement | null>(null);
+  const resumeBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!paused) return undefined;
+    resumeBtnRef.current?.focus();
+    const modal = pauseModalRef.current;
+    const handleTabTrap = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab' || !modal) return;
+      const focusable = Array.from(
+        modal.querySelectorAll<HTMLElement>('button:not([disabled]), [tabindex]:not([tabindex="-1"])'),
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener('keydown', handleTabTrap);
+    return () => window.removeEventListener('keydown', handleTabTrap);
+  }, [paused]);
+
+  const useItemKeyLabel = formatPrimaryKey(bindings.useItem);
+  const recoverKeyLabel = formatPrimaryKey(bindings.recover);
+  const pauseKeyLabel = formatPrimaryKey(bindings.pause);
+
   const trackLayout = getTrackLayout(selectedTrackId);
   const trackTheme = getTrackVisualTheme(selectedTrackId);
   const isSolo = mode === 'time-trial' || mode === 'practice';
@@ -157,7 +192,11 @@ export function RaceHud({
                   height={54}
                 />
                 <span className="kl-item-label">
-                  {telemetry.rouletteActive ? 'SORTEANDO...' : `${displayItemDef.name} (SHIFT)`}
+                  {telemetry.rouletteActive
+                    ? 'SORTEANDO...'
+                    : touchControlsVisible || !useItemKeyLabel
+                      ? displayItemDef.name
+                      : `${displayItemDef.name} (${useItemKeyLabel})`}
                 </span>
               </>
             ) : (
@@ -176,7 +215,7 @@ export function RaceHud({
               disabled={paused || phase !== 'racing'}
               onClick={onRecoverKart}
             >
-              Recuperar (R)
+              Recuperar{recoverKeyLabel ? ` (${recoverKeyLabel})` : ''}
             </button>
           )}
           <button
@@ -199,13 +238,13 @@ export function RaceHud({
             className="kl-btn kl-btn-secondary kl-action-pause"
             onClick={onTogglePause}
           >
-            {touchControlsVisible
+            {touchControlsVisible || !pauseKeyLabel
               ? paused
                 ? 'Retomar'
                 : 'Pausar'
               : paused
-                ? 'Retomar (ESC)'
-                : 'Pausar (ESC)'}
+                ? `Retomar (${pauseKeyLabel})`
+                : `Pausar (${pauseKeyLabel})`}
           </button>
           {mode === 'practice' && (
             <button
@@ -241,7 +280,13 @@ export function RaceHud({
         )}
 
         {paused && (
-          <section className="kl-panel kl-modal-card" role="dialog" aria-label="Jogo Pausado">
+          <section
+            ref={pauseModalRef}
+            className="kl-panel kl-modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Jogo Pausado"
+          >
             <h2 className="kl-title">CORRIDA PAUSADA</h2>
             <p className="kl-subtitle">
               {trackName} —{' '}
@@ -251,7 +296,7 @@ export function RaceHud({
               {!isSolo && ` · ${telemetry.rank}º lugar`}
             </p>
             <div className="kl-modal-actions">
-              <button type="button" className="kl-btn" onClick={onTogglePause}>
+              <button ref={resumeBtnRef} type="button" className="kl-btn" onClick={onTogglePause}>
                 Continuar
               </button>
               <button type="button" className="kl-btn kl-btn-secondary" onClick={onRestartRace}>

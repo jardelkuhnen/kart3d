@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeSelectionsForMode } from '../app/store';
+import { sanitizeSelectionsForMode, useGameStore } from '../app/store';
 import { createInitialSaveData } from '../game/core/constants';
 import {
   createChampionship,
@@ -254,5 +254,19 @@ describe('Slice 6 — Save Persistence, Corruption Recovery, Unlocks, Championsh
       expect(sanitized.selectedCupId).toBe('aurora');
       expect(freshSave.unlockedTracks).toContain(sanitized.selectedTrackId);
     }
+
+    // Store integration: setMode('practice') must actually update mode and allow locked items,
+    // then setMode('quick-race') must sanitize back to unlocked items
+    const store = useGameStore.getState();
+    store.setMode('practice');
+    expect(useGameStore.getState().mode).toBe('practice');
+    useGameStore.getState().setSelectedCharacterId('zera');
+    useGameStore.getState().setSelectedKartId('lamina-glacial');
+    useGameStore.getState().setSelectedCupId('eclipse');
+    useGameStore.getState().setSelectedTrackId('fortaleza-tempestade');
+    useGameStore.getState().setMode('quick-race');
+    expect(useGameStore.getState().mode).toBe('quick-race');
+    expect(useGameStore.getState().selectedCharacterId).not.toBe('zera');
+    expect(useGameStore.getState().selectedCupId).toBe('aurora');
   });
 });

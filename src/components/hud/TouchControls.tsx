@@ -152,8 +152,9 @@ export function TouchControls({
       inputManager.setVirtualInput({ drift: active });
     } else if (action === 'useItem') {
       inputManager.setVirtualInput({ useItem: active });
-    } else if (action === 'recover') {
-      inputManager.setVirtualInput({ recover: active });
+    } else if (action === 'recover' && active) {
+      // One-shot pulse prevents repeated recovery triggers if finger stays pressed > 0.55s (MÉDIO-07)
+      inputManager.triggerRecoverOnce();
     }
   };
 
@@ -194,11 +195,8 @@ export function TouchControls({
         ref={padRef}
         className={`kl-touch-steer-pad ${steerUi !== 0 ? 'engaged' : ''}`}
         data-testid="touch-steer-pad"
-        role="slider"
+        role="group"
         aria-label="Direção Touch"
-        aria-valuemin={-100}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(steerUi * 100)}
         onPointerDown={handleSteerDown}
         onPointerMove={handleSteerMove}
         onPointerUp={handleSteerUp}

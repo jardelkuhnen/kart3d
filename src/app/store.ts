@@ -43,7 +43,12 @@ export function sanitizeSelectionsForMode(
   selectedTrackId: TrackId;
 } {
   if (mode === 'practice') {
-    return current;
+    return {
+      selectedCharacterId: current.selectedCharacterId,
+      selectedKartId: current.selectedKartId,
+      selectedCupId: current.selectedCupId,
+      selectedTrackId: current.selectedTrackId,
+    };
   }
 
   const selectedCharacterId = saveData.unlockedCharacters.includes(current.selectedCharacterId)
