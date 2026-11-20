@@ -269,4 +269,24 @@ describe('Slice 6 — Save Persistence, Corruption Recovery, Unlocks, Championsh
     expect(useGameStore.getState().selectedCharacterId).not.toBe('zera');
     expect(useGameStore.getState().selectedCupId).toBe('aurora');
   });
+
+  it('strips invalid or unknown TrackId entries when loading save data (BAIXO-04)', () => {
+    const storage = new MemoryStorage();
+    const tampered = {
+      ...createInitialSaveData(),
+      unlockedTracks: ['porto-das-lanternas', 'fake-track-999', 'unknown-circuit'],
+      bestLapTimesMs: { 'porto-das-lanternas': 28_100, 'fake-track-999': 12_000 },
+      bestRaceTimesMs: { 'porto-das-lanternas': 90_000, 'bogus-track': 45_000 },
+    };
+    storage.setItem(SAVE_STORAGE_KEY, JSON.stringify(tampered));
+
+    const loaded = loadSaveData(storage, false);
+    expect(loaded.recoveredFromCorruption).toBe(false);
+    expect(loaded.data.unlockedTracks).not.toContain('fake-track-999');
+    expect(loaded.data.unlockedTracks).not.toContain('unknown-circuit');
+    expect(loaded.data.bestLapTimesMs['porto-das-lanternas']).toBe(28_100);
+    expect((loaded.data.bestLapTimesMs as Record<string, number>)['fake-track-999']).toBeUndefined();
+    expect(loaded.data.bestRaceTimesMs['porto-das-lanternas']).toBe(90_000);
+    expect((loaded.data.bestRaceTimesMs as Record<string, number>)['bogus-track']).toBeUndefined();
+  });
 });

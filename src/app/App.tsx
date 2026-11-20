@@ -1,4 +1,4 @@
-import { Component, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Component, Suspense, lazy, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useGameStore } from './store';
 import { RaceHud } from '../components/hud/RaceHud';
 import {
@@ -30,7 +30,11 @@ import type { CharacterId } from '../game/core/types';
 import { InputManager } from '../game/input/inputManager';
 import type { RacePhase } from '../game/racing/raceManager';
 import type { FullHudSnapshot } from '../game/racing/raceSimulation';
-import { RaceScene, type RaceStageSync, type SceneStageMode } from '../scenes/RaceScene';
+import type { RaceStageSync, SceneStageMode } from '../scenes/RaceScene';
+
+const RaceScene = lazy(() =>
+  import('../scenes/RaceScene').then((mod) => ({ default: mod.RaceScene })),
+);
 
 interface ErrorBoundaryState {
   error: string | null;
@@ -349,19 +353,21 @@ export function App() {
       ) : (
         <>
           <SceneErrorBoundary>
-            <RaceScene
-              sceneMode={sceneMode}
-              phaseRequest={phaseRequest}
-              paused={paused || screen !== 'race'}
-              canTogglePause={screen === 'race' || screen === 'pause'}
-              resetToken={resetToken}
-              audioEngine={audioEngine}
-              inputManager={inputManager}
-              podiumRoster={podiumRoster}
-              onTelemetry={handleTelemetry}
-              onStageSync={setStageSync}
-              onPauseToggle={handleTogglePause}
-            />
+            <Suspense fallback={null}>
+              <RaceScene
+                sceneMode={sceneMode}
+                phaseRequest={phaseRequest}
+                paused={paused || screen !== 'race'}
+                canTogglePause={screen === 'race' || screen === 'pause'}
+                resetToken={resetToken}
+                audioEngine={audioEngine}
+                inputManager={inputManager}
+                podiumRoster={podiumRoster}
+                onTelemetry={handleTelemetry}
+                onStageSync={setStageSync}
+                onPauseToggle={handleTogglePause}
+              />
+            </Suspense>
           </SceneErrorBoundary>
 
           {screen === 'main-menu' && <MainMenuScreen onPlaySfx={playUiSfx} />}

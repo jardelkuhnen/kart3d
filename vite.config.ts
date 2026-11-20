@@ -28,12 +28,32 @@ export default defineConfig({
   },
   assetsInclude: ['**/*.glb', '**/*.gltf', '**/*.ogg', '**/*.mp3', '**/*.wav'],
   build: {
-    rollupOptions: {
+    chunkSizeWarningLimit: 800,
+    rolldownOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules/three/')) return 'three';
-          if (id.includes('node_modules/@react-three/')) return 'r3f';
-          return undefined;
+        codeSplitting: {
+          groups: [
+            {
+              name: 'three-core',
+              test: /[\\/]node_modules[\\/]three[\\/]/,
+              priority: 20,
+            },
+            {
+              name: 'three-stdlib',
+              test: /[\\/]node_modules[\\/]three-stdlib[\\/]/,
+              priority: 18,
+            },
+            {
+              name: 'r3f',
+              test: /[\\/]node_modules[\\/]@react-three[\\/]/,
+              priority: 15,
+            },
+            {
+              name: 'react-vendor',
+              test: /[\\/]node_modules[\\/](react|react-dom|scheduler|zustand|howler)[\\/]/,
+              priority: 10,
+            },
+          ],
         },
       },
     },

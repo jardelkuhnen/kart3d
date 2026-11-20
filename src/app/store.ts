@@ -110,7 +110,6 @@ export interface GameStoreState {
   selectedTrackId: TrackId;
   manifest: AssetManifest | null;
   manifestError: string | null;
-  physicsStepsObserved: number;
   settings: GameSettings;
   saveData: SaveDataV1;
   saveRecoveredNotice: boolean;
@@ -129,7 +128,6 @@ export interface GameStoreState {
   setSelectedTrackId: (id: TrackId) => void;
   setManifest: (manifest: AssetManifest) => void;
   setManifestError: (error: string | null) => void;
-  incrementPhysicsSteps: (steps: number) => void;
   updateSettings: (partial: Partial<GameSettings>) => void;
   startNewChampionship: () => void;
   advanceChampionshipRace: () => void;
@@ -161,7 +159,6 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
   selectedTrackId: 'porto-das-lanternas',
   manifest: null,
   manifestError: null,
-  physicsStepsObserved: 0,
   settings: structuredClone(initialLoad.data.settings),
   saveData: initialLoad.data,
   saveRecoveredNotice: initialLoad.recoveredFromCorruption,
@@ -191,8 +188,6 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
   setSelectedTrackId: (selectedTrackId) => set({ selectedTrackId }),
   setManifest: (manifest) => set({ manifest, manifestError: null }),
   setManifestError: (manifestError) => set({ manifestError }),
-  incrementPhysicsSteps: (steps) =>
-    set((state) => ({ physicsStepsObserved: state.physicsStepsObserved + steps })),
   updateSettings: (partial) =>
     set((state) => {
       const nextSettings: GameSettings = {
