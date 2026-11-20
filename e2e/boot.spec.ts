@@ -1,9 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-test.describe('KART LEGENDS 3D — Boot & Manifest Integrity', () => {
-  test('boots WebGL 3D world and loads Porto das Lanternas, Nilo and Trilha Raposa with zero runtime errors', async ({
-    page,
-  }) => {
+test.describe('KART LEGENDS 3D — Boot & Main Menu 3D Stage', () => {
+  test('boots WebGL 3D world onto Main Menu with zero runtime errors', async ({ page }) => {
     const pageErrors: string[] = [];
     const consoleErrors: string[] = [];
 
@@ -21,10 +19,12 @@ test.describe('KART LEGENDS 3D — Boot & Manifest Integrity', () => {
 
     await page.goto('/');
 
-    await expect(page.getByRole('heading', { name: 'KART LEGENDS 3D' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'INICIAR CORRIDA' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'KART LEGENDS 3D' })).toBeVisible({
       timeout: 15_000,
     });
+    await expect(page.getByRole('button', { name: 'JOGAR' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Progressão e Troféus' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Configurações' })).toBeVisible();
 
     const canvas = page.locator('canvas');
     await expect(canvas).toBeVisible();

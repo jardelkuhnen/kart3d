@@ -1,7 +1,7 @@
 import { CHARACTERS } from '../../data/characters';
 import { KARTS, getKartById } from '../../data/karts';
 import { CHAMPIONSHIP_POINTS, DEFAULT_LAPS } from '../core/constants';
-import type { CharacterId, Difficulty, ItemId, KartId, SurfaceType } from '../core/types';
+import type { CharacterId, Difficulty, GameMode, ItemId, KartId, SurfaceType } from '../core/types';
 import {
   type AiDriverState,
   computeAiKartInput,
@@ -103,6 +103,9 @@ export interface FullHudSnapshot {
   rouletteDisplayItem: ItemId | null;
   shieldActive: boolean;
   hitActive: boolean;
+  driftsCompleted: number;
+  turbosTriggered: number;
+  itemsUsed: number;
   standings: StandingEntry[];
   minimapRacers: Array<{
     id: string;
@@ -184,10 +187,12 @@ export function computeStandings(
 export class RaceSimulation {
   public readonly layout: TrackLayoutDef;
   public readonly difficulty: Difficulty;
+  public readonly mode: GameMode;
   public readonly tracker: RaceProgressTracker;
   public readonly items: ItemWorldManager;
   public readonly racers: RacerEntityState[];
   public readonly playerId = 'racer-player';
+  public playerItemsUsed = 0;
   private lastCountdownBeep = 4;
 
   constructor(
@@ -197,15 +202,22 @@ export class RaceSimulation {
     difficulty: Difficulty,
     totalLaps = DEFAULT_LAPS,
     skipIntro = false,
+    mode: GameMode = 'quick-race',
   ) {
     this.layout = layout;
     this.difficulty = difficulty;
-    this.tracker = new RaceProgressTracker(layout, totalLaps, skipIntro);
+    this.mode = mode;
+    const effectiveLaps = mode === 'practice' && totalLaps === DEFAULT_LAPS ? 99 : totalLaps;
+    this.tracker = new RaceProgressTracker(layout, effectiveLaps, skipIntro);
     this.items = new ItemWorldManager(layout);
+    if (mode === 'time-trial') {
+      this.items.boxes.length = 0;
+    }
 
     const playerChar = CHARACTERS.find((c) => c.id === playerCharacterId) ?? CHARACTERS[0];
     const playerKart = KARTS.find((k) => k.id === playerKartId) ?? KARTS[0];
     const otherChars = CHARACTERS.filter((c) => c.id !== playerChar.id);
+    const soloMode = mode === 'time-trial' || mode === 'practice';
 
     const roster: Array<{
       id: string;
@@ -221,13 +233,15 @@ export class RaceSimulation {
         kart: playerKart,
         slotIdx: 0,
       },
-      ...otherChars.slice(0, 7).map((aiChar, idx) => ({
-        id: `racer-ai-${idx + 1}`,
-        isPlayer: false,
-        char: aiChar,
-        kart: getKartById(aiChar.defaultKartId),
-        slotIdx: idx + 1,
-      })),
+      ...(soloMode
+        ? []
+        : otherChars.slice(0, 7).map((aiChar, idx) => ({
+            id: `racer-ai-${idx + 1}`,
+            isPlayer: false,
+            char: aiChar,
+            kart: getKartById(aiChar.defaultKartId),
+            slotIdx: idx + 1,
+          }))),
     ];
 
     this.racers = roster.map((entry) => {
@@ -347,6 +361,7 @@ export class RaceSimulation {
           playerShieldBlocked: false,
         };
         if (this.items.activateItem(adapter, itemAdapters, this.playerId, fakeEvents)) {
+          if (racer.isPlayer) this.playerItemsUsed += 1;
           if (fakeEvents.usedByPlayer) audioEvents.playerItemUsed = fakeEvents.usedByPlayer;
           if (fakeEvents.playerHit) audioEvents.playerCollision = true;
         }
@@ -526,6 +541,9 @@ export class RaceSimulation {
       rouletteDisplayItem: p.item.rouletteDisplayItem,
       shieldActive: p.item.shieldTimer > 0,
       hitActive: p.sim.hitTimer > 0,
+      driftsCompleted: p.sim.totalDriftsCompleted,
+      turbosTriggered: p.sim.totalTurbosTriggered,
+      itemsUsed: this.playerItemsUsed,
       standings,
       minimapRacers: this.racers.map((r) => ({
         id: r.id,

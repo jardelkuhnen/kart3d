@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-test.describe('KART LEGENDS 3D — Slice 4 Copa Aurora Tracks', () => {
-  test('switches cleanly between Copa Aurora tracks and races 8 karts in Vale dos Moinhos with zero errors', async ({
+test.describe('KART LEGENDS 3D — Copa Aurora Tracks', () => {
+  test('switches between Copa Aurora tracks in Track Select and races 8 karts in Vale dos Moinhos with zero errors', async ({
     page,
   }) => {
     const pageErrors: string[] = [];
@@ -20,9 +20,13 @@ test.describe('KART LEGENDS 3D — Slice 4 Copa Aurora Tracks', () => {
     });
 
     await page.goto('/');
+    await page.getByRole('button', { name: 'Corrida Rápida' }).click();
+    await page.getByTestId('next-to-kart').click();
+    await page.getByTestId('next-to-cup').click();
+    await page.getByTestId('next-to-track').click();
 
     const bosqueBtn = page.getByTestId('track-option-bosque-de-cristal');
-    await expect(bosqueBtn).toBeVisible({ timeout: 15_000 });
+    await expect(bosqueBtn).toBeVisible();
     await bosqueBtn.click();
     await expect(bosqueBtn).toHaveAttribute('aria-pressed', 'true');
 
@@ -34,24 +38,17 @@ test.describe('KART LEGENDS 3D — Slice 4 Copa Aurora Tracks', () => {
     await valeBtn.click();
     await expect(valeBtn).toHaveAttribute('aria-pressed', 'true');
 
-    // Bottom badge displays selected track name
+    await page.getByTestId('next-to-difficulty').click();
+    await page.getByRole('button', { name: 'INICIAR CORRIDA' }).click();
+
     await expect(page.getByText('Vale dos Moinhos').first()).toBeVisible();
-
-    const startBtn = page.getByRole('button', { name: 'INICIAR CORRIDA' });
-    await startBtn.click();
-
-    await expect(page.getByTestId('countdown-callout')).toBeVisible({ timeout: 5_000 });
     await expect(page.getByTestId('countdown-callout')).toHaveText('JÁ!', { timeout: 10_000 });
-
     await expect(page.getByTestId('minimap-racer')).toHaveCount(8);
 
     await page.keyboard.down('KeyW');
     await expect
       .poll(
-        async () => {
-          const text = await page.getByTestId('speedometer-value').textContent();
-          return Number(text ?? '0');
-        },
+        async () => Number((await page.getByTestId('speedometer-value').textContent()) ?? '0'),
         { timeout: 6_000 },
       )
       .toBeGreaterThan(35);

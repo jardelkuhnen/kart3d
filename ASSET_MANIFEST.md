@@ -1,6 +1,6 @@
 # ASSET MANIFEST — KART LEGENDS 3D
 
-Gerado automaticamente por `npm run assets:build` em 2026-11-20T02:49:32.091Z.
+Gerado automaticamente por `npm run assets:build` em 2026-11-20T03:03:36.093Z.
 
 | ID | Nome | Tipo | Caminho | Formato | Origem | Licença | Tamanho (bytes) | Status | Uso |
 | --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- |
@@ -73,16 +73,16 @@ Gerado automaticamente por `npm run assets:build` em 2026-11-20T02:49:32.091Z.
 | `music-victory` | Música — Vitória | `audio-music` | `/assets/audio/music/victory_fanfare.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 21027 | `validated` | AudioEngine |
 | `music-defeat` | Música — Derrota / Consolação | `audio-music` | `/assets/audio/music/defeat_theme.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 21744 | `validated` | AudioEngine |
 | `sfx-countdown-beep` | Contagem Regressiva (Beep) | `audio-sfx` | `/assets/audio/sfx/countdown_beep.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 4216 | `validated` | AudioEngine, RaceScene |
-| `sfx-item-use` | Utilização de Item | `audio-sfx` | `/assets/audio/sfx/item_use.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 4239 | `validated` | AudioEngine, RaceScene |
-| `sfx-jump-launch` | Impulso de Salto | `audio-sfx` | `/assets/audio/sfx/jump_launch.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 3604 | `validated` | AudioEngine, RaceScene |
 | `sfx-countdown-go` | Contagem Regressiva (Largada) | `audio-sfx` | `/assets/audio/sfx/countdown_go.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 6986 | `validated` | AudioEngine, RaceScene |
 | `sfx-turbo-boost` | Disparo de Turbo | `audio-sfx` | `/assets/audio/sfx/turbo_boost.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 6809 | `validated` | AudioEngine, RaceScene |
 | `sfx-collision-hit` | Impacto de Colisão | `audio-sfx` | `/assets/audio/sfx/collision_hit.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 5120 | `validated` | AudioEngine, RaceScene |
-| `sfx-land-thud` | Aterrissagem | `audio-sfx` | `/assets/audio/sfx/land_thud.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 3234 | `validated` | AudioEngine, RaceScene |
-| `sfx-item-pickup` | Coleta de Item | `audio-sfx` | `/assets/audio/sfx/item_pickup.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 4528 | `validated` | AudioEngine, RaceScene |
 | `sfx-drift-spark` | Faísca de Drift | `audio-sfx` | `/assets/audio/sfx/drift_spark.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 3464 | `validated` | AudioEngine, RaceScene |
-| `sfx-lap-complete` | Volta Concluída | `audio-sfx` | `/assets/audio/sfx/lap_complete.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 9459 | `validated` | AudioEngine, RaceScene |
+| `sfx-jump-launch` | Impulso de Salto | `audio-sfx` | `/assets/audio/sfx/jump_launch.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 3604 | `validated` | AudioEngine, RaceScene |
+| `sfx-item-pickup` | Coleta de Item | `audio-sfx` | `/assets/audio/sfx/item_pickup.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 4528 | `validated` | AudioEngine, RaceScene |
+| `sfx-land-thud` | Aterrissagem | `audio-sfx` | `/assets/audio/sfx/land_thud.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 3234 | `validated` | AudioEngine, RaceScene |
+| `sfx-item-use` | Utilização de Item | `audio-sfx` | `/assets/audio/sfx/item_use.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 4239 | `validated` | AudioEngine, RaceScene |
 | `sfx-race-finish` | Chegada da Corrida | `audio-sfx` | `/assets/audio/sfx/race_finish.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 12941 | `validated` | AudioEngine, RaceScene |
+| `sfx-lap-complete` | Volta Concluída | `audio-sfx` | `/assets/audio/sfx/lap_complete.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 9459 | `validated` | AudioEngine, RaceScene |
 | `sfx-ambience-coastal` | Ambiência — Costa e Ondas | `audio-sfx` | `/assets/audio/sfx/ambience_coastal.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 42169 | `validated` | AudioEngine, PortoDasLanternas |
 | `sfx-ambience-forest` | Ambiência — Bosque e Cascata | `audio-sfx` | `/assets/audio/sfx/ambience_forest.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 42912 | `validated` | AudioEngine, BosqueDeCristal |
 | `sfx-ambience-valley` | Ambiência — Brisa do Vale | `audio-sfx` | `/assets/audio/sfx/ambience_valley.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 42219 | `validated` | AudioEngine, ValeDosMoinhos |

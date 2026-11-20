@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { DEFAULT_SETTINGS, createInitialSaveData } from '../game/core/constants';
+import { getTracksByCup } from '../data/tracks';
 import type {
   AssetManifest,
   CharacterId,
@@ -12,9 +12,39 @@ import type {
   ScreenId,
   TrackId,
 } from '../game/core/types';
+import {
+  type ChampionshipState,
+  createChampionship,
+  recordChampionshipRace,
+} from '../game/racing/championshipManager';
+import type { StandingEntry } from '../game/racing/raceSimulation';
+import {
+  applyChampionshipCompletionToSave,
+  applyRaceResultToSave,
+  loadSaveData,
+  persistSaveData,
+  resetSaveData,
+} from '../game/save/saveManager';
+
+export interface RaceCompletionSummary {
+  mode: GameMode;
+  cupId: CupId;
+  trackId: TrackId;
+  playerRank: number;
+  totalRaceTimeMs: number;
+  bestLapMs: number | null;
+  lapTimesMs: number[];
+  standings: StandingEntry[];
+  newlyUnlocked: string[];
+  isNewBestRace: boolean;
+  isNewBestLap: boolean;
+  championshipFinished: boolean;
+  championshipTrophy: 'gold' | 'silver' | 'bronze' | null;
+}
 
 export interface GameStoreState {
   screen: ScreenId;
+  previousScreen: ScreenId;
   mode: GameMode;
   difficulty: Difficulty;
   selectedCharacterId: CharacterId;
@@ -26,8 +56,14 @@ export interface GameStoreState {
   physicsStepsObserved: number;
   settings: GameSettings;
   saveData: SaveDataV1;
+  saveRecoveredNotice: boolean;
+  championship: ChampionshipState | null;
+  lastRaceResult: RaceCompletionSummary | null;
 
   setScreen: (screen: ScreenId) => void;
+  openSettings: () => void;
+  closeSettings: () => void;
+  dismissSaveRecoveredNotice: () => void;
   setMode: (mode: GameMode) => void;
   setDifficulty: (difficulty: Difficulty) => void;
   setSelectedCharacterId: (id: CharacterId) => void;
@@ -38,10 +74,28 @@ export interface GameStoreState {
   setManifestError: (error: string | null) => void;
   incrementPhysicsSteps: (steps: number) => void;
   updateSettings: (partial: Partial<GameSettings>) => void;
+  startNewChampionship: () => void;
+  advanceChampionshipRace: () => void;
+  clearChampionship: () => void;
+  commitRaceOutcome: (payload: {
+    trackId: TrackId;
+    playerRank: number;
+    totalRaceTimeMs: number;
+    bestLapMs: number | null;
+    lapTimesMs: number[];
+    standings: StandingEntry[];
+    driftsCompleted: number;
+    turbosTriggered: number;
+    itemsUsed: number;
+  }) => void;
+  resetAllProgress: () => void;
 }
 
-export const useGameStore = create<GameStoreState>((set) => ({
+const initialLoad = loadSaveData();
+
+export const useGameStore = create<GameStoreState>((set, get) => ({
   screen: 'loading',
+  previousScreen: 'main-menu',
   mode: 'quick-race',
   difficulty: 'normal',
   selectedCharacterId: 'nilo',
@@ -51,10 +105,23 @@ export const useGameStore = create<GameStoreState>((set) => ({
   manifest: null,
   manifestError: null,
   physicsStepsObserved: 0,
-  settings: structuredClone(DEFAULT_SETTINGS),
-  saveData: createInitialSaveData(),
+  settings: structuredClone(initialLoad.data.settings),
+  saveData: initialLoad.data,
+  saveRecoveredNotice: initialLoad.recoveredFromCorruption,
+  championship: null,
+  lastRaceResult: null,
 
   setScreen: (screen) => set({ screen }),
+  openSettings: () =>
+    set((state) => ({
+      previousScreen: state.screen === 'settings' ? state.previousScreen : state.screen,
+      screen: 'settings',
+    })),
+  closeSettings: () =>
+    set((state) => ({
+      screen: state.previousScreen === 'settings' ? 'main-menu' : state.previousScreen,
+    })),
+  dismissSaveRecoveredNotice: () => set({ saveRecoveredNotice: false }),
   setMode: (mode) => set({ mode }),
   setDifficulty: (difficulty) => set({ difficulty }),
   setSelectedCharacterId: (selectedCharacterId) => set({ selectedCharacterId }),
@@ -66,10 +133,121 @@ export const useGameStore = create<GameStoreState>((set) => ({
   incrementPhysicsSteps: (steps) =>
     set((state) => ({ physicsStepsObserved: state.physicsStepsObserved + steps })),
   updateSettings: (partial) =>
-    set((state) => ({
-      settings: {
+    set((state) => {
+      const nextSettings: GameSettings = {
         ...state.settings,
         ...partial,
+      };
+      const nextSave: SaveDataV1 = {
+        ...state.saveData,
+        settings: nextSettings,
+      };
+      persistSaveData(nextSave);
+      return {
+        settings: nextSettings,
+        saveData: nextSave,
+      };
+    }),
+  startNewChampionship: () => {
+    const state = get();
+    const champ = createChampionship(
+      state.selectedCupId,
+      state.difficulty,
+      state.selectedCharacterId,
+      state.selectedKartId,
+    );
+    const cupTracks = getTracksByCup(state.selectedCupId);
+    set({
+      championship: champ,
+      selectedTrackId: cupTracks[0]?.id ?? state.selectedTrackId,
+      lastRaceResult: null,
+    });
+  },
+  advanceChampionshipRace: () => {
+    const state = get();
+    if (!state.championship) return;
+    const nextTrackId = state.championship.trackIds[state.championship.currentRaceIndex];
+    if (nextTrackId) {
+      set({ selectedTrackId: nextTrackId });
+    }
+  },
+  clearChampionship: () => set({ championship: null }),
+  commitRaceOutcome: (payload) => {
+    const state = get();
+    const { nextSave: postRaceSave, newlyUnlocked, isNewBestRace, isNewBestLap } =
+      applyRaceResultToSave(state.saveData, {
+        mode: state.mode,
+        cupId: state.selectedCupId,
+        trackId: payload.trackId,
+        playerRank: payload.playerRank,
+        totalRaceTimeMs: state.mode === 'practice' ? null : payload.totalRaceTimeMs,
+        bestLapMs: state.mode === 'practice' ? null : payload.bestLapMs,
+        driftsCompleted: payload.driftsCompleted,
+        turbosTriggered: payload.turbosTriggered,
+        itemsUsed: payload.itemsUsed,
+      });
+
+    let finalSave = postRaceSave;
+    const allUnlocked = [...newlyUnlocked];
+    let nextChamp = state.championship;
+    let championshipFinished = false;
+    let championshipTrophy: 'gold' | 'silver' | 'bronze' | null = null;
+
+    if (state.mode === 'championship' && state.championship) {
+      nextChamp = recordChampionshipRace(state.championship, payload.standings);
+      if (nextChamp.finished) {
+        championshipFinished = true;
+        const playerStanding = nextChamp.standings.find((s) => s.isPlayer);
+        const champRank = playerStanding?.rank ?? 8;
+        const champResult = applyChampionshipCompletionToSave(
+          finalSave,
+          nextChamp.cupId,
+          champRank,
+        );
+        finalSave = champResult.nextSave;
+        championshipTrophy = champResult.trophy;
+        allUnlocked.push(...champResult.newlyUnlocked);
+      }
+    }
+
+    persistSaveData(finalSave);
+
+    set({
+      saveData: finalSave,
+      championship: nextChamp,
+      lastRaceResult: {
+        mode: state.mode,
+        cupId: state.selectedCupId,
+        trackId: payload.trackId,
+        playerRank: payload.playerRank,
+        totalRaceTimeMs: payload.totalRaceTimeMs,
+        bestLapMs: payload.bestLapMs,
+        lapTimesMs: payload.lapTimesMs,
+        standings: payload.standings,
+        newlyUnlocked: Array.from(new Set(allUnlocked)),
+        isNewBestRace,
+        isNewBestLap,
+        championshipFinished,
+        championshipTrophy,
       },
-    })),
+    });
+  },
+  resetAllProgress: () => {
+    const currentSettings = get().settings;
+    const fresh = resetSaveData();
+    const preserved: SaveDataV1 = {
+      ...fresh,
+      settings: currentSettings,
+    };
+    persistSaveData(preserved);
+    set({
+      saveData: preserved,
+      selectedCharacterId: 'nilo',
+      selectedKartId: 'trilha-raposa',
+      selectedCupId: 'aurora',
+      selectedTrackId: 'porto-das-lanternas',
+      championship: null,
+      lastRaceResult: null,
+    });
+  },
 }));

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-20T02:49:32.091Z",
+  "generatedAt": "2026-11-20T03:03:36.093Z",
   "project": "KART LEGENDS 3D",
   "assets": [
     {
@@ -1476,38 +1476,6 @@
       ]
     },
     {
-      "id": "sfx-item-use",
-      "name": "Utilização de Item",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/item_use.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 4239,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
-      "id": "sfx-jump-launch",
-      "name": "Impulso de Salto",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/jump_launch.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 3604,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
       "id": "sfx-countdown-go",
       "name": "Contagem Regressiva (Largada)",
       "type": "audio-sfx",
@@ -1556,15 +1524,31 @@
       ]
     },
     {
-      "id": "sfx-land-thud",
-      "name": "Aterrissagem",
+      "id": "sfx-drift-spark",
+      "name": "Faísca de Drift",
       "type": "audio-sfx",
-      "path": "/assets/audio/sfx/land_thud.ogg",
+      "path": "/assets/audio/sfx/drift_spark.ogg",
       "format": "ogg",
       "origin": "Síntese PCM local + ffmpeg Opus",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 3234,
+      "sizeBytes": 3464,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-jump-launch",
+      "name": "Impulso de Salto",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/jump_launch.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 3604,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1588,15 +1572,15 @@
       ]
     },
     {
-      "id": "sfx-drift-spark",
-      "name": "Faísca de Drift",
+      "id": "sfx-land-thud",
+      "name": "Aterrissagem",
       "type": "audio-sfx",
-      "path": "/assets/audio/sfx/drift_spark.ogg",
+      "path": "/assets/audio/sfx/land_thud.ogg",
       "format": "ogg",
       "origin": "Síntese PCM local + ffmpeg Opus",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 3464,
+      "sizeBytes": 3234,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1604,15 +1588,15 @@
       ]
     },
     {
-      "id": "sfx-lap-complete",
-      "name": "Volta Concluída",
+      "id": "sfx-item-use",
+      "name": "Utilização de Item",
       "type": "audio-sfx",
-      "path": "/assets/audio/sfx/lap_complete.ogg",
+      "path": "/assets/audio/sfx/item_use.ogg",
       "format": "ogg",
       "origin": "Síntese PCM local + ffmpeg Opus",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 9459,
+      "sizeBytes": 4239,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1629,6 +1613,22 @@
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
       "sizeBytes": 12941,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-lap-complete",
+      "name": "Volta Concluída",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/lap_complete.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 9459,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",

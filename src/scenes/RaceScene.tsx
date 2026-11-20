@@ -16,7 +16,6 @@ import { InputManager } from '../game/input/inputManager';
 import { RaceProgressTracker, type RacePhase } from '../game/racing/raceManager';
 import { type FullHudSnapshot, RaceSimulation } from '../game/racing/raceSimulation';
 import {
-  AVAILABLE_TRACK_IDS,
   FALLBACK_TRACK_GLB_PATHS,
   getTrackLayout,
   getTrackVisualTheme,
@@ -29,6 +28,13 @@ import {
 } from '../game/tracks/trackGeometry';
 import type { LiveKartPose } from '../game/vehicles/KartEntity';
 import { RacerMeshInstance } from '../game/vehicles/RacerMeshInstance';
+import {
+  GarageShowcaseStage,
+  PodiumCeremonyStage,
+  type PodiumRacerStageEntry,
+} from './ShowcaseStages';
+
+export type SceneStageMode = 'menu-bg' | 'showcase' | 'race' | 'podium';
 
 export interface RaceStageSync {
   phase: RacePhase;
@@ -36,10 +42,12 @@ export interface RaceStageSync {
 }
 
 export interface RaceSceneProps {
+  sceneMode: SceneStageMode;
   phaseRequest: RacePhase;
   paused: boolean;
   resetToken: number;
   audioEngine: GameAudioEngine;
+  podiumRoster?: ReadonlyArray<{ rank: 1 | 2 | 3; characterId: CharacterId; name: string }>;
   onTelemetry: (telemetry: FullHudSnapshot) => void;
   onStageSync: (sync: RaceStageSync) => void;
   onPauseToggle: () => void;
@@ -468,6 +476,7 @@ const FALLBACK_KART_PATHS: Record<KartId, string> = {
 };
 
 function RaceWorldContent({
+  sceneMode,
   phaseRequest,
   paused,
   resetToken,
@@ -475,8 +484,9 @@ function RaceWorldContent({
   onTelemetry,
   onStageSync,
   onPauseToggle,
-}: RaceSceneProps) {
+}: Omit<RaceSceneProps, 'podiumRoster'>) {
   const manifest = useGameStore((s) => s.manifest);
+  const mode = useGameStore((s) => s.mode);
   const selectedCharacterId = useGameStore((s) => s.selectedCharacterId);
   const selectedKartId = useGameStore((s) => s.selectedKartId);
   const selectedTrackId = useGameStore((s) => s.selectedTrackId);
@@ -486,6 +496,7 @@ function RaceWorldContent({
   const trackDef = getTrackById(selectedTrackId);
   const layout = getTrackLayout(selectedTrackId);
   const visualTheme = getTrackVisualTheme(selectedTrackId);
+  const isSoloMode = mode === 'time-trial' || mode === 'practice';
 
   const trackModelPath = useMemo(
     () =>
@@ -495,11 +506,13 @@ function RaceWorldContent({
     [manifest, trackDef.modelAssetId, selectedTrackId],
   );
 
-  // Align visual GLB models 1:1 with RaceSimulation's 8-racer roster order
+  // Align visual GLB models 1:1 with RaceSimulation roster order (8 or 1 solo racer)
   const racerAssetList = useMemo(() => {
     const playerChar = getCharacterById(selectedCharacterId);
     const playerKart = getKartById(selectedKartId);
-    const aiChars = CHARACTERS.filter((c) => c.id !== playerChar.id).slice(0, 7);
+    const aiChars = isSoloMode
+      ? []
+      : CHARACTERS.filter((c) => c.id !== playerChar.id).slice(0, 7);
     const roster = [
       { char: playerChar, kart: playerKart },
       ...aiChars.map((char) => ({ char, kart: getKartById(char.defaultKartId) })),
@@ -511,7 +524,7 @@ function RaceWorldContent({
         : FALLBACK_CHARACTER_PATHS[char.id],
       kart: manifest ? resolveAssetPath(manifest, kart.modelAssetId) : FALLBACK_KART_PATHS[kart.id],
     }));
-  }, [manifest, selectedCharacterId, selectedKartId]);
+  }, [manifest, selectedCharacterId, selectedKartId, isSoloMode]);
 
   const startSlot = layout.startGridSlots[0];
 
@@ -523,6 +536,7 @@ function RaceWorldContent({
       difficulty,
       DEFAULT_LAPS,
       phaseRequest !== 'intro',
+      mode,
     ),
   );
   const playerRapierRef = useRef<RapierRigidBody | null>(null);
@@ -575,7 +589,7 @@ function RaceWorldContent({
     return () => manager.detach();
   }, []);
 
-  // Re-initialize full 8-racer simulation on track/character/kart/difficulty/mode reset
+  // Re-initialize full simulation on mode/track/character/kart/difficulty/reset
   useEffect(() => {
     const freshSim = new RaceSimulation(
       layout,
@@ -584,13 +598,15 @@ function RaceWorldContent({
       difficulty,
       DEFAULT_LAPS,
       phaseRequest !== 'intro',
+      mode,
     );
-    if (phaseRequest === 'countdown') {
+    if (sceneMode === 'race' && phaseRequest === 'countdown') {
       freshSim.startCountdown();
       audioEngine.playMusic(visualTheme.musicAssetId);
       audioEngine.playAmbience(visualTheme.ambienceAssetId);
     } else if (phaseRequest === 'intro') {
-      audioEngine.stopRaceAudio();
+      audioEngine.stopAmbience();
+      audioEngine.updateEngineTelemetry(0, false, false, 0, false, false, false);
     }
 
     simRef.current = freshSim;
@@ -625,6 +641,8 @@ function RaceWorldContent({
     onTelemetry(freshSim.buildHudSnapshot());
   }, [
     resetToken,
+    sceneMode,
+    mode,
     phaseRequest,
     selectedCharacterId,
     selectedKartId,
@@ -644,7 +662,7 @@ function RaceWorldContent({
 
   useFrame((_state, delta) => {
     const pausePressed = inputManagerRef.current.consumePausePressed();
-    if (pausePressed && simRef.current.phase !== 'intro') {
+    if (pausePressed && sceneMode === 'race' && simRef.current.phase !== 'intro') {
       onPauseToggle();
     }
 
@@ -812,6 +830,56 @@ function RaceWorldContent({
   );
 }
 
+function SceneRouter(props: RaceSceneProps) {
+  const manifest = useGameStore((s) => s.manifest);
+  const selectedCharacterId = useGameStore((s) => s.selectedCharacterId);
+  const selectedKartId = useGameStore((s) => s.selectedKartId);
+  const selectedTrackId = useGameStore((s) => s.selectedTrackId);
+
+  useEffect(() => {
+    const path = manifest
+      ? resolveAssetPath(manifest, getTrackById(selectedTrackId).modelAssetId)
+      : FALLBACK_TRACK_GLB_PATHS[selectedTrackId];
+    useGLTF.preload(path);
+  }, [manifest, selectedTrackId]);
+
+  const playerChar = getCharacterById(selectedCharacterId);
+  const playerKart = getKartById(selectedKartId);
+  const charModelPath = manifest
+    ? resolveAssetPath(manifest, playerChar.modelAssetId)
+    : FALLBACK_CHARACTER_PATHS[playerChar.id];
+  const kartModelPath = manifest
+    ? resolveAssetPath(manifest, playerKart.modelAssetId)
+    : FALLBACK_KART_PATHS[playerKart.id];
+
+  const podiumStageEntries: PodiumRacerStageEntry[] = useMemo(() => {
+    const source = props.podiumRoster ?? [];
+    return source.map((entry) => {
+      const charDef = getCharacterById(entry.characterId);
+      return {
+        rank: entry.rank,
+        name: entry.name,
+        primaryColor: charDef.primaryColor,
+        characterModelPath: manifest
+          ? resolveAssetPath(manifest, charDef.modelAssetId)
+          : FALLBACK_CHARACTER_PATHS[charDef.id],
+      };
+    });
+  }, [manifest, props.podiumRoster]);
+
+  if (props.sceneMode === 'showcase') {
+    return (
+      <GarageShowcaseStage characterModelPath={charModelPath} kartModelPath={kartModelPath} />
+    );
+  }
+
+  if (props.sceneMode === 'podium') {
+    return <PodiumCeremonyStage entries={podiumStageEntries} />;
+  }
+
+  return <RaceWorldContent {...props} />;
+}
+
 export function RaceScene(props: RaceSceneProps) {
   const quality = useGameStore((s) => s.settings.quality);
   const dpr: [number, number] =
@@ -826,7 +894,7 @@ export function RaceScene(props: RaceSceneProps) {
         camera={{ position: [0, 6, 52], fov: 56, near: 0.25, far: 500 }}
       >
         <Suspense fallback={null}>
-          <RaceWorldContent {...props} />
+          <SceneRouter {...props} />
         </Suspense>
       </Canvas>
     </div>
@@ -839,9 +907,8 @@ for (const charPath of Object.values(FALLBACK_CHARACTER_PATHS)) {
 for (const kartPath of Object.values(FALLBACK_KART_PATHS)) {
   useGLTF.preload(kartPath);
 }
-for (const trackId of AVAILABLE_TRACK_IDS) {
-  useGLTF.preload(FALLBACK_TRACK_GLB_PATHS[trackId]);
-}
+// Preload only default track on boot; remaining tracks preload on demand when selected
+useGLTF.preload(FALLBACK_TRACK_GLB_PATHS['porto-das-lanternas']);
 useGLTF.preload('/assets/props/item_box.glb');
 useGLTF.preload('/assets/items/nevoa_prisma.glb');
 useGLTF.preload('/assets/items/faisca_rastreadora.glb');

@@ -1,6 +1,6 @@
 # QA REPORT — KART LEGENDS 3D
 
-**Status Geral do Projeto:** **PARCIAL** (Slices 0, 1, 2, 3, 4 e 5 de 8 concluídos e verificados; Slices 6–7 em andamento).
+**Status Geral do Projeto:** **PARCIAL** (Slices 0 a 6 de 8 concluídos e verificados; Slice 7 final de VFX, qualidade/desempenho e entrega final em andamento).
 
 ---
 
@@ -115,3 +115,25 @@
 - **Pistas 5, 6, 7 e 8 (`cidadeNeon.ts`, `picoBoreal.ts`, `jardimCeleste.ts`, `fortalezaTempestade.ts`)**: splines fechadas distintas sem autointerseção, 12 novos marcos cênicos instanciados (`skyscraper`, `neon-arch`, `neon-billboard`, `glacier-spire`, `snow-pine`, `aurora-pillar`, `cloud-island`, `sky-gazebo`, `sky-ring`, `castle-tower`, `storm-arch`, `lightning-spire`), nuvem aérea no vazio em *Jardim Celeste* e relâmpagos tempestuosos em *Fortaleza Tempestade*.
 - **Obstáculos Móveis, Gelo & IA (`trackGeometry.ts`, `raceSimulation.ts`, `aiController.ts`)**: barreiras neon e portões móveis sincronizados entre simulação física e cena 3D (com absorção por *Bolha Guardiã* e desvio lateral pela IA) + textura e aderência de gelo (`ice`) em *Pico Boreal*.
 - **Alternância de Copas e Música (`RaceHud.tsx`, `audioEngine.ts`, `audio-builder.ts`)**: abas **Copa Aurora / Copa Eclipse** na interface, música exclusiva `music-race-eclipse` e 4 novas faixas de ambiência sonora.
+
+---
+
+## Slice 6 — 14 Telas, 4 Modos de Jogo, Campeonato, Pódio 3D, Progressão e Save
+
+### Verificações Executadas
+
+| Comando | Resultado | Observações |
+| :--- | :--- | :--- |
+| `npm run assets:build` | PASS | 87 recursos gerados e manifestados em `public/assets/` |
+| `npm run validate:assets` | PASS | 87 ativos verificados, 0 erros, 0 arquivos órfãos |
+| `npm run typecheck` | PASS | `tsc --noEmit` (strict) com 0 erros |
+| `npm run lint` | PASS | `eslint .` com 0 erros e 0 avisos |
+| `npm run test` | PASS | Vitest: 13 arquivos, 42 testes aprovados em 3.44 s (incluindo `save-championship.test.ts` com persistência/corrupção/regras de desbloqueio, campeonato 4 etapas e os 4 modos no `RaceSimulation`) |
+| `npm run build` | PASS | Build de produção Vite gerada em `dist/` (608 módulos em 803 ms) |
+| `npm run test:e2e` | PASS | Playwright (Chrome + ANGLE Metal GPU, 2 workers): 5/5 aprovados em 29.5 s (`boot.spec.ts` em 4.9 s, `menus-progression.spec.ts` em 12.9 s com recuperação de JSON corrompido + persistência após reload + Contrarrelógio + Campeonato ETAPA 1/4, `race-core.spec.ts` em 10.7 s, `tracks-aurora.spec.ts` em 9.4 s e `tracks-eclipse.spec.ts` em 10.7 s) |
+
+### Escopo Entregue no Slice 6
+
+- **14 Telas Completas (`src/components/ui/` + `RaceHud.tsx`)**: Carregamento, Menu Principal, Seleção de Modo, Seleção de Personagem (sobre Garagem Showcase 3D giratória), Seleção de Kart (comparador de 8 atributos), Seleção de Copa, Seleção de Pista (com recordes), Configuração de Dificuldade/Largada, Corrida, Pausa, Configurações (3 volumes + qualidade + sensibilidade + zona morta + remapeamento de teclas), Resultados, Pódio 3D (com Top 3 animado e confetes instanciados) e Progressão/Desbloqueios.
+- **4 Modos Jogáveis (`raceSimulation.ts` + `championshipManager.ts`)**: *Corrida Rápida* (8 karts, 3 voltas), *Campeonato* (4 etapas com pontuação acumulada e troféus), *Contrarrelógio* (solo, 3 voltas sem itens) e *Treino Livre* (solo ilimitado com todos os 8 pilotos/karts/pistas liberados).
+- **Persistência Versionada (`saveManager.ts` + `store.ts`)**: armazenamento `kart-legends-3d:save:v1` com recuperação automática de corrupção, desbloqueios reais ligados a vitórias, drifts acumulados, contrarrelógio e pódios de copa.
