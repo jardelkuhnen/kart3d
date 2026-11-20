@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_BINDINGS } from '../game/core/constants';
 import {
+  InputManager,
   applyAnalogDeadzone,
   mapGamepadToInput,
   mapKeyboardStateToInput,
@@ -64,5 +65,14 @@ describe('Input Mapping (Keyboard, Remapping & Gamepad API)', () => {
     expect(mapped.kart.drift).toBe(true);
     expect(mapped.kart.useItem).toBe(true);
     expect(mapped.pausePressed).toBe(true);
+  });
+
+  it('queues a single-step recover pulse via triggerRecoverOnce() for HUD button use', () => {
+    const manager = new InputManager(DEFAULT_BINDINGS);
+    expect(manager.pollKartOnly().recover).toBe(false);
+
+    manager.triggerRecoverOnce();
+    expect(manager.pollKartOnly().recover).toBe(true);
+    expect(manager.pollKartOnly().recover).toBe(false);
   });
 });

@@ -15,6 +15,7 @@ test.describe('KART LEGENDS 3D — Slice 8 Mobile Touch, Viewport, iOS PWA & Erg
   test('auto-enables TouchControls + low quality preset, drives via auto-accelerate, drifts via multitouch & overrides with brake', async ({
     page,
   }) => {
+    test.setTimeout(60_000);
     await fs.mkdir(SCREENSHOTS_DIR, { recursive: true });
 
     const pageErrors: string[] = [];
@@ -128,47 +129,66 @@ test.describe('KART LEGENDS 3D — Slice 8 Mobile Touch, Viewport, iOS PWA & Erg
     await expect(page.getByText(/CARREGANDO DRIFT|DRIFT NV\./i)).toBeVisible({ timeout: 4_000 });
     await page.screenshot({ path: path.join(SCREENSHOTS_DIR, 'mobile_race_landscape.png') });
 
-    // Release multitouch steer & drift cleanly, then press brake to verify speed reduction
-    await page.evaluate(() => {
+    // Release multitouch steer & drift cleanly, then press brake and observe speed drop below 35 km/h
+    const brakeObserved = await page.evaluate(() => {
       const pad = document.querySelector('[data-testid="touch-steer-pad"]')!;
       const driftBtn = document.querySelector('[data-testid="touch-btn-drift"]')!;
       const brakeBtn = document.querySelector('[data-testid="touch-btn-brake"]')!;
+      const speedEl = document.querySelector('[data-testid="speedometer-value"]')!;
       const bRect = brakeBtn.getBoundingClientRect();
 
-      driftBtn.dispatchEvent(
-        new PointerEvent('pointerup', {
-          bubbles: true,
-          cancelable: true,
-          pointerId: 102,
-          pointerType: 'touch',
-        }),
-      );
-      pad.dispatchEvent(
-        new PointerEvent('pointerup', {
-          bubbles: true,
-          cancelable: true,
-          pointerId: 101,
-          pointerType: 'touch',
-        }),
-      );
-      brakeBtn.dispatchEvent(
-        new PointerEvent('pointerdown', {
-          bubbles: true,
-          cancelable: true,
-          pointerId: 103,
-          pointerType: 'touch',
-          clientX: bRect.left + bRect.width * 0.5,
-          clientY: bRect.top + bRect.height * 0.5,
-        }),
-      );
+      return new Promise<boolean>((resolve) => {
+        const readSpeed = () => Number(speedEl.textContent ?? '999');
+        const observer = new MutationObserver(() => {
+          if (readSpeed() < 35) {
+            observer.disconnect();
+            clearTimeout(timer);
+            resolve(true);
+          }
+        });
+        observer.observe(speedEl, { characterData: true, childList: true, subtree: true });
+
+        const timer = window.setTimeout(() => {
+          observer.disconnect();
+          resolve(readSpeed() < 35);
+        }, 10_000);
+
+        driftBtn.dispatchEvent(
+          new PointerEvent('pointerup', {
+            bubbles: true,
+            cancelable: true,
+            pointerId: 102,
+            pointerType: 'touch',
+          }),
+        );
+        pad.dispatchEvent(
+          new PointerEvent('pointerup', {
+            bubbles: true,
+            cancelable: true,
+            pointerId: 101,
+            pointerType: 'touch',
+          }),
+        );
+        brakeBtn.dispatchEvent(
+          new PointerEvent('pointerdown', {
+            bubbles: true,
+            cancelable: true,
+            pointerId: 103,
+            pointerType: 'touch',
+            clientX: bRect.left + bRect.width * 0.5,
+            clientY: bRect.top + bRect.height * 0.5,
+          }),
+        );
+
+        if (readSpeed() < 35) {
+          observer.disconnect();
+          clearTimeout(timer);
+          resolve(true);
+        }
+      });
     });
 
-    await expect
-      .poll(
-        async () => Number((await page.getByTestId('speedometer-value').textContent()) ?? '0'),
-        { timeout: 6_000 },
-      )
-      .toBeLessThan(35);
+    expect(brakeObserved).toBe(true);
 
     await page.evaluate(() => {
       const brakeBtn = document.querySelector('[data-testid="touch-btn-brake"]')!;

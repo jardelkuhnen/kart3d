@@ -10,7 +10,12 @@ import {
   triggerKartBoost,
 } from '../game/physics/kartController';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from '../game/tracks/portoDasLanternas';
-import { type TrackPointQuery, projectPointOntoTrack } from '../game/tracks/trackGeometry';
+import {
+  type TrackPointQuery,
+  offsetPointOnTrack,
+  projectPointOntoTrack,
+  yawFromTangent,
+} from '../game/tracks/trackGeometry';
 
 const NO_INPUT: KartInputState = {
   throttle: 0,
@@ -203,6 +208,19 @@ describe('Kart Arcade Physics & 3-Tier Drift System', () => {
     expect(state.boostMultiplier).toBeGreaterThan(1.3);
     expect(state.totalDriftsCompleted).toBe(1);
     expect(state.totalTurbosTriggered).toBe(1);
+
+    // Explicit braking without throttle cancels active boost and decelerates cleanly
+    const speedBeforeBrake = state.forwardSpeed;
+    stepKartSimulation(
+      state,
+      { ...NO_INPUT, brake: 1 },
+      query,
+      profile,
+      PORTO_DAS_LANTERNAS_LAYOUT,
+      FIXED_TIMESTEP,
+    );
+    expect(state.boostTimer).toBe(0);
+    expect(state.forwardSpeed).toBeLessThan(speedBeforeBrake);
   });
 
   it('launches on jump ramps, lands with gravity, and safely recovers to last checkpoint without gaining distance', () => {
@@ -245,5 +263,90 @@ describe('Kart Arcade Physics & 3-Tier Drift System', () => {
     expect(state.forwardSpeed).toBe(0);
     expect(state.boostTimer).toBe(0);
     expect(Math.hypot(state.x - cp0.position.x, state.z - cp0.position.z)).toBeLessThan(0.5);
+  });
+
+  it('slides smoothly along track wall on angled collision without getting stuck', () => {
+    const profile = computeKartPhysicsProfile(getKartById('trilha-raposa'));
+    const startSample = PORTO_DAS_LANTERNAS_LAYOUT.samples[12];
+    const trackYaw = yawFromTangent(startSample.tangent);
+    const startPos = offsetPointOnTrack(startSample, PORTO_DAS_LANTERNAS_LAYOUT.wallMargin - 1.5, 0);
+    // Point ~35 deg into the right wall while cruising fast
+    const state = createInitialKartState(startPos.x, startPos.y, startPos.z, trackYaw - 0.62);
+    state.forwardSpeed = 28;
+    state.vx = -Math.sin(state.yaw) * state.forwardSpeed;
+    state.vz = -Math.cos(state.yaw) * state.forwardSpeed;
+
+    const initialS = startSample.s;
+    let sawWallSlide = false;
+    let maxObservedLateral = 0;
+
+    for (let i = 0; i < 90; i += 1) {
+      const q = projectPointOntoTrack(PORTO_DAS_LANTERNAS_LAYOUT, state.x, state.z, state.y);
+      stepKartSimulation(
+        state,
+        { ...NO_INPUT, throttle: 1 },
+        q,
+        profile,
+        PORTO_DAS_LANTERNAS_LAYOUT,
+        FIXED_TIMESTEP,
+      );
+      if (state.wallCollisionThisStep) {
+        sawWallSlide = true;
+      }
+      maxObservedLateral = Math.max(maxObservedLateral, Math.abs(state.lateralOffset));
+    }
+
+    const finalQ = projectPointOntoTrack(PORTO_DAS_LANTERNAS_LAYOUT, state.x, state.z, state.y);
+    const maxLateral = PORTO_DAS_LANTERNAS_LAYOUT.wallMargin - 0.95;
+    expect(sawWallSlide).toBe(true);
+    expect(maxObservedLateral).toBeLessThanOrEqual(maxLateral + 0.25);
+    expect(finalQ.distanceAlongTrack - initialS).toBeGreaterThan(15);
+    expect(state.forwardSpeed).toBeGreaterThan(14);
+  });
+
+  it('allows steering at zero speed and auto-unsticks a kart wedged 90 degrees into a wall', () => {
+    const profile = computeKartPhysicsProfile(getKartById('trilha-raposa'));
+
+    // 1. Steering authority at zero speed
+    const idleState = createInitialKartState(0, 0, 36, 0);
+    const qIdle = makeQuery('asphalt');
+    for (let i = 0; i < 15; i += 1) {
+      stepKartSimulation(
+        idleState,
+        { ...NO_INPUT, steer: 1, throttle: 0 },
+        qIdle,
+        profile,
+        PORTO_DAS_LANTERNAS_LAYOUT,
+        FIXED_TIMESTEP,
+      );
+    }
+    expect(Math.abs(idleState.yaw)).toBeGreaterThan(0.05);
+
+    // 2. Wedged 90 degrees straight into right wall with low tangential speed -> auto-unsticks within 1.5s
+    const sSample = PORTO_DAS_LANTERNAS_LAYOUT.samples[10];
+    const trackYaw = yawFromTangent(sSample.tangent);
+    const wallEdge = offsetPointOnTrack(sSample, PORTO_DAS_LANTERNAS_LAYOUT.wallMargin - 0.9, 0);
+    const wedged = createInitialKartState(
+      wallEdge.x,
+      wallEdge.y,
+      wallEdge.z,
+      trackYaw - Math.PI * 0.5,
+    );
+    wedged.forwardSpeed = 2;
+
+    for (let i = 0; i < 95; i += 1) {
+      const q = projectPointOntoTrack(PORTO_DAS_LANTERNAS_LAYOUT, wedged.x, wedged.z, wedged.y);
+      stepKartSimulation(
+        wedged,
+        { ...NO_INPUT, throttle: 1 },
+        q,
+        profile,
+        PORTO_DAS_LANTERNAS_LAYOUT,
+        FIXED_TIMESTEP,
+      );
+    }
+
+    expect(wedged.forwardSpeed).toBeGreaterThan(5);
+    expect(wedged.wallStuckTimer).toBe(0);
   });
 });

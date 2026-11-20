@@ -105,6 +105,25 @@ Medições reais obtidas em corrida ativa de 8 competidores em *Porto das Lanter
 
 ---
 
+## Correções Pós-Slice 8 — Física de Parede (Wall-Slide), Rapier Sync e UI/HUD
+
+### Verificações Executadas
+
+| Comando | Resultado | Observações Diretamente Observadas |
+| :--- | :--- | :--- |
+| `npm run validate:assets` | PASS | **114 ativos verificados**, 0 erros, 0 órfãos |
+| `npm run typecheck` | PASS | `tsc --noEmit` (`strict`) com 0 erros |
+| `npm run lint` | PASS | `eslint .` com 0 erros e 0 avisos |
+| `npm run test` | PASS | Vitest `5.1.1`: **15 arquivos, 54 testes aprovados** (adicionados testes de wall-slide tangencial em `physics.test.ts`, autoridade de curva em baixa velocidade + auto-destravamento + interrupção de boost pelo freio e pulso único `triggerRecoverOnce` em `input.test.ts`), 0 falhas |
+| `npm run build` | PASS | Vite `8.3.8`: **614 módulos transformados** em `2.50 s` (`dist/`) |
+| `npm run test:e2e` | PASS | Playwright (Chrome + ANGLE Metal GPU, `1 worker`): **8/8 testes aprovados** (`boot`, `menus-progression`, `mobile-touch`, `performance-vfx #1 e #2`, `race-core` com botão clicável `Recuperar (R)` e duplo ciclo pausa/retomar em React 19 StrictMode, `tracks-aurora`, `tracks-eclipse`) |
+
+### Correções Aplicadas
+- **Deslizamento Tangencial & Rapier Sync (`kartController.ts`, `raceSimulation.ts`, `RaceScene.tsx`, `RacerMeshInstance.tsx`):** simulação agora detém a posição autoritativa `(x, z)` e sincroniza o `RapierRigidBody` sem descartar empurrões de parede/colisões ou resetar o corpo a cada tick de telemetria (`syncPlayerRapier` em `useCallback`); implementado clamp em `maxLateral`, corte apenas da componente de velocidade voltada ao muro, auto-alinhamento suave de `yaw` para longe da barreira, autoridade mínima de curva em baixa velocidade, freio explícito interrompendo turbo ativo, auto-destravamento após `>= 1,0 s`, `wallColliders` deslocados para fora de `maxLateral` com vãos nos atalhos e spawn no `startSlot` real por pista.
+- **UI/HUD & StrictMode (`App.tsx`, `inputManager.ts`, `RaceHud.tsx`, `global.css`):** remoção de efeito colateral (`setScreen`) de dentro do updater de `setPaused`; botão clicável `Recuperar (R)` (`data-testid="hud-recover-btn"`) no HUD acoplado a pulso seguro entre monitores de alta frequência; fila de alertas centrais limitada a no máximo 2 alertas priorizados sem cobrir o modal de pausa; `flex-wrap: wrap` em `.kl-race-actions` e `.kl-modal-actions` e grades flexíveis/responsivas em `.kl-scoreboard-row` e `.kl-career-stats-grid`.
+
+---
+
 ## Matriz de Rastreabilidade dos 20 Tópicos de Teste (§23)
 
 | # | Tópico Obrigatório (§23) | Cobertura Automatizada Verificada |
@@ -153,7 +172,7 @@ Medições reais obtidas em corrida ativa de 8 competidores em *Porto das Lanter
 - [x] **O áudio estiver integrado.** (*Howler.js 3 canais + sintetizador Web Audio contínuo de motor/drift.*)
 - [x] **O campeonato funcionar.** (*4 etapas acumulam pontos e geram troféus em `save-championship.test.ts` e E2E `ETAPA 1/4`.*)
 - [x] **O progresso for salvo.** (*Persistência `kart-legends-3d:save:v1` após reload no Playwright.*)
-- [x] **Os testes forem executados.** (*51 testes Vitest + 8 testes Playwright E2E executados com 0 falhas.*)
+- [x] **Os testes forem executados.** (*54 testes Vitest + 8 testes Playwright E2E executados com 0 falhas.*)
 - [x] **A build estiver disponível.** (*`npm run build` gerando `dist/` em `~1 s`.*)
 - [x] **Os assets possuírem licenças verificadas.** (*114/114 ativos com `Original-Project-License` auditados em `validate:assets`.*)
 - [x] **Não existirem placeholders finais.** (*Zero cubos/cápsulas provisórias; áudio/texturas/GLBs reais em disco.*)

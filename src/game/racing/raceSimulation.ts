@@ -71,6 +71,7 @@ export interface RaceAudioEvents {
   playerDriftTierUp: number | null;
   playerTurboTriggered: boolean;
   playerCollision: boolean;
+  playerPositionCorrected: boolean;
   playerJumped: boolean;
   playerLanded: boolean;
   playerItemPickup: boolean;
@@ -287,6 +288,7 @@ export class RaceSimulation {
       playerDriftTierUp: null,
       playerTurboTriggered: false,
       playerCollision: false,
+      playerPositionCorrected: false,
       playerJumped: false,
       playerLanded: false,
       playerItemPickup: false,
@@ -379,6 +381,10 @@ export class RaceSimulation {
         canDrive,
       );
 
+      if (racer.isPlayer && racer.sim.wallCollisionThisStep) {
+        audioEvents.playerPositionCorrected = true;
+      }
+
       if (racer.item.hazardSlowTimer > 0 && racer.sim.boostTimer <= 0) {
         racer.sim.forwardSpeed = Math.min(racer.sim.forwardSpeed, racer.profile.topSpeedMs * 0.56);
       }
@@ -440,6 +446,10 @@ export class RaceSimulation {
           b.sim.vx += nx * bounce * shareB;
           b.sim.vz += nz * bounce * shareB;
 
+          if (a.isPlayer || b.isPlayer) {
+            audioEvents.playerPositionCorrected = true;
+          }
+
           if (overlap > 0.14) {
             if (a.isPlayer || b.isPlayer) {
               audioEvents.playerCollision = true;
@@ -478,6 +488,9 @@ export class RaceSimulation {
               const nz = dist > 0.01 ? dz / safeDist : hazard.right.z;
               racer.sim.x = hPos.x + nx * minDist;
               racer.sim.z = hPos.z + nz * minDist;
+              if (racer.isPlayer) {
+                audioEvents.playerPositionCorrected = true;
+              }
               if (racer.item.shieldTimer > 0) {
                 racer.item.shieldTimer = 0;
               } else {

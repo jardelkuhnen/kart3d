@@ -26,6 +26,7 @@ export interface RaceHudProps {
   touchControlsVisible: boolean;
   touchAutoAccelerate: boolean;
   onUserGesture: () => void;
+  onRecoverKart: () => void;
   onRestartRace: () => void;
   onTogglePause: () => void;
   onToggleMute: () => void;
@@ -52,6 +53,7 @@ export function RaceHud({
   touchControlsVisible,
   touchAutoAccelerate,
   onUserGesture,
+  onRecoverKart,
   onRestartRace,
   onTogglePause,
   onToggleMute,
@@ -78,6 +80,37 @@ export function RaceHud({
   const rankClass = RANK_ORDINAL_CLASSES[telemetry.rank - 1] ?? 'standard';
   const isFinalLap =
     mode !== 'practice' && telemetry.currentLap === telemetry.totalLaps && phase === 'racing';
+
+  const activeAlerts: Array<{ key: string; variant: string; text: string }> = [];
+  if (!paused && !countdownLabel && phase === 'racing') {
+    if (telemetry.wrongWay) {
+      activeAlerts.push({ key: 'wrong-way', variant: 'danger', text: 'CONTRAMÃO! DÊ A VOLTA!' });
+    }
+    if (telemetry.hitActive) {
+      activeAlerts.push({ key: 'hit', variant: 'danger', text: 'IMPACTO!' });
+    }
+    if (isFinalLap) {
+      activeAlerts.push({ key: 'final-lap', variant: 'final-lap', text: 'VOLTA FINAL!' });
+    }
+    if (telemetry.boostActive && telemetry.boostLabel) {
+      activeAlerts.push({
+        key: 'boost',
+        variant: 'boost',
+        text: `${telemetry.boostLabel.toUpperCase()}!`,
+      });
+    }
+    if (telemetry.shieldActive) {
+      activeAlerts.push({ key: 'shield', variant: 'shield', text: 'BOLHA GUARDIÃ ATIVA!' });
+    }
+    if (telemetry.onShortcut) {
+      activeAlerts.push({
+        key: 'shortcut',
+        variant: 'shortcut',
+        text: `${trackTheme.shortcutBannerLabel}!`,
+      });
+    }
+  }
+  const visibleAlerts = activeAlerts.slice(0, 2);
 
   return (
     <div className={`kl-hud-overlay ${touchControlsVisible ? 'has-touch-controls' : ''}`}>
@@ -137,6 +170,16 @@ export function RaceHud({
           <button
             type="button"
             className="kl-btn kl-btn-secondary"
+            data-testid="hud-recover-btn"
+            aria-label="Recuperar Kart na Pista"
+            disabled={paused || phase !== 'racing'}
+            onClick={onRecoverKart}
+          >
+            Recuperar (R)
+          </button>
+          <button
+            type="button"
+            className="kl-btn kl-btn-secondary"
             onClick={onToggleMute}
             aria-label={muted ? 'Ativar Som' : 'Silenciar Som'}
           >
@@ -167,39 +210,13 @@ export function RaceHud({
           </div>
         )}
 
-        {isFinalLap && !paused && !countdownLabel && (
-          <div className="kl-alert-banner final-lap" role="status">
-            VOLTA FINAL!
-          </div>
-        )}
-
-        {telemetry.wrongWay && phase === 'racing' && !paused && (
-          <div className="kl-alert-banner danger" role="status">
-            CONTRAMÃO! DÊ A VOLTA!
-          </div>
-        )}
-
-        {telemetry.shieldActive && phase === 'racing' && !paused && (
-          <div className="kl-alert-banner shield" role="status">
-            BOLHA GUARDIÃ ATIVA!
-          </div>
-        )}
-
-        {telemetry.hitActive && phase === 'racing' && !paused && (
-          <div className="kl-alert-banner danger" role="status">
-            IMPACTO!
-          </div>
-        )}
-
-        {telemetry.boostActive && telemetry.boostLabel && phase === 'racing' && !paused && (
-          <div className="kl-alert-banner boost" role="status">
-            {telemetry.boostLabel.toUpperCase()}!
-          </div>
-        )}
-
-        {telemetry.onShortcut && phase === 'racing' && !paused && (
-          <div className="kl-alert-banner shortcut" role="status">
-            {trackTheme.shortcutBannerLabel}!
+        {visibleAlerts.length > 0 && (
+          <div className="kl-alerts-stack" data-testid="hud-alerts">
+            {visibleAlerts.map((alert) => (
+              <div key={alert.key} className={`kl-alert-banner ${alert.variant}`} role="status">
+                {alert.text}
+              </div>
+            ))}
           </div>
         )}
 

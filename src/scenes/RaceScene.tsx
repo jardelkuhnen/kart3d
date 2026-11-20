@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, Lightformer, useGLTF, useTexture } from '@react-three/drei';
 import { CuboidCollider, Physics, RigidBody, type RapierRigidBody } from '@react-three/rapier';
@@ -225,23 +225,49 @@ function TrackWorld({
     for (let i = 0; i < samples.length; i += step) {
       const curr = samples[i];
       const next = samples[(i + step) % samples.length];
-      const segLen = Math.hypot(next.point.x - curr.point.x, next.point.z - curr.point.z);
+      const segDx = next.point.x - curr.point.x;
+      const segDz = next.point.z - curr.point.z;
+      const segLen = Math.hypot(segDx, segDz);
+      if (segLen < 0.05) continue;
+
+      const segTx = segDx / segLen;
+      const segTz = segDz / segLen;
+      // Right vector matching trackGeometry (+Y up): tangent x (0, 1, 0) = (-tz, 0, tx)
+      const segRx = -segTz;
+      const segRz = segTx;
+
       const midX = (curr.point.x + next.point.x) * 0.5;
       const midY = (curr.point.y + next.point.y) * 0.5;
       const midZ = (curr.point.z + next.point.z) * 0.5;
-      const rotY = yawFromTangent(curr.tangent);
-      const wallOffset = layout.wallMargin + 0.45;
+      const rotY = yawFromTangent({ x: segTx, y: 0, z: segTz });
+      // Keep outer safety collider outside arcade wall-slide boundary (wallMargin - 0.95 + ballRadius 0.88)
+      const wallOffset = layout.wallMargin + 1.15;
 
       for (const side of [-1, 1] as const) {
+        const wx = midX + segRx * side * wallOffset;
+        const wz = midZ + segRz * side * wallOffset;
+
+        // Leave open gaps across shortcut entrances & exits
+        let blocksShortcut = false;
+        for (const sc of layout.shortcuts) {
+          const clearanceSq = (sc.halfWidth + 4.5) * (sc.halfWidth + 4.5);
+          for (const scSample of sc.samples) {
+            const dx = wx - scSample.point.x;
+            const dz = wz - scSample.point.z;
+            if (dx * dx + dz * dz <= clearanceSq && Math.abs(scSample.point.y - midY) < 4.5) {
+              blocksShortcut = true;
+              break;
+            }
+          }
+          if (blocksShortcut) break;
+        }
+        if (blocksShortcut) continue;
+
         segments.push({
           key: `w_${i}_${side}`,
-          pos: [
-            midX + curr.right.x * side * wallOffset,
-            midY + 0.8,
-            midZ + curr.right.z * side * wallOffset,
-          ],
+          pos: [wx, midY + 0.8, wz],
           rotY,
-          halfLength: segLen * 0.55,
+          halfLength: segLen * 0.5,
         });
       }
     }
@@ -251,11 +277,11 @@ function TrackWorld({
   return (
     <group>
       <primitive object={trackScene} />
-      <RigidBody type="fixed" colliders={false} restitution={0.25} friction={0.1}>
+      <RigidBody type="fixed" colliders={false} restitution={0.1} friction={0}>
         {wallColliders.map((seg) => (
           <CuboidCollider
             key={seg.key}
-            args={[0.6, 1.4, seg.halfLength]}
+            args={[0.5, 1.4, seg.halfLength]}
             position={seg.pos}
             rotation={[0, seg.rotY, 0]}
           />
@@ -546,10 +572,19 @@ function RaceWorldContent({
     ),
   );
   const playerRapierRef = useRef<RapierRigidBody | null>(null);
+  const syncPlayerRapier = useCallback((body: RapierRigidBody | null) => {
+    playerRapierRef.current = body;
+    if (body) {
+      const pSim = simRef.current.player.sim;
+      body.setTranslation({ x: pSim.x, y: pSim.y, z: pSim.z }, true);
+      body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    }
+  }, []);
   const clockRef = useRef(new FixedStepClock(FIXED_TIMESTEP));
   const telemetryTimerRef = useRef(0);
   const lastSyncRef = useRef<string>('');
   const goFlashTimerRef = useRef(0);
+  const recoverQueuedRef = useRef(false);
 
   const poseRef = useRef<LiveKartPose>({
     x: startSlot.position.x,
@@ -657,27 +692,37 @@ function RaceWorldContent({
 
     const sim = simRef.current;
     const playerInput = inputManager.pollKartOnly();
+    if (playerInput.recover) {
+      recoverQueuedRef.current = true;
+    }
 
     clockRef.current.advance(delta, (dt) => {
-      const rapierBody = playerRapierRef.current;
-      if (rapierBody && sim.player.sim.recoverTimer <= 0) {
-        const pos = rapierBody.translation();
-        sim.player.sim.x = pos.x;
-        sim.player.sim.z = pos.z;
-      }
+      const stepInput = recoverQueuedRef.current ? { ...playerInput, recover: true } : playerInput;
+      recoverQueuedRef.current = false;
 
+      const rapierBody = playerRapierRef.current;
       const prevRecover = sim.player.sim.recoverTimer;
-      const events = sim.step(dt, playerInput);
+      const events = sim.step(dt, stepInput);
 
       if (rapierBody) {
         const pSim = sim.player.sim;
-        if (prevRecover <= 0 && pSim.recoverTimer > 0) {
+        const cur = rapierBody.translation();
+        const driftDist = Math.hypot(cur.x - pSim.x, cur.z - pSim.z);
+        if (
+          (prevRecover <= 0 && pSim.recoverTimer > 0) ||
+          events.playerPositionCorrected ||
+          driftDist > 0.35
+        ) {
           rapierBody.setTranslation({ x: pSim.x, y: pSim.y, z: pSim.z }, true);
-          rapierBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+          rapierBody.setLinvel(
+            pSim.recoverTimer > 0 ? { x: 0, y: 0, z: 0 } : { x: pSim.vx, y: 0, z: pSim.vz },
+            true,
+          );
         } else {
-          const cur = rapierBody.translation();
+          const vxCorr = pSim.vx + (pSim.x - cur.x) * 12;
           const vyCorr = (pSim.y - cur.y) / dt;
-          rapierBody.setLinvel({ x: pSim.vx, y: vyCorr, z: pSim.vz }, true);
+          const vzCorr = pSim.vz + (pSim.z - cur.z) * 12;
+          rapierBody.setLinvel({ x: vxCorr, y: vyCorr, z: vzCorr }, true);
         }
       }
 
@@ -793,19 +838,18 @@ function RaceWorldContent({
         <WorldItemsRenderer key={`items-${selectedTrackId}`} layout={layout} simRef={simRef} paused={paused} />
         {racerAssetList.map((racerAsset, idx) => (
           <RacerMeshInstance
-            key={idx}
+            key={`${selectedTrackId}-${idx}`}
             racerIndex={idx}
             simRef={simRef}
             kartModelPath={racerAsset.kart}
             characterModelPath={racerAsset.character}
-            poseRef={idx === 0 ? poseRef : undefined}
-            onPlayerRapierSync={
+            initialPosition={
               idx === 0
-                ? (body) => {
-                    playerRapierRef.current = body;
-                  }
+                ? [startSlot.position.x, startSlot.position.y, startSlot.position.z]
                 : undefined
             }
+            poseRef={idx === 0 ? poseRef : undefined}
+            onPlayerRapierSync={idx === 0 ? syncPlayerRapier : undefined}
             paused={paused}
           />
         ))}

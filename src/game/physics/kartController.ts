@@ -1,6 +1,11 @@
 import { DRIFT_TIERS, SURFACE_PROPERTIES } from '../core/constants';
 import type { CharacterDef, KartDef, SurfaceType } from '../core/types';
-import { getCheckpointPose, type TrackLayoutDef, type TrackPointQuery } from '../tracks/trackGeometry';
+import {
+  getCheckpointPose,
+  type TrackLayoutDef,
+  type TrackPointQuery,
+  yawFromTangent,
+} from '../tracks/trackGeometry';
 
 export interface KartInputState {
   throttle: number; // 0..1
@@ -57,8 +62,16 @@ export interface KartSimState {
   lateralOffset: number;
   onShortcut: boolean;
   lastSafeCheckpointIndex: number;
+  wallStuckTimer: number;
+  wallCollisionThisStep: boolean;
   totalDriftsCompleted: number;
   totalTurbosTriggered: number;
+}
+
+function normalizeAngle(rad: number): number {
+  let a = (rad + Math.PI) % (Math.PI * 2);
+  if (a < 0) a += Math.PI * 2;
+  return a - Math.PI;
 }
 
 const GRAVITY = 28;
@@ -136,6 +149,8 @@ export function createInitialKartState(
     lateralOffset: 0,
     onShortcut: false,
     lastSafeCheckpointIndex: 0,
+    wallStuckTimer: 0,
+    wallCollisionThisStep: false,
     totalDriftsCompleted: 0,
     totalTurbosTriggered: 0,
   };
@@ -176,6 +191,8 @@ export function beginKartRecovery(
   state.boostMultiplier = 1;
   state.boostLabel = null;
   state.recoverTimer = 0.55;
+  state.wallStuckTimer = 0;
+  state.wallCollisionThisStep = false;
   state.visualSlipYaw = 0;
 }
 
@@ -199,6 +216,7 @@ export function stepKartSimulation(
   state.boostPadCooldown = Math.max(0, state.boostPadCooldown - dt);
   state.rampCooldown = Math.max(0, state.rampCooldown - dt);
   state.hitTimer = Math.max(0, state.hitTimer - dt);
+  state.wallCollisionThisStep = false;
   state.distanceAlongTrack = trackQuery.distanceAlongTrack;
   state.lateralOffset = trackQuery.lateralOffset;
   state.onShortcut = trackQuery.onShortcut;
@@ -233,6 +251,11 @@ export function stepKartSimulation(
       state.boostMultiplier = 1;
       state.boostLabel = null;
     }
+  }
+  if (input.brake > 0.5 && input.throttle <= 0.05 && state.boostTimer > 0) {
+    state.boostTimer = 0;
+    state.boostMultiplier = 1;
+    state.boostLabel = null;
   }
 
   const surfaceCfg = SURFACE_PROPERTIES[state.surface];
@@ -337,12 +360,20 @@ export function stepKartSimulation(
     state.driftTier = 0;
   }
 
-  // Normal steering when not in locked drift
+  // Normal steering when not in locked drift (keeps minimum turn authority at low speed)
   if (!state.driftActive) {
     const speedNorm = Math.min(1, Math.abs(state.forwardSpeed) / 10);
+    const minSteerAuthority = input.throttle > 0.05 || input.brake > 0.05 ? 0.42 : 0.25;
+    const effectiveSteerScale = Math.max(speedNorm, minSteerAuthority);
     const reverseSign = state.forwardSpeed < -0.5 ? -1 : 1;
     const gripTurnScale = 0.6 + 0.4 * Math.min(1, surfaceCfg.grip * profile.gripFactor);
-    state.yaw += -state.steerAngle * profile.turnRateRadS * speedNorm * reverseSign * gripTurnScale * dt;
+    state.yaw +=
+      -state.steerAngle *
+      profile.turnRateRadS *
+      effectiveSteerScale *
+      reverseSign *
+      gripTurnScale *
+      dt;
   }
 
   // Convert heading + velocity into world velocity (with slight ice/drift lateral momentum)
@@ -359,21 +390,87 @@ export function stepKartSimulation(
   state.vx += (targetVx - state.vx) * blend;
   state.vz += (targetVz - state.vz) * blend;
 
-  // Horizontal integration + track boundary containment
-  state.x += state.vx * dt;
-  state.z += state.vz * dt;
+  // Horizontal integration + track boundary containment (arcade wall-slide)
+  const stepDx = state.vx * dt;
+  const stepDz = state.vz * dt;
+  state.x += stepDx;
+  state.z += stepDz;
 
-  // Soft wall pushback if exceeding track wall margin (works alongside Rapier wall colliders)
+  const sample = trackQuery.nearestSample;
+  const postLateral =
+    trackQuery.lateralOffset + (stepDx * sample.right.x + stepDz * sample.right.z);
   const maxLateral = trackQuery.wallDistance - 0.95;
-  if (Math.abs(trackQuery.lateralOffset) > maxLateral && !trackQuery.onShortcut) {
-    const excess = Math.abs(trackQuery.lateralOffset) - maxLateral;
-    const pushDir = -Math.sign(trackQuery.lateralOffset);
-    state.x += trackQuery.nearestSample.right.x * pushDir * excess * 0.65;
-    state.z += trackQuery.nearestSample.right.z * pushDir * excess * 0.65;
-    if (excess > 0.25 && state.forwardSpeed > 18) {
-      state.forwardSpeed *= 0.92;
-      state.hitTimer = Math.max(state.hitTimer, 0.25);
+
+  if (!trackQuery.onShortcut && Math.abs(postLateral) > maxLateral) {
+    const wallSign = Math.sign(postLateral) || 1;
+    const outX = sample.right.x * wallSign;
+    const outZ = sample.right.z * wallSign;
+    const excess = Math.abs(postLateral) - maxLateral;
+
+    // 1. Clamp strictly back onto playable track width
+    state.x -= outX * excess;
+    state.z -= outZ * excess;
+    state.lateralOffset = wallSign * maxLateral;
+    state.wallCollisionThisStep = true;
+
+    // 2. Remove only outward wall-normal velocity so kart slides cleanly along the tangent
+    const tLen = Math.hypot(sample.tangent.x, sample.tangent.z) || 1;
+    const tx = sample.tangent.x / tLen;
+    const tz = sample.tangent.z / tLen;
+    const vOut = state.vx * outX + state.vz * outZ;
+    if (vOut > 0) {
+      state.vx -= outX * (vOut + 0.8);
+      state.vz -= outZ * (vOut + 0.8);
     }
+
+    const vTan = state.vx * tx + state.vz * tz;
+    const headingX = -Math.sin(state.yaw);
+    const headingZ = -Math.cos(state.yaw);
+    const intoWallDot = headingX * outX + headingZ * outZ;
+    const trackYaw = yawFromTangent(sample.tangent);
+    const targetSafeYaw = trackYaw + wallSign * 0.1;
+
+    // 3. Auto-align kart yaw gently away from barrier to prevent 90-deg lockups
+    if (intoWallDot > 0.02 && state.forwardSpeed >= -0.5) {
+      const diffToSafe = normalizeAngle(targetSafeYaw - state.yaw);
+      const alignRate = (3.5 + intoWallDot * 6.5) * dt;
+      state.yaw += Math.sign(diffToSafe) * Math.min(Math.abs(diffToSafe), alignRate);
+
+      const projectedForward = Math.max(0, vTan);
+      if (intoWallDot > 0.45 && state.forwardSpeed > 14) {
+        state.forwardSpeed = Math.max(
+          projectedForward * 0.85,
+          state.forwardSpeed * (1 - intoWallDot * 0.22),
+        );
+        if (excess > 0.2 && intoWallDot > 0.65) {
+          state.hitTimer = Math.max(state.hitTimer, 0.2);
+        }
+      } else {
+        state.forwardSpeed = Math.max(
+          Math.min(state.forwardSpeed, maxAllowedSpeed * 0.92),
+          projectedForward * 0.92,
+        );
+      }
+    }
+
+    // 4. Auto-unstick failsafe if holding throttle wedged against barrier for >= 1.0s
+    if (input.throttle > 0.1 && Math.abs(vTan) < 2.5) {
+      state.wallStuckTimer += dt;
+      if (state.wallStuckTimer >= 1.0) {
+        state.x -= outX * 1.6;
+        state.z -= outZ * 1.6;
+        state.lateralOffset = wallSign * Math.max(0, maxLateral - 1.6);
+        state.yaw = trackYaw + wallSign * 0.14;
+        state.forwardSpeed = Math.max(state.forwardSpeed, 10);
+        state.vx = -Math.sin(state.yaw) * state.forwardSpeed;
+        state.vz = -Math.cos(state.yaw) * state.forwardSpeed;
+        state.wallStuckTimer = 0;
+      }
+    } else {
+      state.wallStuckTimer = Math.max(0, state.wallStuckTimer - dt * 2.5);
+    }
+  } else {
+    state.wallStuckTimer = Math.max(0, state.wallStuckTimer - dt * 3);
   }
 
   // Vertical motion, ramp & gravity

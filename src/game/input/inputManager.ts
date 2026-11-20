@@ -153,6 +153,7 @@ export class InputManager {
   private readonly pressedCodes = new Set<string>();
   private virtualInput: VirtualTouchInput = { ...EMPTY_VIRTUAL_INPUT };
   private autoAccelerateActive = false;
+  private recoverPulsePending = false;
   private pauseEdgeTriggered = false;
   private prevGamepadPause = false;
   private bindings: ControlBindings;
@@ -226,6 +227,11 @@ export class InputManager {
 
   public resetVirtualInput(): void {
     this.virtualInput = { ...EMPTY_VIRTUAL_INPUT };
+    this.recoverPulsePending = false;
+  }
+
+  public triggerRecoverOnce(): void {
+    this.recoverPulsePending = true;
   }
 
   public getVirtualInput(): VirtualTouchInput {
@@ -279,13 +285,17 @@ export class InputManager {
       ? mapGamepadToInput(activePad, this.gamepadDeadzone, this.steeringSensitivity).kart
       : { throttle: 0, brake: 0, steer: 0, drift: false, useItem: false, recover: false };
 
-    return mergeKartInputs(
+    const merged = mergeKartInputs(
       kb,
       gp,
       this.virtualInput,
       this.steeringSensitivity,
       this.autoAccelerateActive,
     );
+
+    const recoverPulse = this.recoverPulsePending;
+    this.recoverPulsePending = false;
+    return recoverPulse ? { ...merged, recover: true } : merged;
   }
 
   public consumePausePressed(): boolean {

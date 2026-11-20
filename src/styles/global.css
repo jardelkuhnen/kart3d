@@ -252,6 +252,8 @@ body,
 
 .kl-race-actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 10px;
 }
 
@@ -481,7 +483,7 @@ body,
 
 .kl-scoreboard-row {
   display: grid;
-  grid-template-columns: 42px 14px 1fr 140px 84px 66px;
+  grid-template-columns: 38px 12px minmax(90px, 1fr) minmax(80px, 0.85fr) auto auto;
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
@@ -512,6 +514,14 @@ body,
   width: 12px;
   height: 12px;
   border-radius: 50%;
+}
+
+.kl-sb-name,
+.kl-sb-kart {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kl-sb-kart {
@@ -596,6 +606,13 @@ body,
     0 12px 30px rgba(0, 0, 0, 0.65);
 }
 
+.kl-alerts-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
 .kl-alert-banner {
   padding: 7px 18px;
   border-radius: 999px;
@@ -634,6 +651,7 @@ body,
 .kl-modal-actions {
   margin-top: 16px;
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 12px;
 }
@@ -1243,7 +1261,7 @@ body,
 
 .kl-career-stats-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 8px;
   margin-top: 12px;
 }
@@ -1614,6 +1632,30 @@ body,
   }
 
   .kl-career-stats-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .kl-scoreboard-row {
+    grid-template-columns: 32px 10px 1fr auto auto;
+    gap: 8px;
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .kl-sb-kart {
+    display: none;
+  }
+
+  .kl-settings-grid,
+  .kl-mode-grid,
+  .kl-cup-grid,
+  .kl-track-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kl-podium-mini-table {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

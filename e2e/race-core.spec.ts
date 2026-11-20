@@ -78,6 +78,18 @@ test.describe('KART LEGENDS 3D — Core 8-Racer Quick Race Flow', () => {
     await muteBtn.click();
     await expect(page.getByRole('button', { name: /Ativar Som/i })).toBeVisible();
 
+    const recoverBtn = page.getByTestId('hud-recover-btn');
+    await expect(recoverBtn).toBeEnabled();
+    await recoverBtn.click();
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('heading', { name: 'CORRIDA PAUSADA' })).toBeVisible({
+      timeout: 3_000,
+    });
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await expect(page.getByRole('heading', { name: 'CORRIDA PAUSADA' })).toBeHidden();
+
+    // Verify second pause/resume toggle remains synchronized under React 19 StrictMode
     await page.keyboard.press('Escape');
     await expect(page.getByRole('heading', { name: 'CORRIDA PAUSADA' })).toBeVisible({
       timeout: 3_000,

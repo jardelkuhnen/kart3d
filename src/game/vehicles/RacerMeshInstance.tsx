@@ -15,6 +15,7 @@ export interface RacerMeshInstanceProps {
   simRef: React.MutableRefObject<RaceSimulation>;
   kartModelPath: string;
   characterModelPath: string;
+  initialPosition?: [number, number, number];
   poseRef?: React.MutableRefObject<LiveKartPose>;
   onPlayerRapierSync?: (body: RapierRigidBody | null) => void;
   paused: boolean;
@@ -42,6 +43,7 @@ export function RacerMeshInstance({
   simRef,
   kartModelPath,
   characterModelPath,
+  initialPosition,
   poseRef,
   onPlayerRapierSync,
   paused,
@@ -249,7 +251,7 @@ export function RacerMeshInstance({
         <RigidBody
           ref={bodyRef}
           type="dynamic"
-          position={[0, 0.35, 43]}
+          position={initialPosition ?? [0, 0.35, 0]}
           lockRotations
           gravityScale={0}
           linearDamping={0}

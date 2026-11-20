@@ -237,12 +237,16 @@ export function App() {
   const handleTogglePause = useCallback(() => {
     audioEngine.unlock();
     audioEngine.playSfx('sfx-ui-click');
-    setPaused((prev) => {
-      const next = !prev;
-      setScreen(next ? 'pause' : 'race');
-      return next;
-    });
-  }, [audioEngine, setScreen]);
+    const next = !paused;
+    setPaused(next);
+    setScreen(next ? 'pause' : 'race');
+  }, [audioEngine, paused, setScreen]);
+
+  const handleRecoverKart = useCallback(() => {
+    audioEngine.unlock();
+    audioEngine.playSfx('sfx-ui-click');
+    inputManager.triggerRecoverOnce();
+  }, [audioEngine, inputManager]);
 
   const handleToggleMute = useCallback(() => {
     audioEngine.unlock();
@@ -381,6 +385,7 @@ export function App() {
               touchControlsVisible={touchControlsVisible}
               touchAutoAccelerate={settings.touch.autoAccelerate}
               onUserGesture={handleUserGesture}
+              onRecoverKart={handleRecoverKart}
               onRestartRace={handleRestartRace}
               onTogglePause={handleTogglePause}
               onToggleMute={handleToggleMute}
