@@ -1,3 +1,4 @@
+import { getRecommendedInitialQuality } from './mobile';
 import type {
   ControlBindings,
   Difficulty,
@@ -170,9 +171,17 @@ export const DEFAULT_SETTINGS: GameSettings = {
     muted: false,
   },
   bindings: DEFAULT_BINDINGS,
+  touch: {
+    mode: 'auto',
+    autoAccelerate: true,
+  },
 };
 
-export function createInitialSaveData(): SaveDataV1 {
+export function createInitialSaveData(options?: { isMobile?: boolean }): SaveDataV1 {
+  const settings = structuredClone(DEFAULT_SETTINGS);
+  if (options?.isMobile !== undefined) {
+    settings.quality = getRecommendedInitialQuality(options.isMobile);
+  }
   return {
     version: 1,
     updatedAt: new Date(0).toISOString(),
@@ -195,7 +204,7 @@ export function createInitialSaveData(): SaveDataV1 {
       totalTurbosTriggered: 0,
       totalItemsUsed: 0,
     },
-    settings: structuredClone(DEFAULT_SETTINGS),
+    settings,
   };
 }
 

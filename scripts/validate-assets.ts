@@ -109,6 +109,12 @@ async function validateAudioFile(absPath: string, entry: AssetManifestEntry): Pr
 
   if (entry.format === 'ogg' && raw.subarray(0, 4).toString('ascii') !== 'OggS') {
     errors.push(`[${entry.id}] Cabeçalho OggS inválido.`);
+  } else if (entry.format === 'mp3') {
+    const hasId3 = raw.subarray(0, 3).toString('ascii') === 'ID3';
+    const hasMpegSync = raw[0] === 0xff && (raw[1] & 0xe0) === 0xe0;
+    if (!hasId3 && !hasMpegSync) {
+      errors.push(`[${entry.id}] Cabeçalho MP3 (ID3/MPEG sync) inválido.`);
+    }
   } else if (entry.format === 'wav' && raw.subarray(0, 4).toString('ascii') !== 'RIFF') {
     errors.push(`[${entry.id}] Cabeçalho WAV RIFF inválido.`);
   }
@@ -153,6 +159,27 @@ async function main(): Promise<void> {
       errors.push(...(await validatePngFile(absPath, entry)));
     } else if (entry.format === 'ogg' || entry.format === 'wav' || entry.format === 'mp3') {
       errors.push(...(await validateAudioFile(absPath, entry)));
+    }
+  }
+
+  const entriesById = new Map(manifest.assets.map((item) => [item.id, item]));
+  for (const entry of manifest.assets) {
+    if (
+      (entry.type === 'audio-music' || entry.type === 'audio-sfx') &&
+      entry.format === 'ogg'
+    ) {
+      const mp3Fallback = entriesById.get(`${entry.id}-mp3`);
+      const expectedMp3Path = entry.path.replace(/\.ogg$/, '.mp3');
+      if (
+        !mp3Fallback ||
+        mp3Fallback.format !== 'mp3' ||
+        mp3Fallback.validationStatus !== 'validated' ||
+        mp3Fallback.path !== expectedMp3Path
+      ) {
+        errors.push(
+          `[${entry.id}] Fallback MP3 iOS/Safari ausente ou inválido (esperado: "${entry.id}-mp3" em ${expectedMp3Path}).`,
+        );
+      }
     }
   }
 

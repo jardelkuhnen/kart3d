@@ -1,11 +1,13 @@
 import { getItemById } from '../../data/items';
 import { DRIFT_TIERS, SURFACE_PROPERTIES } from '../../game/core/constants';
 import type { AssetManifest, GameMode, TrackId } from '../../game/core/types';
+import type { InputManager } from '../../game/input/inputManager';
 import { resolveAssetPath } from '../../game/core/assetLoader';
 import { formatRaceTimeMs, type RacePhase } from '../../game/racing/raceManager';
 import type { FullHudSnapshot } from '../../game/racing/raceSimulation';
 import { getTrackLayout, getTrackVisualTheme } from '../../game/tracks/registry';
 import { Minimap } from './Minimap';
+import { TouchControls } from './TouchControls';
 
 export interface RaceHudProps {
   mode: GameMode;
@@ -20,6 +22,10 @@ export interface RaceHudProps {
   championshipRoundLabel: string | null;
   muted: boolean;
   telemetry: FullHudSnapshot;
+  inputManager: InputManager;
+  touchControlsVisible: boolean;
+  touchAutoAccelerate: boolean;
+  onUserGesture: () => void;
   onRestartRace: () => void;
   onTogglePause: () => void;
   onToggleMute: () => void;
@@ -42,6 +48,10 @@ export function RaceHud({
   championshipRoundLabel,
   muted,
   telemetry,
+  inputManager,
+  touchControlsVisible,
+  touchAutoAccelerate,
+  onUserGesture,
   onRestartRace,
   onTogglePause,
   onToggleMute,
@@ -70,7 +80,12 @@ export function RaceHud({
     mode !== 'practice' && telemetry.currentLap === telemetry.totalLaps && phase === 'racing';
 
   return (
-    <div className="kl-hud-overlay">
+    <div className={`kl-hud-overlay ${touchControlsVisible ? 'has-touch-controls' : ''}`}>
+      {touchControlsVisible && (
+        <div className="kl-portrait-hint" role="note">
+          Gire o aparelho para o modo paisagem para melhor ergonomia
+        </div>
+      )}
       {/* Top Bar: Rank/Mode + Minimap (Left), Item Slot (Center), Controls + Audio (Right) */}
       <header className="kl-topbar">
         <div className="kl-left-cluster">
@@ -277,6 +292,19 @@ export function RaceHud({
           </div>
         </section>
       </footer>
+
+      {touchControlsVisible && !paused && (phase === 'countdown' || phase === 'racing') && (
+        <TouchControls
+          inputManager={inputManager}
+          mode={mode}
+          autoAccelerate={touchAutoAccelerate}
+          driftTier={telemetry.driftTier}
+          driftActive={telemetry.driftActive}
+          heldItemName={displayItemDef?.name ?? null}
+          heldItemIcon={displayItemIcon}
+          onUserGesture={onUserGesture}
+        />
+      )}
     </div>
   );
 }

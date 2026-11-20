@@ -2,13 +2,13 @@
 
 Jogo original de corrida de kart arcade 3D para navegador, desenvolvido com **React 19**, **TypeScript (`strict`)**, **Three.js / React Three Fiber**, **Rapier Physics**, **Zustand**, **Howler.js + Web Audio API**, **Vitest** e **Playwright**.
 
-> **Status Atual:** Slices 0 a 7 implementados e verificados (8 personagens originais animados, 8 karts estruturalmente distintos, 8 pistas em 2 copas, 7 adversários com IA física, 6 itens, 4 modos de jogo, 14 telas em português-BR, Pódio 3D, save versionado `v1`, VFX em pool com shaders customizados, 3 perfis de qualidade e 88 ativos locais validados). Consulte a seção **Notas de Ambiente e Limitações Conhecidas** e [QA_REPORT.md](QA_REPORT.md) para detalhes completos das medições e ferramentas do host.
+> **Status Atual:** Slices 0 a 8 implementados e verificados (8 personagens originais animados, 8 karts estruturalmente distintos, 8 pistas em 2 copas, 7 adversários com IA física, 6 itens, 4 modos de jogo, 14 telas em português-BR, Pódio 3D, save versionado `v1`, VFX em pool com shaders customizados, 3 perfis de qualidade, suporte mobile completo para Chrome iOS & Android e 114 ativos locais validados). Consulte a seção **Notas de Ambiente e Limitações Conhecidas** e [QA_REPORT.md](QA_REPORT.md) para detalhes completos das medições e ferramentas do host.
 
 ---
 
 ## Capturas Reais de Gameplay (Playwright + Chrome Metal WebGL)
 
-Todas as capturas abaixo foram geradas diretamente pelo teste real [e2e/performance-vfx.spec.ts](e2e/performance-vfx.spec.ts) no build de produção servido via `vite preview`:
+Todas as capturas abaixo foram geradas diretamente pelos testes reais [e2e/performance-vfx.spec.ts](e2e/performance-vfx.spec.ts) e [e2e/mobile-touch.spec.ts](e2e/mobile-touch.spec.ts) no build de produção servido via `vite preview`:
 
 | Tela | Captura |
 | :--- | :--- |
@@ -16,6 +16,7 @@ Todas as capturas abaixo foram geradas diretamente pelo teste real [e2e/performa
 | Garagem 3D Showcase (pedestal giratório) | ![Garagem 3D](docs/screenshots/garage_showcase.png) |
 | Corrida em Porto das Lanternas (Copa Aurora) | ![Porto das Lanternas](docs/screenshots/race_porto.png) |
 | Treino em Fortaleza Tempestade (Copa Eclipse + VFX) | ![Fortaleza Tempestade](docs/screenshots/race_fortaleza.png) |
+| Corrida Mobile em Paisagem (`844×390`, Controles Multitoque) | ![Mobile Paisagem](docs/screenshots/mobile_race_landscape.png) |
 
 ---
 
@@ -30,7 +31,8 @@ Todas as capturas abaixo foram geradas diretamente pelo teste real [e2e/performa
 - **7 Adversários IA + 6 Itens (`aiController.ts`, `itemSystem.ts`):** IA física competindo sem teleporte em 3 dificuldades (*Fácil*, *Normal*, *Difícil*) + *Pulso Solar*, *Bolha Guardiã*, *Névoa Prisma*, *Faísca Rastreadora*, *Onda de Vento* e *Cristal de Salto*.
 - **14 Telas & 4 Modos (`pt-BR`):** *Corrida Rápida*, *Campeonato* (4 etapas com pontuação acumulada e Cerimônia do Pódio 3D), *Contrarrelógio* e *Treino Livre* (acesso livre às 2 copas e todos os pilotos/karts), mais Garagem Showcase 3D, Configurações (qualidade `Baixo` / `Médio` / `Alto`, 3 volumes, sensibilidade, zona morta e remapeamento de teclas) e Progressão/Troféus com persistência versionada e recuperação contra corrupção (`kart-legends-3d:save:v1`).
 - **VFX em Pool & Shaders Customizados:** Sistema de partículas em `InstancedMesh` usando `public/assets/vfx/particles_atlas.png` + `src/shaders/particleAtlasShader.ts` (recorte por quadrante via `aCellOffset` sem alocação por quadro) e `src/shaders/speedLinesShader.ts` (linhas de velocidade radiais).
-- **Áudio Integrado:** 5 músicas, 8 ambiências e 13 SFX em `.ogg` (Howler.js) + sintetizador Web Audio contínuo de motor e chiado de drift.
+- **Áudio Integrado Dual-Formato:** 5 músicas, 8 ambiências e 13 SFX em `.ogg` + `.mp3` fallback iOS/Safari (Howler.js `src: [ogg, mp3]`) + sintetizador Web Audio contínuo de motor e chiado de drift com desbloqueio automático no primeiro toque.
+- **Suporte Mobile (Chrome iOS & Android):** Detecção automática de tela touch e viewport mobile com qualidade inicial **Baixa**, teto `dpr <= 1.5`, controles multitoque (`PointerEvent.pointerId`) no componente `TouchControls.tsx` (pad de direção à esquerda + Drift, Item, Freio/Ré e Recuperar à direita + Aceleração Automática opcional), alternância manual `Auto` / `Ligado` / `Desligado` nas Configurações, layout paisagem responsivo com `100dvh`, `viewport-fit=cover`, `env(safe-area-inset-*)`, prevenção de callout iOS (`-webkit-touch-callout: none`) e `manifest.webmanifest`.
 
 ---
 
@@ -38,7 +40,7 @@ Todas as capturas abaixo foram geradas diretamente pelo teste real [e2e/performa
 
 - **Node.js 22+** (`v26.7.0` validado neste host)
 - **npm 10+** (`12.0.2` validado neste host)
-- **`ffmpeg`** (`8.1.1` validado — transcodificação `.ogg`/`libopus` durante `npm run assets:build`)
+- **`ffmpeg`** (`8.1.1` validado — transcodificação `.ogg`/`libopus` + `.mp3`/`libmp3lame` durante `npm run assets:build`)
 - **Google Chrome** (para execução da suíte Playwright E2E com WebGL GPU)
 
 ---
@@ -70,7 +72,8 @@ npm run preview
 - `Shift`: Utilizar item equipado *(remapeável)*
 - `R`: Recuperar kart no último checkpoint válido *(remapeável)*
 - `Esc`: Pausar / Retomar
-- Suporte à **Gamepad API** (direcional analógico/D-pad, gatilhos e botões de drift/item/pausa) com sensibilidade e zona morta ajustáveis.
+- Suporte completo à **Gamepad API** (direcional analógico/D-pad, gatilhos e botões de drift/item/pausa) com sensibilidade e zona morta ajustáveis.
+- **Controles Touch Mobile (`TouchControls`):** Pad horizontal deslizante de direção à esquerda + botões independentes à direita (**Drift**, **Item**, **Freio/Ré**, **Recuperar** e **Aceleração** quando o modo de aceleração automática está em *Manual*), exibidos automaticamente em dispositivos touch ou configuráveis via **Configurações → Controles Touch (Mobile)**.
 
 ---
 
@@ -84,8 +87,8 @@ npm run preview
 - `npm run lint` — Análise estática com ESLint.
 - `npm run test` — Executa os testes unitários no Vitest.
 - `npm run test:e2e` — Executa os testes ponta a ponta e captura/benchmark no Playwright (Chrome + WebGL).
-- `npm run assets:build` — Gera os 88 ativos locais (GLB, PNG, OGG) e atualiza `public/assets/manifest.json` e `ASSET_MANIFEST.md`.
-- `npm run validate:assets` — Audita todos os arquivos em `public/assets/` contra o manifesto, checando assinaturas GLB/PNG/OGG, licenças, nós/animações obrigatórios e ausência de arquivos órfãos.
+- `npm run assets:build` — Gera os 114 ativos locais (GLB, PNG, OGG e MP3 fallback) e atualiza `public/assets/manifest.json` e `ASSET_MANIFEST.md`.
+- `npm run validate:assets` — Audita todos os arquivos em `public/assets/` contra o manifesto, checando assinaturas GLB/PNG/OGG/MP3, fallback MP3 obrigatório, licenças, nós/animações obrigatórios e ausência de arquivos órfãos.
 
 ---
 

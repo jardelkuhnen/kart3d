@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-20T03:19:54.869Z",
+  "generatedAt": "2026-11-20T04:57:22.008Z",
   "project": "KART LEGENDS 3D",
   "assets": [
     {
@@ -1386,6 +1386,21 @@
       ]
     },
     {
+      "id": "sfx-ui-click-mp3",
+      "name": "Som de Clique de Interface (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ui_click.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 2133,
+      "validationStatus": "validated",
+      "usedIn": [
+        "UISystem"
+      ]
+    },
+    {
       "id": "sfx-ui-confirm",
       "name": "Som de Confirmação de Interface",
       "type": "audio-sfx",
@@ -1395,6 +1410,21 @@
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
       "sizeBytes": 5502,
+      "validationStatus": "validated",
+      "usedIn": [
+        "UISystem"
+      ]
+    },
+    {
+      "id": "sfx-ui-confirm-mp3",
+      "name": "Som de Confirmação de Interface (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ui_confirm.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 6313,
       "validationStatus": "validated",
       "usedIn": [
         "UISystem"
@@ -1416,6 +1446,21 @@
       ]
     },
     {
+      "id": "music-menu-mp3",
+      "name": "Música — Menu Principal (Fallback MP3 iOS/Safari)",
+      "type": "audio-music",
+      "path": "/assets/audio/music/menu_theme.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 61066,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine"
+      ]
+    },
+    {
       "id": "music-race-aurora",
       "name": "Música — Corrida Copa Aurora",
       "type": "audio-music",
@@ -1425,6 +1470,21 @@
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
       "sizeBytes": 120228,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine"
+      ]
+    },
+    {
+      "id": "music-race-aurora-mp3",
+      "name": "Música — Corrida Copa Aurora (Fallback MP3 iOS/Safari)",
+      "type": "audio-music",
+      "path": "/assets/audio/music/race_aurora.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 109131,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine"
@@ -1446,6 +1506,21 @@
       ]
     },
     {
+      "id": "music-race-eclipse-mp3",
+      "name": "Música — Corrida Copa Eclipse (Fallback MP3 iOS/Safari)",
+      "type": "audio-music",
+      "path": "/assets/audio/music/race_eclipse.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 102026,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine"
+      ]
+    },
+    {
       "id": "music-victory",
       "name": "Música — Vitória",
       "type": "audio-music",
@@ -1455,6 +1530,21 @@
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
       "sizeBytes": 21027,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine"
+      ]
+    },
+    {
+      "id": "music-victory-mp3",
+      "name": "Música — Vitória (Fallback MP3 iOS/Safari)",
+      "type": "audio-music",
+      "path": "/assets/audio/music/victory_fanfare.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 20942,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine"
@@ -1476,51 +1566,18 @@
       ]
     },
     {
-      "id": "sfx-collision-hit",
-      "name": "Impacto de Colisão",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/collision_hit.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
+      "id": "music-defeat-mp3",
+      "name": "Música — Derrota / Consolação (Fallback MP3 iOS/Safari)",
+      "type": "audio-music",
+      "path": "/assets/audio/music/defeat_theme.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 5120,
+      "sizeBytes": 23449,
       "validationStatus": "validated",
       "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
-      "id": "sfx-countdown-beep",
-      "name": "Contagem Regressiva (Beep)",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/countdown_beep.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 4216,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
-      "id": "sfx-item-use",
-      "name": "Utilização de Item",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/item_use.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 4239,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
+        "AudioEngine"
       ]
     },
     {
@@ -1540,15 +1597,15 @@
       ]
     },
     {
-      "id": "sfx-drift-spark",
-      "name": "Faísca de Drift",
+      "id": "sfx-item-pickup-mp3",
+      "name": "Coleta de Item (Fallback MP3 iOS/Safari)",
       "type": "audio-sfx",
-      "path": "/assets/audio/sfx/drift_spark.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
+      "path": "/assets/audio/sfx/item_pickup.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 3464,
+      "sizeBytes": 5477,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1556,15 +1613,31 @@
       ]
     },
     {
-      "id": "sfx-land-thud",
-      "name": "Aterrissagem",
+      "id": "sfx-collision-hit",
+      "name": "Impacto de Colisão",
       "type": "audio-sfx",
-      "path": "/assets/audio/sfx/land_thud.ogg",
+      "path": "/assets/audio/sfx/collision_hit.ogg",
       "format": "ogg",
       "origin": "Síntese PCM local + ffmpeg Opus",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 3234,
+      "sizeBytes": 5120,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-collision-hit-mp3",
+      "name": "Impacto de Colisão (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/collision_hit.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 5477,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1588,6 +1661,22 @@
       ]
     },
     {
+      "id": "sfx-countdown-go-mp3",
+      "name": "Contagem Regressiva (Largada) (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/countdown_go.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 7985,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
       "id": "sfx-jump-launch",
       "name": "Impulso de Salto",
       "type": "audio-sfx",
@@ -1597,6 +1686,54 @@
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
       "sizeBytes": 3604,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-jump-launch-mp3",
+      "name": "Impulso de Salto (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/jump_launch.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 5059,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-drift-spark",
+      "name": "Faísca de Drift",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/drift_spark.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 3464,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-drift-spark-mp3",
+      "name": "Faísca de Drift (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/drift_spark.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 3805,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1620,6 +1757,86 @@
       ]
     },
     {
+      "id": "sfx-turbo-boost-mp3",
+      "name": "Disparo de Turbo (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/turbo_boost.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 8821,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-countdown-beep",
+      "name": "Contagem Regressiva (Beep)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/countdown_beep.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 4216,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-countdown-beep-mp3",
+      "name": "Contagem Regressiva (Beep) (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/countdown_beep.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 4641,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-land-thud",
+      "name": "Aterrissagem",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/land_thud.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 3234,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-land-thud-mp3",
+      "name": "Aterrissagem (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/land_thud.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 3805,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
       "id": "sfx-lap-complete",
       "name": "Volta Concluída",
       "type": "audio-sfx",
@@ -1629,6 +1846,22 @@
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
       "sizeBytes": 9459,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-lap-complete-mp3",
+      "name": "Volta Concluída (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/lap_complete.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 9239,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1652,6 +1885,54 @@
       ]
     },
     {
+      "id": "sfx-race-finish-mp3",
+      "name": "Chegada da Corrida (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/race_finish.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 12582,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-item-use",
+      "name": "Utilização de Item",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/item_use.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 4239,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-item-use-mp3",
+      "name": "Utilização de Item (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/item_use.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 5895,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
       "id": "sfx-ambience-coastal",
       "name": "Ambiência — Costa e Ondas",
       "type": "audio-sfx",
@@ -1661,6 +1942,22 @@
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
       "sizeBytes": 42169,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "PortoDasLanternas"
+      ]
+    },
+    {
+      "id": "sfx-ambience-coastal-mp3",
+      "name": "Ambiência — Costa e Ondas (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_coastal.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 65245,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1684,6 +1981,22 @@
       ]
     },
     {
+      "id": "sfx-ambience-forest-mp3",
+      "name": "Ambiência — Bosque e Cascata (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_forest.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 65245,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "BosqueDeCristal"
+      ]
+    },
+    {
       "id": "sfx-ambience-valley",
       "name": "Ambiência — Brisa do Vale",
       "type": "audio-sfx",
@@ -1693,6 +2006,22 @@
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
       "sizeBytes": 42219,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "ValeDosMoinhos"
+      ]
+    },
+    {
+      "id": "sfx-ambience-valley-mp3",
+      "name": "Ambiência — Brisa do Vale (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_valley.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 65245,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1716,6 +2045,22 @@
       ]
     },
     {
+      "id": "sfx-ambience-canyon-mp3",
+      "name": "Ambiência — Ventos do Cânion (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_canyon.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 65245,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "CanionSolar"
+      ]
+    },
+    {
       "id": "sfx-ambience-neon",
       "name": "Ambiência — Metrópole Neon",
       "type": "audio-sfx",
@@ -1725,6 +2070,22 @@
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
       "sizeBytes": 42542,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "CidadeNeon"
+      ]
+    },
+    {
+      "id": "sfx-ambience-neon-mp3",
+      "name": "Ambiência — Metrópole Neon (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_neon.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 65245,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1748,6 +2109,22 @@
       ]
     },
     {
+      "id": "sfx-ambience-boreal-mp3",
+      "name": "Ambiência — Vento Glacial (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_boreal.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 65245,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "PicoBoreal"
+      ]
+    },
+    {
       "id": "sfx-ambience-sky",
       "name": "Ambiência — Jardins Suspensos",
       "type": "audio-sfx",
@@ -1764,6 +2141,22 @@
       ]
     },
     {
+      "id": "sfx-ambience-sky-mp3",
+      "name": "Ambiência — Jardins Suspensos (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_sky.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 65245,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "JardimCeleste"
+      ]
+    },
+    {
       "id": "sfx-ambience-storm",
       "name": "Ambiência — Trovões da Fortaleza",
       "type": "audio-sfx",
@@ -1773,6 +2166,22 @@
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
       "sizeBytes": 42614,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "FortalezaTempestade"
+      ]
+    },
+    {
+      "id": "sfx-ambience-storm-mp3",
+      "name": "Ambiência — Trovões da Fortaleza (Fallback MP3 iOS/Safari)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/ambience_storm.mp3",
+      "format": "mp3",
+      "origin": "Síntese PCM local + ffmpeg MP3 (libmp3lame)",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 65245,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",

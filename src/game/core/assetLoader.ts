@@ -100,6 +100,15 @@ export function resolveAssetPath(manifest: AssetManifest, assetId: string): stri
   return getManifestEntry(manifest, assetId).path;
 }
 
+export function resolveAudioSources(manifest: AssetManifest, assetId: string): string[] {
+  const primary = resolveAssetPath(manifest, assetId);
+  const mp3Id = `${assetId}-mp3`;
+  const mp3Entry = manifest.assets.find(
+    (item) => item.id === mp3Id && item.validationStatus === 'validated',
+  );
+  return mp3Entry ? [primary, mp3Entry.path] : [primary];
+}
+
 export function disposeMaterial(material: THREE.Material): void {
   const textureProps = [
     'map',

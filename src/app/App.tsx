@@ -23,8 +23,10 @@ import { getCharacterById } from '../data/characters';
 import { getTrackById } from '../data/tracks';
 import { GameAudioEngine } from '../game/audio/audioEngine';
 import { loadAssetManifest, resolveAssetPath } from '../game/core/assetLoader';
-import { DEFAULT_LAPS, TOTAL_RACERS } from '../game/core/constants';
+import { DEFAULT_BINDINGS, DEFAULT_LAPS, TOTAL_RACERS } from '../game/core/constants';
+import { detectTouchDevice, resolveTouchControlsVisible } from '../game/core/mobile';
 import type { CharacterId } from '../game/core/types';
+import { InputManager } from '../game/input/inputManager';
 import type { RacePhase } from '../game/racing/raceManager';
 import type { FullHudSnapshot } from '../game/racing/raceSimulation';
 import { RaceScene, type RaceStageSync, type SceneStageMode } from '../scenes/RaceScene';
@@ -106,6 +108,9 @@ export function App() {
   const clearChampionship = useGameStore((s) => s.clearChampionship);
 
   const audioEngine = useMemo(() => new GameAudioEngine(settings.audio), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const inputManager = useMemo(() => new InputManager(DEFAULT_BINDINGS), []);
+  const isTouchDevice = useMemo(() => detectTouchDevice(), []);
+  const touchControlsVisible = resolveTouchControlsVisible(settings.touch.mode, isTouchDevice);
 
   const [paused, setPaused] = useState(false);
   const [resetToken, setResetToken] = useState(0);
@@ -124,6 +129,43 @@ export function App() {
   useEffect(() => {
     audioEngine.applySettings(settings.audio);
   }, [audioEngine, settings.audio]);
+
+  useEffect(() => {
+    inputManager.attach();
+    return () => inputManager.detach();
+  }, [inputManager]);
+
+  useEffect(() => {
+    inputManager.updateConfig(
+      settings.bindings,
+      settings.steeringSensitivity,
+      settings.gamepadDeadzone,
+    );
+  }, [inputManager, settings.bindings, settings.steeringSensitivity, settings.gamepadDeadzone]);
+
+  useEffect(() => {
+    const raceActive = screen === 'race' && !paused;
+    inputManager.setAutoAccelerate(
+      raceActive && touchControlsVisible && settings.touch.autoAccelerate,
+    );
+    if (!raceActive || !touchControlsVisible) {
+      inputManager.resetVirtualInput();
+    }
+  }, [inputManager, paused, screen, settings.touch.autoAccelerate, touchControlsVisible]);
+
+  useEffect(() => {
+    const unlockAudioOnGesture = () => {
+      audioEngine.unlock();
+    };
+    window.addEventListener('pointerdown', unlockAudioOnGesture, { passive: true, capture: true });
+    window.addEventListener('touchstart', unlockAudioOnGesture, { passive: true, capture: true });
+    window.addEventListener('keydown', unlockAudioOnGesture, { passive: true, capture: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlockAudioOnGesture, { capture: true });
+      window.removeEventListener('touchstart', unlockAudioOnGesture, { capture: true });
+      window.removeEventListener('keydown', unlockAudioOnGesture, { capture: true });
+    };
+  }, [audioEngine]);
 
   useEffect(() => {
     return () => {
@@ -250,6 +292,10 @@ export function App() {
     [commitRaceOutcome, selectedTrackId, setScreen],
   );
 
+  const handleUserGesture = useCallback(() => {
+    audioEngine.unlock();
+  }, [audioEngine]);
+
   const isRaceActiveScreen =
     screen === 'race' ||
     screen === 'pause' ||
@@ -299,6 +345,7 @@ export function App() {
               paused={paused || screen !== 'race'}
               resetToken={resetToken}
               audioEngine={audioEngine}
+              inputManager={inputManager}
               podiumRoster={podiumRoster}
               onTelemetry={handleTelemetry}
               onStageSync={setStageSync}
@@ -329,6 +376,10 @@ export function App() {
               championshipRoundLabel={championshipRoundLabel}
               muted={settings.audio.muted}
               telemetry={telemetry}
+              inputManager={inputManager}
+              touchControlsVisible={touchControlsVisible}
+              touchAutoAccelerate={settings.touch.autoAccelerate}
+              onUserGesture={handleUserGesture}
               onRestartRace={handleRestartRace}
               onTogglePause={handleTogglePause}
               onToggleMute={handleToggleMute}

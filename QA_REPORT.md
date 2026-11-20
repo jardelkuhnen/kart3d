@@ -1,6 +1,6 @@
 # QA REPORT — KART LEGENDS 3D
 
-**Status do Projeto:** Todos os Slices 0 a 7 foram implementados, integrados e verificados com suíte automatizada verde (`validate:assets`, `typecheck`, `lint`, `Vitest`, `vite build` e `Playwright WebGL E2E`).
+**Status do Projeto:** Todos os Slices 0 a 8 foram implementados, integrados e verificados com suíte automatizada verde (`validate:assets`, `typecheck`, `lint`, `Vitest`, `vite build` e `Playwright WebGL E2E` incluindo emulação mobile `844×390`).
 **Nota de Transparência (§27 — Ferramentas Externas):** Conforme registrado em *Limitações Conhecidas* abaixo, `blender` CLI não estava disponível neste host macOS (todos os modelos 3D, esqueletos, clipes GLTF e cenários foram gerados localmente via `@gltf-transform/core` + `pngjs` e áudios via `ffmpeg 8.1.1`), portanto seguimos estritamente a regra de transparência do documento mestre ao reportar o ambiente exato utilizado.
 
 ---
@@ -84,16 +84,37 @@ Medições reais obtidas em corrida ativa de 8 competidores em *Porto das Lanter
 
 ---
 
+## Slice 8 — Suporte Mobile (Chrome iOS & Android)
+
+### Verificações Executadas
+
+| Comando | Resultado | Observações Diretamente Observadas |
+| :--- | :--- | :--- |
+| `npm run assets:build` | PASS | **114 recursos gerados** em `public/assets/` (incluindo os 26 arquivos `.mp3` fallback `libmp3lame` ao lado de cada `.ogg`) |
+| `npm run validate:assets` | PASS | **114 ativos verificados**, cabeçalhos ID3/MPEG validados para todos os `.mp3` e pareamento obrigatório 1:1 com `.ogg`, 0 erros, 0 órfãos |
+| `npm run typecheck` | PASS | `tsc --noEmit` (`strict`) com 0 erros |
+| `npm run lint` | PASS | `eslint .` com 0 erros e 0 avisos |
+| `npm run test` | PASS | Vitest `5.1.1`: **15 arquivos de teste, 51 testes aprovados** em `3.65 s` (incluindo `mobile-touch.test.ts` e fallback dual `[ogg, mp3]` em `audio.test.ts`), 0 falhas, 0 pulados |
+| `npm run build` | PASS | Vite `8.3.8`: **614 módulos transformados** em `1.01 s` |
+| `npm run test:e2e` | PASS | Playwright (Chrome + ANGLE Metal GPU, `2 workers`): **8/8 testes aprovados em `49.6 s`**, incluindo `e2e/mobile-touch.spec.ts` (`15.5 s`) em viewport mobile `844×390`, touch habilitado, DPR `2`, 0 erros |
+
+### Escopo Entregue no Slice 8
+- **Áudio Compatível com iOS WebKit / Chrome iOS e Android (`audio-builder.ts`, `build-assets.ts`, `validate-assets.ts`, `assetLoader.ts`, `audioEngine.ts`):** fallback `.mp3` gerado via `ffmpeg`/`libmp3lame` ao lado dos 26 arquivos `.ogg`, registrado e validado no manifesto, passado em ordem `[ogg, mp3]` ao Howler.js, com desbloqueio/retomada idempotente de `AudioContext`s em `pointerdown`, `touchstart` e `keydown`.
+- **Controles Touch Multitoque & Entrada Virtual (`mobile.ts`, `inputManager.ts`, `TouchControls.tsx`, `RaceHud.tsx`, `OutcomeAndMetaScreens.tsx`):** direção esquerda rastreada por `PointerEvent.pointerId`, botões independentes de *Drift*, *Item*, *Freio/Ré* e *Recuperar* à direita, opção de *Aceleração Automática* (sobrescrita por *Freio/Ré*) e alternância *Auto / Ligado / Desligado* nas Configurações persistida com migração segura no save `v1`.
+- **Ergonomia, PWA & Desempenho Mobile (`index.html`, `public/manifest.webmanifest`, `src/styles/global.css`, `RaceScene.tsx`):** `touch-action: none`, `-webkit-touch-callout: none`, layout paisagem `100dvh` com `viewport-fit=cover` e `env(safe-area-inset-*)`, dica visual não bloqueante em modo retrato, teto `dpr <= 1.5`, qualidade inicial `low` em dispositivos móveis e captura verificada em [docs/screenshots/mobile_race_landscape.png](docs/screenshots/mobile_race_landscape.png).
+
+---
+
 ## Matriz de Rastreabilidade dos 20 Tópicos de Teste (§23)
 
 | # | Tópico Obrigatório (§23) | Cobertura Automatizada Verificada |
 | :--- | :--- | :--- |
 | 1 | Inicialização | `e2e/boot.spec.ts`, `src/tests/core.test.ts` |
-| 2 | Carregamento de assets | `npm run validate:assets`, `src/tests/manifest.test.ts`, `src/tests/vfx-quality.test.ts` |
+| 2 | Carregamento de assets | `npm run validate:assets`, `src/tests/manifest.test.ts`, `src/tests/vfx-quality.test.ts`, `src/tests/mobile-touch.test.ts` |
 | 3 | Seleção de personagem | `e2e/race-core.spec.ts`, `e2e/performance-vfx.spec.ts`, `src/tests/catalog.test.ts`, `src/tests/garage.test.ts` |
 | 4 | Seleção de kart | `e2e/race-core.spec.ts`, `src/tests/catalog.test.ts`, `src/tests/garage.test.ts` |
 | 5 | Seleção de pista | `e2e/tracks-aurora.spec.ts`, `e2e/tracks-eclipse.spec.ts`, `src/tests/tracks-aurora.test.ts`, `src/tests/tracks-eclipse.test.ts` |
-| 6 | Controles | `src/tests/input.test.ts`, `e2e/menus-progression.spec.ts` |
+| 6 | Controles | `src/tests/input.test.ts`, `src/tests/mobile-touch.test.ts`, `e2e/menus-progression.spec.ts`, `e2e/mobile-touch.spec.ts` |
 | 7 | Aceleração | `src/tests/physics.test.ts`, `e2e/race-core.spec.ts`, `e2e/performance-vfx.spec.ts` |
 | 8 | Frenagem | `src/tests/physics.test.ts` |
 | 9 | Drift | `src/tests/physics.test.ts`, `e2e/race-core.spec.ts`, `e2e/performance-vfx.spec.ts` |
@@ -132,9 +153,9 @@ Medições reais obtidas em corrida ativa de 8 competidores em *Porto das Lanter
 - [x] **O áudio estiver integrado.** (*Howler.js 3 canais + sintetizador Web Audio contínuo de motor/drift.*)
 - [x] **O campeonato funcionar.** (*4 etapas acumulam pontos e geram troféus em `save-championship.test.ts` e E2E `ETAPA 1/4`.*)
 - [x] **O progresso for salvo.** (*Persistência `kart-legends-3d:save:v1` após reload no Playwright.*)
-- [x] **Os testes forem executados.** (*46 testes Vitest + 7 testes Playwright E2E executados com 0 falhas.*)
-- [x] **A build estiver disponível.** (*`npm run build` gerando `dist/` em <1 s — `813 ms`–`853 ms` nas verificações finais.*)
-- [x] **Os assets possuírem licenças verificadas.** (*88/88 ativos com `Original-Project-License` auditados em `validate:assets`.*)
+- [x] **Os testes forem executados.** (*51 testes Vitest + 8 testes Playwright E2E executados com 0 falhas.*)
+- [x] **A build estiver disponível.** (*`npm run build` gerando `dist/` em `~1 s`.*)
+- [x] **Os assets possuírem licenças verificadas.** (*114/114 ativos com `Original-Project-License` auditados em `validate:assets`.*)
 - [x] **Não existirem placeholders finais.** (*Zero cubos/cápsulas provisórias; áudio/texturas/GLBs reais em disco.*)
 - [x] **Não existirem referências quebradas.** (*0 erros HTTP >= 400, 0 órfãos, 0 erros de console/página.*)
 

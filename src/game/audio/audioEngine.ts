@@ -1,5 +1,5 @@
 import { Howl, Howler } from 'howler';
-import { resolveAssetPath } from '../core/assetLoader';
+import { resolveAudioSources } from '../core/assetLoader';
 import type { AssetManifest, AudioSettings } from '../core/types';
 
 export type MusicTrackId =
@@ -101,13 +101,24 @@ export class GameAudioEngine {
     }
   }
 
+  public isUnlocked(): boolean {
+    return this.unlocked;
+  }
+
   public unlock(): void {
-    if (this.disposed || this.unlocked) return;
+    if (this.disposed) return;
     this.unlocked = true;
 
     try {
       // Engine synth creates its own AudioContext isolated from Howler's internal _unlockAudio()
       this.ensureEngineSynth();
+      if (this.engineNodes && this.engineNodes.ctx.state === 'suspended') {
+        void this.engineNodes.ctx.resume().catch(() => undefined);
+      }
+      const howlerCtx = (Howler as unknown as { ctx?: AudioContext | null }).ctx;
+      if (howlerCtx && howlerCtx.state === 'suspended') {
+        void howlerCtx.resume().catch(() => undefined);
+      }
     } catch {
       // Web Audio unavailable in pure test environment
     }
@@ -189,24 +200,24 @@ export class GameAudioEngine {
     };
   }
 
-  private resolveSrc(id: string): string | null {
-    if (!this.manifest) return null;
+  public resolveSources(id: string): string[] {
+    if (!this.manifest) return [];
     try {
-      return resolveAssetPath(this.manifest, id);
+      return resolveAudioSources(this.manifest, id);
     } catch {
-      return null;
+      return [];
     }
   }
 
   public playSfx(id: SfxId, rate = 1.0): void {
     if (this.disposed || this.settings.muted || typeof window === 'undefined') return;
-    const src = this.resolveSrc(id);
-    if (!src) return;
+    const sources = this.resolveSources(id);
+    if (sources.length === 0) return;
 
     try {
       let howl = this.sfxPool.get(id);
       if (!howl) {
-        howl = new Howl({ src: [src], preload: true });
+        howl = new Howl({ src: sources, preload: true });
         this.sfxPool.set(id, howl);
       }
       const vol = this.getEffectiveChannelVolume('sfx') * 0.8;
@@ -224,12 +235,12 @@ export class GameAudioEngine {
     if (this.activeMusic?.id === id && this.activeMusic.howl.playing()) return;
 
     this.stopMusic();
-    const src = this.resolveSrc(id);
-    if (!src) return;
+    const sources = this.resolveSources(id);
+    if (sources.length === 0) return;
 
     try {
       const howl = new Howl({
-        src: [src],
+        src: sources,
         loop,
         volume: this.getEffectiveChannelVolume('music') * 0.65,
       });
@@ -256,12 +267,12 @@ export class GameAudioEngine {
     if (this.activeAmbience?.id === id && this.activeAmbience.howl.playing()) return;
 
     this.stopAmbience();
-    const src = this.resolveSrc(id);
-    if (!src) return;
+    const sources = this.resolveSources(id);
+    if (sources.length === 0) return;
 
     try {
       const howl = new Howl({
-        src: [src],
+        src: sources,
         loop: true,
         volume: this.getEffectiveChannelVolume('ambient') * 0.55,
       });

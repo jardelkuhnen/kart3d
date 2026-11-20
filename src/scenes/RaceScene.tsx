@@ -11,8 +11,9 @@ import { GameAudioEngine } from '../game/audio/audioEngine';
 import { RaceCamera } from '../game/camera/RaceCamera';
 import { disposeObject3D, resolveAssetPath } from '../game/core/assetLoader';
 import { DEFAULT_LAPS, FIXED_TIMESTEP, FixedStepClock } from '../game/core/constants';
+import { clampCanvasDpr, detectMobileDevice } from '../game/core/mobile';
 import type { CharacterId, KartId } from '../game/core/types';
-import { InputManager } from '../game/input/inputManager';
+import type { InputManager } from '../game/input/inputManager';
 import { RaceProgressTracker, type RacePhase } from '../game/racing/raceManager';
 import { type FullHudSnapshot, RaceSimulation } from '../game/racing/raceSimulation';
 import {
@@ -49,6 +50,7 @@ export interface RaceSceneProps {
   paused: boolean;
   resetToken: number;
   audioEngine: GameAudioEngine;
+  inputManager: InputManager;
   podiumRoster?: ReadonlyArray<{ rank: 1 | 2 | 3; characterId: CharacterId; name: string }>;
   onTelemetry: (telemetry: FullHudSnapshot) => void;
   onStageSync: (sync: RaceStageSync) => void;
@@ -483,6 +485,7 @@ function RaceWorldContent({
   paused,
   resetToken,
   audioEngine,
+  inputManager,
   onTelemetry,
   onStageSync,
   onPauseToggle,
@@ -569,28 +572,6 @@ function RaceWorldContent({
     ),
   );
 
-  const inputManagerRef = useRef(
-    new InputManager(
-      settings.bindings,
-      settings.steeringSensitivity,
-      settings.gamepadDeadzone,
-    ),
-  );
-
-  useEffect(() => {
-    inputManagerRef.current.updateConfig(
-      settings.bindings,
-      settings.steeringSensitivity,
-      settings.gamepadDeadzone,
-    );
-  }, [settings.bindings, settings.steeringSensitivity, settings.gamepadDeadzone]);
-
-  useEffect(() => {
-    const manager = inputManagerRef.current;
-    manager.attach();
-    return () => manager.detach();
-  }, []);
-
   // Re-initialize full simulation on mode/track/character/kart/difficulty/reset
   useEffect(() => {
     const freshSim = new RaceSimulation(
@@ -663,7 +644,7 @@ function RaceWorldContent({
   ]);
 
   useFrame((_state, delta) => {
-    const pausePressed = inputManagerRef.current.consumePausePressed();
+    const pausePressed = inputManager.consumePausePressed();
     if (pausePressed && sceneMode === 'race' && simRef.current.phase !== 'intro') {
       onPauseToggle();
     }
@@ -674,7 +655,7 @@ function RaceWorldContent({
     }
 
     const sim = simRef.current;
-    const playerInput = inputManagerRef.current.pollKartOnly();
+    const playerInput = inputManager.pollKartOnly();
 
     clockRef.current.advance(delta, (dt) => {
       const rapierBody = playerRapierRef.current;
@@ -895,12 +876,14 @@ function SceneRouter(props: RaceSceneProps) {
 export function RaceScene(props: RaceSceneProps) {
   const quality = useGameStore((s) => s.settings.quality);
   const preset = QUALITY_PRESETS[quality];
+  const isMobile = useMemo(() => detectMobileDevice(), []);
+  const canvasDpr = clampCanvasDpr(preset.dpr, isMobile);
 
   return (
     <div className="kl-canvas-wrap">
       <Canvas
         shadows={preset.shadowsEnabled ? 'basic' : false}
-        dpr={preset.dpr}
+        dpr={canvasDpr}
         gl={{ antialias: preset.antialias, powerPreference: 'high-performance' }}
         camera={{ position: [0, 6, 52], fov: 56, near: 0.25, far: 500 }}
       >

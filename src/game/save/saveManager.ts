@@ -6,6 +6,7 @@ import {
   DEFAULT_SETTINGS,
   createInitialSaveData,
 } from '../core/constants';
+import { detectMobileDevice } from '../core/mobile';
 import type {
   CharacterId,
   ControlBindings,
@@ -15,6 +16,7 @@ import type {
   KartId,
   QualityLevel,
   SaveDataV1,
+  TouchControlsMode,
   TrackId,
 } from '../core/types';
 
@@ -23,6 +25,7 @@ export const SAVE_STORAGE_KEY = 'kart-legends-3d:save:v1';
 const VALID_CHARACTER_IDS = new Set<string>(Object.keys(CHARACTERS_BY_ID));
 const VALID_KART_IDS = new Set<string>(Object.keys(KARTS_BY_ID));
 const VALID_QUALITIES = new Set<QualityLevel>(['low', 'medium', 'high']);
+const VALID_TOUCH_MODES = new Set<TouchControlsMode>(['auto', 'on', 'off']);
 
 export interface LoadSaveResult {
   data: SaveDataV1;
@@ -69,6 +72,10 @@ export function sanitizeSettings(raw: unknown): GameSettings {
     string,
     unknown
   >;
+  const touch = (obj.touch && typeof obj.touch === 'object' ? obj.touch : {}) as Record<
+    string,
+    unknown
+  >;
 
   return {
     quality: VALID_QUALITIES.has(obj.quality as QualityLevel)
@@ -95,6 +102,15 @@ export function sanitizeSettings(raw: unknown): GameSettings {
       muted: typeof audio.muted === 'boolean' ? audio.muted : base.audio.muted,
     },
     bindings: sanitizeBindings(obj.bindings),
+    touch: {
+      mode: VALID_TOUCH_MODES.has(touch.mode as TouchControlsMode)
+        ? (touch.mode as TouchControlsMode)
+        : base.touch.mode,
+      autoAccelerate:
+        typeof touch.autoAccelerate === 'boolean'
+          ? touch.autoAccelerate
+          : base.touch.autoAccelerate,
+    },
   };
 }
 
@@ -113,8 +129,13 @@ function nonNegInt(val: unknown): number {
   return typeof val === 'number' && Number.isFinite(val) && val >= 0 ? Math.floor(val) : 0;
 }
 
-export function loadSaveData(explicitStorage?: Storage): LoadSaveResult {
-  const defaults = createInitialSaveData();
+export function loadSaveData(
+  explicitStorage?: Storage,
+  isMobileOverride?: boolean,
+): LoadSaveResult {
+  const defaults = createInitialSaveData({
+    isMobile: isMobileOverride ?? detectMobileDevice(),
+  });
   const storage = getSafeStorage(explicitStorage);
   if (!storage) {
     return { data: defaults, recoveredFromCorruption: false };

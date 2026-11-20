@@ -1,0 +1,10 @@
+{
+  "name": "KART LEGENDS 3D",
+  "short_name": "Kart Legends",
+  "description": "Jogo original de corrida arcade de kart 3D para navegador e mobile.",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020"
+}

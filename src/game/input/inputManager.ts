@@ -102,8 +102,57 @@ export function mapGamepadToInput(
   };
 }
 
+export interface VirtualTouchInput {
+  steer: number;
+  throttle: number;
+  brake: number;
+  drift: boolean;
+  useItem: boolean;
+  recover: boolean;
+}
+
+const EMPTY_VIRTUAL_INPUT: VirtualTouchInput = {
+  steer: 0,
+  throttle: 0,
+  brake: 0,
+  drift: false,
+  useItem: false,
+  recover: false,
+};
+
+export function mergeKartInputs(
+  kb: KartInputState,
+  gp: KartInputState,
+  vt: VirtualTouchInput,
+  steeringSensitivity = 1.0,
+  autoAccelerateActive = false,
+): KartInputState {
+  const virtualSteer = Math.max(-1, Math.min(1, vt.steer * steeringSensitivity));
+  let steer = kb.steer;
+  if (Math.abs(gp.steer) > Math.abs(steer)) {
+    steer = gp.steer;
+  }
+  if (Math.abs(virtualSteer) > Math.abs(steer)) {
+    steer = virtualSteer;
+  }
+
+  const brake = Math.max(kb.brake, gp.brake, vt.brake);
+  const autoThrottle = autoAccelerateActive && brake <= 0.05 ? 1 : 0;
+
+  return {
+    throttle: Math.max(kb.throttle, gp.throttle, vt.throttle, autoThrottle),
+    brake,
+    steer,
+    drift: kb.drift || gp.drift || vt.drift,
+    useItem: kb.useItem || gp.useItem || vt.useItem,
+    recover: kb.recover || gp.recover || vt.recover,
+  };
+}
+
 export class InputManager {
   private readonly pressedCodes = new Set<string>();
+  private virtualInput: VirtualTouchInput = { ...EMPTY_VIRTUAL_INPUT };
+  private autoAccelerateActive = false;
   private pauseEdgeTriggered = false;
   private prevGamepadPause = false;
   private bindings: ControlBindings;
@@ -151,8 +200,45 @@ export class InputManager {
     this.pressedCodes.delete(event.code);
   };
 
+  public setVirtualInput(partial: Partial<VirtualTouchInput>): void {
+    const nextSteer =
+      partial.steer !== undefined
+        ? Math.max(-1, Math.min(1, partial.steer))
+        : this.virtualInput.steer;
+    const nextThrottle =
+      partial.throttle !== undefined
+        ? Math.max(0, Math.min(1, partial.throttle))
+        : this.virtualInput.throttle;
+    const nextBrake =
+      partial.brake !== undefined
+        ? Math.max(0, Math.min(1, partial.brake))
+        : this.virtualInput.brake;
+
+    this.virtualInput = {
+      steer: nextSteer,
+      throttle: nextThrottle,
+      brake: nextBrake,
+      drift: partial.drift ?? this.virtualInput.drift,
+      useItem: partial.useItem ?? this.virtualInput.useItem,
+      recover: partial.recover ?? this.virtualInput.recover,
+    };
+  }
+
+  public resetVirtualInput(): void {
+    this.virtualInput = { ...EMPTY_VIRTUAL_INPUT };
+  }
+
+  public getVirtualInput(): VirtualTouchInput {
+    return { ...this.virtualInput };
+  }
+
+  public setAutoAccelerate(active: boolean): void {
+    this.autoAccelerateActive = active;
+  }
+
   private readonly handleWindowBlur = (): void => {
     this.pressedCodes.clear();
+    this.resetVirtualInput();
   };
 
   public attach(): void {
@@ -169,6 +255,7 @@ export class InputManager {
     window.removeEventListener('keyup', this.handleKeyUp);
     window.removeEventListener('blur', this.handleWindowBlur);
     this.pressedCodes.clear();
+    this.resetVirtualInput();
     this.attached = false;
   }
 
@@ -192,14 +279,13 @@ export class InputManager {
       ? mapGamepadToInput(activePad, this.gamepadDeadzone, this.steeringSensitivity).kart
       : { throttle: 0, brake: 0, steer: 0, drift: false, useItem: false, recover: false };
 
-    return {
-      throttle: Math.max(kb.throttle, gp.throttle),
-      brake: Math.max(kb.brake, gp.brake),
-      steer: Math.abs(gp.steer) > Math.abs(kb.steer) ? gp.steer : kb.steer,
-      drift: kb.drift || gp.drift,
-      useItem: kb.useItem || gp.useItem,
-      recover: kb.recover || gp.recover,
-    };
+    return mergeKartInputs(
+      kb,
+      gp,
+      this.virtualInput,
+      this.steeringSensitivity,
+      this.autoAccelerateActive,
+    );
   }
 
   public consumePausePressed(): boolean {
@@ -216,10 +302,18 @@ export class InputManager {
   }
 
   public poll(): MappedInputFrame {
+    const virtualActive =
+      Math.abs(this.virtualInput.steer) > 0.01 ||
+      this.virtualInput.throttle > 0.01 ||
+      this.virtualInput.brake > 0.01 ||
+      this.virtualInput.drift ||
+      this.virtualInput.useItem ||
+      this.virtualInput.recover;
+
     return {
       kart: this.pollKartOnly(),
       pausePressed: this.consumePausePressed(),
-      anyKeyActive: this.pressedCodes.size > 0,
+      anyKeyActive: this.pressedCodes.size > 0 || virtualActive,
     };
   }
 }

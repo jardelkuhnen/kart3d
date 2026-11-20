@@ -4,7 +4,7 @@ import { CHARACTERS } from '../../data/characters';
 import { KARTS } from '../../data/karts';
 import { CUPS, TRACKS, getTrackById } from '../../data/tracks';
 import { DEFAULT_BINDINGS } from '../../game/core/constants';
-import type { ControlBindings, QualityLevel } from '../../game/core/types';
+import type { ControlBindings, QualityLevel, TouchControlsMode } from '../../game/core/types';
 import { formatRaceTimeMs } from '../../game/racing/raceManager';
 
 const ACTION_LABELS: ReadonlyArray<{ key: keyof ControlBindings; label: string }> = [
@@ -171,6 +171,50 @@ export function SettingsScreen({
                 }
               />
             </label>
+
+            <div className="kl-garage-heading" style={{ marginTop: 12 }}>
+              Controles Touch (Mobile)
+            </div>
+
+            <div className="kl-toggle-row">
+              <span>Botões na Tela</span>
+              <div className="kl-inline-pills">
+                {(['auto', 'on', 'off'] as TouchControlsMode[]).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={`kl-diff-pill ${settings.touch.mode === m ? 'active' : ''}`}
+                    data-testid={`touch-mode-${m}`}
+                    onClick={() => {
+                      onPlaySfx('click');
+                      updateSettings({ touch: { ...settings.touch, mode: m } });
+                    }}
+                  >
+                    {m === 'auto' ? 'Auto' : m === 'on' ? 'Ligado' : 'Desligado'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="kl-toggle-row">
+              <span>Aceleração Automática</span>
+              <button
+                type="button"
+                className={`kl-diff-pill ${settings.touch.autoAccelerate ? 'active' : ''}`}
+                data-testid="touch-auto-accel-toggle"
+                onClick={() => {
+                  onPlaySfx('click');
+                  updateSettings({
+                    touch: {
+                      ...settings.touch,
+                      autoAccelerate: !settings.touch.autoAccelerate,
+                    },
+                  });
+                }}
+              >
+                {settings.touch.autoAccelerate ? 'Ativada' : 'Manual'}
+              </button>
+            </div>
           </div>
 
           <div className="kl-garage-col">

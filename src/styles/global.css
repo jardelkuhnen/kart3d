@@ -24,17 +24,24 @@ body,
 #root {
   margin: 0;
   padding: 0;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
+  overscroll-behavior: none;
   background: var(--bg-deep);
+  touch-action: none;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .kl-app {
   position: relative;
   width: 100%;
   height: 100%;
+  touch-action: none;
 }
 
 .kl-canvas-wrap {
@@ -42,12 +49,14 @@ body,
   inset: 0;
   width: 100%;
   height: 100%;
+  touch-action: none;
 }
 
 .kl-canvas-wrap canvas {
   width: 100%;
   height: 100%;
   display: block;
+  touch-action: none;
 }
 
 .kl-hud-overlay {
@@ -57,7 +66,9 @@ body,
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 18px 24px;
+  padding: max(18px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right))
+    max(18px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  touch-action: none;
 }
 
 .kl-topbar {
@@ -761,7 +772,8 @@ body,
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
   pointer-events: none;
 }
 
@@ -769,17 +781,27 @@ body,
   width: min(560px, 94vw);
   text-align: center;
   padding: 22px 26px;
+  max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .kl-wide-card {
   width: min(920px, 95vw);
   text-align: center;
   padding: 20px 24px;
+  max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .kl-scroll-card {
-  max-height: 88vh;
+  max-height: calc(90dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .kl-title-hero {
@@ -900,14 +922,17 @@ body,
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 20px 28px;
+  padding: max(14px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+    max(14px, env(safe-area-inset-bottom)) max(22px, env(safe-area-inset-left));
   pointer-events: none;
 }
 
 .kl-showcase-sidebar {
   width: min(440px, 92vw);
-  max-height: 90vh;
+  max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   padding: 18px 20px;
 }
 
@@ -1251,4 +1276,344 @@ body,
 .kl-progress-row span {
   color: var(--text-muted);
   text-align: right;
+}
+
+/* Slice 8 — Mobile Touch Controls, Safe Areas & Landscape Ergonomics */
+
+.kl-portrait-hint {
+  display: none;
+  position: fixed;
+  top: max(6px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  background: rgba(11, 16, 32, 0.9);
+  border: 1px solid rgba(255, 184, 0, 0.65);
+  color: var(--accent-gold);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+@media (orientation: portrait) and (max-width: 767px) {
+  .kl-portrait-hint {
+    display: block;
+  }
+}
+
+.kl-touch-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.kl-touch-steer-pad {
+  position: fixed;
+  left: max(14px, env(safe-area-inset-left));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  width: 184px;
+  height: 84px;
+  border-radius: 999px;
+  background: rgba(14, 18, 32, 0.72);
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+
+.kl-touch-steer-pad.engaged {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 22px rgba(0, 212, 255, 0.45);
+}
+
+.kl-touch-steer-arrow {
+  pointer-events: none;
+  font-size: 16px;
+  font-weight: 900;
+  color: rgba(248, 250, 252, 0.65);
+}
+
+.kl-touch-steer-knob {
+  pointer-events: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  border: 2px solid #e0f2fe;
+  box-shadow: 0 4px 14px rgba(0, 212, 255, 0.55);
+  transition: transform 0.04s linear;
+}
+
+.kl-touch-action-cluster {
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+  touch-action: none;
+}
+
+.kl-touch-row-top,
+.kl-touch-row-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.kl-touch-btn {
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  border-radius: 16px;
+  color: #f8fafc;
+  background: rgba(14, 18, 32, 0.78);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  transition: transform 0.08s ease, background 0.08s ease;
+}
+
+.kl-touch-btn.active {
+  transform: scale(0.93);
+  border-color: #fde68a;
+}
+
+.kl-touch-btn-util {
+  min-width: 58px;
+  height: 44px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.kl-touch-btn-item {
+  min-width: 58px;
+  height: 48px;
+  padding: 0 10px;
+  font-size: 11px;
+  border-color: rgba(56, 189, 248, 0.45);
+}
+
+.kl-touch-btn-item.ready {
+  border-color: var(--accent-gold);
+  background: rgba(255, 184, 0, 0.24);
+  box-shadow: 0 0 16px rgba(255, 184, 0, 0.45);
+}
+
+.kl-touch-item-icon {
+  pointer-events: none;
+  border-radius: 8px;
+}
+
+.kl-touch-btn-accel {
+  min-width: 68px;
+  height: 48px;
+  padding: 0 12px;
+  font-size: 12px;
+  background: rgba(16, 185, 129, 0.34);
+  border-color: #34d399;
+}
+
+.kl-touch-btn-accel.active {
+  background: rgba(16, 185, 129, 0.72);
+}
+
+.kl-touch-auto-badge {
+  pointer-events: none;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  color: #6ee7b7;
+  background: rgba(6, 78, 59, 0.78);
+  border: 1px solid rgba(52, 211, 153, 0.55);
+}
+
+.kl-touch-btn-brake {
+  min-width: 82px;
+  height: 58px;
+  padding: 0 12px;
+  font-size: 11px;
+  background: rgba(225, 29, 72, 0.34);
+  border-color: rgba(251, 113, 133, 0.65);
+}
+
+.kl-touch-btn-brake.active {
+  background: rgba(225, 29, 72, 0.75);
+}
+
+.kl-touch-btn-drift {
+  min-width: 102px;
+  height: 66px;
+  padding: 0 16px;
+  font-size: 15px;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.65) 0%, rgba(180, 83, 9, 0.8) 100%);
+  border-color: var(--accent-gold);
+}
+
+.kl-touch-btn-drift.active {
+  background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+  color: #0b1020;
+}
+
+/* Keep bottom telemetry bar centered neatly between left & right thumb zones when touch is active */
+.kl-hud-overlay.has-touch-controls .kl-bottom-bar {
+  justify-content: center;
+  gap: 8px;
+  padding: 0 210px;
+}
+
+.kl-hud-overlay.has-touch-controls .kl-race-badge,
+.kl-hud-overlay.has-touch-controls .kl-telemetry-cluster {
+  padding: 7px 10px;
+  gap: 8px;
+  min-width: 0;
+}
+
+.kl-hud-overlay.has-touch-controls .kl-speed-box {
+  min-width: 68px;
+}
+
+.kl-hud-overlay.has-touch-controls .kl-gauges-col {
+  max-width: 148px;
+  gap: 4px;
+}
+
+.kl-hud-overlay.has-touch-controls .kl-stat-label {
+  font-size: 9px;
+  letter-spacing: 0.02em;
+}
+
+.kl-hud-overlay.has-touch-controls .kl-speed-number {
+  font-size: 26px;
+}
+
+.kl-hud-overlay.has-touch-controls .kl-timer-readout {
+  font-size: 16px;
+}
+
+@media (max-width: 960px), (max-height: 540px) {
+  .kl-hud-overlay {
+    padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+
+  .kl-left-cluster {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .kl-rank-num {
+    font-size: 26px;
+  }
+
+  .kl-minimap-box {
+    transform: scale(0.76);
+    transform-origin: top left;
+    margin-bottom: -24px;
+    margin-right: -24px;
+  }
+
+  .kl-item-slot {
+    min-width: 82px;
+    min-height: 54px;
+    padding: 4px 8px;
+    border-radius: 14px;
+  }
+
+  .kl-item-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .kl-item-label {
+    font-size: 9px;
+  }
+
+  .kl-race-actions {
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .kl-race-actions .kl-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .kl-driver-avatar {
+    width: 30px;
+    height: 30px;
+  }
+
+  .kl-track-chip {
+    display: none;
+  }
+
+  .kl-countdown-callout {
+    font-size: 56px;
+  }
+
+  .kl-menu-card,
+  .kl-wide-card,
+  .kl-showcase-sidebar {
+    padding: 12px 14px;
+  }
+
+  .kl-title {
+    font-size: 20px;
+  }
+
+  .kl-title-hero {
+    font-size: 24px;
+  }
+
+  .kl-subtitle {
+    font-size: 12px;
+    margin-top: 3px;
+  }
+
+  .kl-btn {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+
+  .kl-btn-large {
+    padding: 10px 18px;
+    font-size: 13px;
+  }
+
+  .kl-settings-grid,
+  .kl-cup-grid,
+  .kl-track-cards-grid {
+    gap: 8px;
+  }
+
+  .kl-career-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }

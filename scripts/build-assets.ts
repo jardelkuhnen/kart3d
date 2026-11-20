@@ -14,6 +14,7 @@ import { PICO_BOREAL_LAYOUT } from '../src/game/tracks/picoBoreal';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from '../src/game/tracks/portoDasLanternas';
 import { VALE_DOS_MOINHOS_LAYOUT } from '../src/game/tracks/valeDosMoinhos';
 import {
+  type AudioPairSizes,
   generateAmbienceBorealOgg,
   generateAmbienceCanyonOgg,
   generateAmbienceCoastalOgg,
@@ -794,36 +795,64 @@ async function main(): Promise<void> {
     });
   }
 
-  // 7. Audio Music, Ambience & SFX
-  const uiClickSize = await generateUiClickOgg(path.join(PUBLIC_DIR, 'assets/audio/sfx/ui_click.ogg'));
-  entries.push({
+  // 7. Audio Music, Ambience & SFX (OGG primary + MP3 fallback for iOS/Safari)
+  const pushAudioAssetPair = (opts: {
+    id: string;
+    name: string;
+    type: 'audio-music' | 'audio-sfx';
+    oggPath: string;
+    sizes: AudioPairSizes;
+    usedIn: string[];
+  }) => {
+    entries.push({
+      id: opts.id,
+      name: opts.name,
+      type: opts.type,
+      path: opts.oggPath,
+      format: 'ogg',
+      origin: 'Síntese PCM local + ffmpeg Opus',
+      author: 'Kart Legends 3D Audio',
+      license: 'Original-Project-License',
+      sizeBytes: opts.sizes.oggSize,
+      validationStatus: 'validated',
+      usedIn: opts.usedIn,
+    });
+    entries.push({
+      id: `${opts.id}-mp3`,
+      name: `${opts.name} (Fallback MP3 iOS/Safari)`,
+      type: opts.type,
+      path: opts.oggPath.replace(/\.ogg$/, '.mp3'),
+      format: 'mp3',
+      origin: 'Síntese PCM local + ffmpeg MP3 (libmp3lame)',
+      author: 'Kart Legends 3D Audio',
+      license: 'Original-Project-License',
+      sizeBytes: opts.sizes.mp3Size,
+      validationStatus: 'validated',
+      usedIn: opts.usedIn,
+    });
+  };
+
+  const uiClickSizes = await generateUiClickOgg(
+    path.join(PUBLIC_DIR, 'assets/audio/sfx/ui_click.ogg'),
+  );
+  pushAudioAssetPair({
     id: 'sfx-ui-click',
     name: 'Som de Clique de Interface',
     type: 'audio-sfx',
-    path: '/assets/audio/sfx/ui_click.ogg',
-    format: 'ogg',
-    origin: 'Síntese PCM local + ffmpeg Opus',
-    author: 'Kart Legends 3D Audio',
-    license: 'Original-Project-License',
-    sizeBytes: uiClickSize,
-    validationStatus: 'validated',
+    oggPath: '/assets/audio/sfx/ui_click.ogg',
+    sizes: uiClickSizes,
     usedIn: ['UISystem'],
   });
 
-  const uiConfirmSize = await generateUiConfirmOgg(
+  const uiConfirmSizes = await generateUiConfirmOgg(
     path.join(PUBLIC_DIR, 'assets/audio/sfx/ui_confirm.ogg'),
   );
-  entries.push({
+  pushAudioAssetPair({
     id: 'sfx-ui-confirm',
     name: 'Som de Confirmação de Interface',
     type: 'audio-sfx',
-    path: '/assets/audio/sfx/ui_confirm.ogg',
-    format: 'ogg',
-    origin: 'Síntese PCM local + ffmpeg Opus',
-    author: 'Kart Legends 3D Audio',
-    license: 'Original-Project-License',
-    sizeBytes: uiConfirmSize,
-    validationStatus: 'validated',
+    oggPath: '/assets/audio/sfx/ui_confirm.ogg',
+    sizes: uiConfirmSizes,
     usedIn: ['UISystem'],
   });
 
@@ -831,7 +860,7 @@ async function main(): Promise<void> {
     id: string;
     name: string;
     file: string;
-    gen: (out: string) => Promise<number>;
+    gen: (out: string) => Promise<AudioPairSizes>;
   }> = [
     { id: 'music-menu', name: 'Música — Menu Principal', file: 'menu_theme.ogg', gen: generateMenuThemeOgg },
     { id: 'music-race-aurora', name: 'Música — Corrida Copa Aurora', file: 'race_aurora.ogg', gen: generateRaceMusicOgg },
@@ -841,18 +870,13 @@ async function main(): Promise<void> {
   ];
 
   for (const m of musicSpecs) {
-    const sizeBytes = await m.gen(path.join(PUBLIC_DIR, 'assets/audio/music', m.file));
-    entries.push({
+    const sizes = await m.gen(path.join(PUBLIC_DIR, 'assets/audio/music', m.file));
+    pushAudioAssetPair({
       id: m.id,
       name: m.name,
       type: 'audio-music',
-      path: `/assets/audio/music/${m.file}`,
-      format: 'ogg',
-      origin: 'Síntese PCM local + ffmpeg Opus',
-      author: 'Kart Legends 3D Audio',
-      license: 'Original-Project-License',
-      sizeBytes,
-      validationStatus: 'validated',
+      oggPath: `/assets/audio/music/${m.file}`,
+      sizes,
       usedIn: ['AudioEngine'],
     });
   }
@@ -872,18 +896,13 @@ async function main(): Promise<void> {
     lap_complete: 'Volta Concluída',
     race_finish: 'Chegada da Corrida',
   };
-  for (const [key, sizeBytes] of Object.entries(raceSfxSizes)) {
-    entries.push({
+  for (const [key, sizes] of Object.entries(raceSfxSizes)) {
+    pushAudioAssetPair({
       id: `sfx-${key.replace(/_/g, '-')}`,
       name: sfxLabels[key] ?? key,
       type: 'audio-sfx',
-      path: `/assets/audio/sfx/${key}.ogg`,
-      format: 'ogg',
-      origin: 'Síntese PCM local + ffmpeg Opus',
-      author: 'Kart Legends 3D Audio',
-      license: 'Original-Project-License',
-      sizeBytes,
-      validationStatus: 'validated',
+      oggPath: `/assets/audio/sfx/${key}.ogg`,
+      sizes,
       usedIn: ['AudioEngine', 'RaceScene'],
     });
   }
@@ -893,7 +912,7 @@ async function main(): Promise<void> {
     name: string;
     file: string;
     trackRef: string;
-    gen: (out: string) => Promise<number>;
+    gen: (out: string) => Promise<AudioPairSizes>;
   }> = [
     {
       id: 'sfx-ambience-coastal',
@@ -954,18 +973,13 @@ async function main(): Promise<void> {
   ];
 
   for (const amb of ambienceSpecs) {
-    const ambienceSize = await amb.gen(path.join(sfxDir, amb.file));
-    entries.push({
+    const ambienceSizes = await amb.gen(path.join(sfxDir, amb.file));
+    pushAudioAssetPair({
       id: amb.id,
       name: amb.name,
       type: 'audio-sfx',
-      path: `/assets/audio/sfx/${amb.file}`,
-      format: 'ogg',
-      origin: 'Síntese PCM local + ffmpeg Opus',
-      author: 'Kart Legends 3D Audio',
-      license: 'Original-Project-License',
-      sizeBytes: ambienceSize,
-      validationStatus: 'validated',
+      oggPath: `/assets/audio/sfx/${amb.file}`,
+      sizes: ambienceSizes,
       usedIn: ['AudioEngine', amb.trackRef],
     });
   }

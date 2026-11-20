@@ -217,12 +217,20 @@ export interface AudioSettings {
   muted: boolean;
 }
 
+export type TouchControlsMode = 'auto' | 'on' | 'off';
+
+export interface TouchSettings {
+  mode: TouchControlsMode;
+  autoAccelerate: boolean;
+}
+
 export interface GameSettings {
   quality: QualityLevel;
   steeringSensitivity: number;
   gamepadDeadzone: number;
   audio: AudioSettings;
   bindings: ControlBindings;
+  touch: TouchSettings;
 }
 
 export interface SaveDataV1 {

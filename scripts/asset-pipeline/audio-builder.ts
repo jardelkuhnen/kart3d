@@ -98,33 +98,56 @@ export function synthesizeNotesToWav(
   return wav;
 }
 
-export async function encodeWavToOgg(wavBuffer: Buffer, outOggPath: string): Promise<number> {
+export interface AudioPairSizes {
+  oggSize: number;
+  mp3Size: number;
+}
+
+export async function encodeWavToAudioPair(
+  wavBuffer: Buffer,
+  outOggPath: string,
+): Promise<AudioPairSizes> {
+  const outMp3Path = outOggPath.replace(/\.ogg$/i, '.mp3');
   await fs.mkdir(path.dirname(outOggPath), { recursive: true });
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'kl3d-audio-'));
   const tmpWav = path.join(tmpDir, 'input.wav');
 
   try {
     await fs.writeFile(tmpWav, wavBuffer);
-    await execFileAsync('ffmpeg', [
-      '-y',
-      '-v',
-      'error',
-      '-i',
-      tmpWav,
-      '-c:a',
-      'libopus',
-      '-b:a',
-      '96k',
-      outOggPath,
+    await Promise.all([
+      execFileAsync('ffmpeg', [
+        '-y',
+        '-v',
+        'error',
+        '-i',
+        tmpWav,
+        '-c:a',
+        'libopus',
+        '-b:a',
+        '96k',
+        outOggPath,
+      ]),
+      execFileAsync('ffmpeg', [
+        '-y',
+        '-v',
+        'error',
+        '-i',
+        tmpWav,
+        '-c:a',
+        'libmp3lame',
+        '-b:a',
+        '128k',
+        outMp3Path,
+      ]),
     ]);
-    const stat = await fs.stat(outOggPath);
-    return stat.size;
+    const [oggStat, mp3Stat] = await Promise.all([fs.stat(outOggPath), fs.stat(outMp3Path)]);
+    return { oggSize: oggStat.size, mp3Size: mp3Stat.size };
   } finally {
     await fs.rm(tmpDir, { recursive: true, force: true });
   }
 }
 
-export async function generateUiClickOgg(outPath: string): Promise<number> {
+export async function generateUiClickOgg(outPath: string): Promise<AudioPairSizes> {
   const wav = synthesizeNotesToWav(
     [
       {
@@ -150,10 +173,10 @@ export async function generateUiClickOgg(outPath: string): Promise<number> {
     ],
     0.075,
   );
-  return encodeWavToOgg(wav, outPath);
+  return encodeWavToAudioPair(wav, outPath);
 }
 
-export async function generateUiConfirmOgg(outPath: string): Promise<number> {
+export async function generateUiConfirmOgg(outPath: string): Promise<AudioPairSizes> {
   const wav = synthesizeNotesToWav(
     [
       {
@@ -186,14 +209,14 @@ export async function generateUiConfirmOgg(outPath: string): Promise<number> {
     ],
     0.32,
   );
-  return encodeWavToOgg(wav, outPath);
+  return encodeWavToAudioPair(wav, outPath);
 }
 
 function midiToHz(midi: number): number {
   return 440 * Math.pow(2, (midi - 69) / 12);
 }
 
-export async function generateMenuThemeOgg(outPath: string): Promise<number> {
+export async function generateMenuThemeOgg(outPath: string): Promise<AudioPairSizes> {
   const bpm = 128;
   const beat = 60 / bpm;
   const notes: SynthNote[] = [];
@@ -223,10 +246,10 @@ export async function generateMenuThemeOgg(outPath: string): Promise<number> {
     });
   }
 
-  return encodeWavToOgg(synthesizeNotesToWav(notes, melody.length * beat * 0.5), outPath);
+  return encodeWavToAudioPair(synthesizeNotesToWav(notes, melody.length * beat * 0.5), outPath);
 }
 
-export async function generateRaceMusicOgg(outPath: string): Promise<number> {
+export async function generateRaceMusicOgg(outPath: string): Promise<AudioPairSizes> {
   const bpm = 142;
   const step = 60 / bpm / 2; // eighth notes
   const notes: SynthNote[] = [];
@@ -272,10 +295,10 @@ export async function generateRaceMusicOgg(outPath: string): Promise<number> {
     });
   }
 
-  return encodeWavToOgg(synthesizeNotesToWav(notes, lead.length * step), outPath);
+  return encodeWavToAudioPair(synthesizeNotesToWav(notes, lead.length * step), outPath);
 }
 
-export async function generateEclipseRaceMusicOgg(outPath: string): Promise<number> {
+export async function generateEclipseRaceMusicOgg(outPath: string): Promise<AudioPairSizes> {
   const bpm = 152;
   const step = 60 / bpm / 2;
   const notes: SynthNote[] = [];
@@ -320,10 +343,10 @@ export async function generateEclipseRaceMusicOgg(outPath: string): Promise<numb
     });
   }
 
-  return encodeWavToOgg(synthesizeNotesToWav(notes, lead.length * step), outPath);
+  return encodeWavToAudioPair(synthesizeNotesToWav(notes, lead.length * step), outPath);
 }
 
-export async function generateVictoryFanfareOgg(outPath: string): Promise<number> {
+export async function generateVictoryFanfareOgg(outPath: string): Promise<AudioPairSizes> {
   const notes: SynthNote[] = [
     { freqHz: 523.25, startSec: 0.0, durationSec: 0.14, waveform: 'triangle', gain: 0.48 },
     { freqHz: 659.25, startSec: 0.13, durationSec: 0.14, waveform: 'triangle', gain: 0.5 },
@@ -331,24 +354,24 @@ export async function generateVictoryFanfareOgg(outPath: string): Promise<number
     { freqHz: 1046.5, startSec: 0.42, durationSec: 0.72, waveform: 'triangle', gain: 0.55, releaseSec: 0.35 },
     { freqHz: 523.25, startSec: 0.42, durationSec: 0.72, waveform: 'sine', gain: 0.35, releaseSec: 0.35 },
   ];
-  return encodeWavToOgg(synthesizeNotesToWav(notes, 1.25), outPath);
+  return encodeWavToAudioPair(synthesizeNotesToWav(notes, 1.25), outPath);
 }
 
-export async function generateDefeatThemeOgg(outPath: string): Promise<number> {
+export async function generateDefeatThemeOgg(outPath: string): Promise<AudioPairSizes> {
   const notes: SynthNote[] = [
     { freqHz: 440, startSec: 0.0, durationSec: 0.24, waveform: 'triangle', gain: 0.42 },
     { freqHz: 392, startSec: 0.24, durationSec: 0.24, waveform: 'triangle', gain: 0.42 },
     { freqHz: 349.23, startSec: 0.48, durationSec: 0.28, waveform: 'triangle', gain: 0.42 },
     { freqHz: 293.66, endFreqHz: 261.63, startSec: 0.76, durationSec: 0.55, waveform: 'sine', gain: 0.46, releaseSec: 0.25 },
   ];
-  return encodeWavToOgg(synthesizeNotesToWav(notes, 1.4), outPath);
+  return encodeWavToAudioPair(synthesizeNotesToWav(notes, 1.4), outPath);
 }
 
-function encodeFloatLoopToOgg(
+function encodeFloatLoopToAudioPair(
   mix: Float32Array,
   sampleRate: number,
   outPath: string,
-): Promise<number> {
+): Promise<AudioPairSizes> {
   const totalSamples = mix.length;
   const dataSize = totalSamples * 2;
   const wav = Buffer.alloc(44 + dataSize);
@@ -371,13 +394,13 @@ function encodeFloatLoopToOgg(
       44 + i * 2,
     );
   }
-  return encodeWavToOgg(wav, outPath);
+  return encodeWavToAudioPair(wav, outPath);
 }
 
 function synthesizeBiomeAmbience(
   outPath: string,
   config: { lpFactor: number; lfoCycles: number; chimeFreqA?: number; chimeFreqB?: number; gain: number },
-): Promise<number> {
+): Promise<AudioPairSizes> {
   const duration = 4.0;
   const sampleRate = 44100;
   const totalSamples = Math.floor(duration * sampleRate);
@@ -403,14 +426,14 @@ function synthesizeBiomeAmbience(
     mix[i] = lp * swell * config.gain + shimmer;
   }
 
-  return encodeFloatLoopToOgg(mix, sampleRate, outPath);
+  return encodeFloatLoopToAudioPair(mix, sampleRate, outPath);
 }
 
-export function generateAmbienceCoastalOgg(outPath: string): Promise<number> {
+export function generateAmbienceCoastalOgg(outPath: string): Promise<AudioPairSizes> {
   return synthesizeBiomeAmbience(outPath, { lpFactor: 0.96, lfoCycles: 1, gain: 1.4 });
 }
 
-export function generateAmbienceForestOgg(outPath: string): Promise<number> {
+export function generateAmbienceForestOgg(outPath: string): Promise<AudioPairSizes> {
   return synthesizeBiomeAmbience(outPath, {
     lpFactor: 0.92,
     lfoCycles: 2,
@@ -420,7 +443,7 @@ export function generateAmbienceForestOgg(outPath: string): Promise<number> {
   });
 }
 
-export function generateAmbienceValleyOgg(outPath: string): Promise<number> {
+export function generateAmbienceValleyOgg(outPath: string): Promise<AudioPairSizes> {
   return synthesizeBiomeAmbience(outPath, {
     lpFactor: 0.94,
     lfoCycles: 1,
@@ -430,11 +453,11 @@ export function generateAmbienceValleyOgg(outPath: string): Promise<number> {
   });
 }
 
-export function generateAmbienceCanyonOgg(outPath: string): Promise<number> {
+export function generateAmbienceCanyonOgg(outPath: string): Promise<AudioPairSizes> {
   return synthesizeBiomeAmbience(outPath, { lpFactor: 0.975, lfoCycles: 1, gain: 1.55 });
 }
 
-export function generateAmbienceNeonOgg(outPath: string): Promise<number> {
+export function generateAmbienceNeonOgg(outPath: string): Promise<AudioPairSizes> {
   return synthesizeBiomeAmbience(outPath, {
     lpFactor: 0.95,
     lfoCycles: 2,
@@ -444,7 +467,7 @@ export function generateAmbienceNeonOgg(outPath: string): Promise<number> {
   });
 }
 
-export function generateAmbienceBorealOgg(outPath: string): Promise<number> {
+export function generateAmbienceBorealOgg(outPath: string): Promise<AudioPairSizes> {
   return synthesizeBiomeAmbience(outPath, {
     lpFactor: 0.98,
     lfoCycles: 1,
@@ -454,7 +477,7 @@ export function generateAmbienceBorealOgg(outPath: string): Promise<number> {
   });
 }
 
-export function generateAmbienceSkyOgg(outPath: string): Promise<number> {
+export function generateAmbienceSkyOgg(outPath: string): Promise<AudioPairSizes> {
   return synthesizeBiomeAmbience(outPath, {
     lpFactor: 0.96,
     lfoCycles: 1,
@@ -464,7 +487,7 @@ export function generateAmbienceSkyOgg(outPath: string): Promise<number> {
   });
 }
 
-export function generateAmbienceStormOgg(outPath: string): Promise<number> {
+export function generateAmbienceStormOgg(outPath: string): Promise<AudioPairSizes> {
   return synthesizeBiomeAmbience(outPath, {
     lpFactor: 0.985,
     lfoCycles: 3,
@@ -474,7 +497,9 @@ export function generateAmbienceStormOgg(outPath: string): Promise<number> {
   });
 }
 
-export async function generateRaceSfxLibrary(sfxDir: string): Promise<Record<string, number>> {
+export async function generateRaceSfxLibrary(
+  sfxDir: string,
+): Promise<Record<string, AudioPairSizes>> {
   const specs: Record<string, { duration: number; notes: SynthNote[] }> = {
     countdown_beep: {
       duration: 0.22,
@@ -551,13 +576,13 @@ export async function generateRaceSfxLibrary(sfxDir: string): Promise<Record<str
     },
   };
 
-  const results: Record<string, number> = {};
+  const results: Record<string, AudioPairSizes> = {};
   const keys = Object.keys(specs);
   await Promise.all(
     keys.map(async (key) => {
       const spec = specs[key];
       const wav = synthesizeNotesToWav(spec.notes, spec.duration);
-      results[key] = await encodeWavToOgg(wav, path.join(sfxDir, `${key}.ogg`));
+      results[key] = await encodeWavToAudioPair(wav, path.join(sfxDir, `${key}.ogg`));
     }),
   );
   return results;
