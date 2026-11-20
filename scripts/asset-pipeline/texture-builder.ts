@@ -602,3 +602,40 @@ export function createIceTexture(size = 256): Buffer {
     return [r, g, b, 255];
   });
 }
+
+export function createVfxSpritesheetPng(size = 256): Buffer {
+  // 2x2 RGBA spritesheet: Top-Left soft smoke puff, Top-Right spark star,
+  // Bottom-Left frost/leaf crystal, Bottom-Right shockwave ring
+  return renderPng(size, size, (_x, _y, u, v) => {
+    const col = u < 0.5 ? 0 : 1;
+    const row = v < 0.5 ? 0 : 1;
+    const lx = ((u * 2) % 1) - 0.5;
+    const ly = ((v * 2) % 1) - 0.5;
+    const r = Math.hypot(lx, ly);
+
+    if (row === 0 && col === 0) {
+      // Soft radial smoke/dust puff
+      const alpha = Math.max(0, 1 - smoothstep(0.05, 0.45, r));
+      return [255, 255, 255, Math.round(alpha * 255)];
+    }
+    if (row === 0 && col === 1) {
+      // Crisp 4-point spark star
+      const core = Math.max(0, 1 - smoothstep(0.04, 0.25, r));
+      const rays = Math.max(
+        Math.max(0, 1 - Math.abs(lx) * 10) * Math.max(0, 1 - Math.abs(ly) * 2.2),
+        Math.max(0, 1 - Math.abs(ly) * 10) * Math.max(0, 1 - Math.abs(lx) * 2.2),
+      );
+      const alpha = Math.min(1, core + rays * 0.9);
+      return [255, 255, 255, Math.round(alpha * 255)];
+    }
+    if (row === 1 && col === 0) {
+      // Diamond snow/crystal/leaf flake
+      const diamond = Math.abs(lx) + Math.abs(ly);
+      const alpha = Math.max(0, 1 - smoothstep(0.18, 0.42, diamond));
+      return [255, 255, 255, Math.round(alpha * 255)];
+    }
+    // Luminous energy halo ring
+    const ring = 1 - smoothstep(0.03, 0.14, Math.abs(r - 0.3));
+    return [255, 255, 255, Math.round(Math.max(0, ring) * 255)];
+  });
+}

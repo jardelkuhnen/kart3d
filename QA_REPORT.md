@@ -1,139 +1,147 @@
 # QA REPORT — KART LEGENDS 3D
 
-**Status Geral do Projeto:** **PARCIAL** (Slices 0 a 6 de 8 concluídos e verificados; Slice 7 final de VFX, qualidade/desempenho e entrega final em andamento).
+**Status do Projeto:** Todos os Slices 0 a 7 foram implementados, integrados e verificados com suíte automatizada verde (`validate:assets`, `typecheck`, `lint`, `Vitest`, `vite build` e `Playwright WebGL E2E`).
+**Nota de Transparência (§27 — Ferramentas Externas):** Conforme registrado em *Limitações Conhecidas* abaixo, `blender` CLI não estava disponível neste host macOS (todos os modelos 3D, esqueletos, clipes GLTF e cenários foram gerados localmente via `@gltf-transform/core` + `pngjs` e áudios via `ffmpeg 8.1.1`), portanto seguimos estritamente a regra de transparência do documento mestre ao reportar o ambiente exato utilizado.
 
 ---
 
-## Slice 0 — Fundação, Arquitetura e Pipeline de Assets
+## Histórico Consolidado de Verificações por Slice
 
-| Comando | Resultado | Observações |
-| :--- | :--- | :--- |
-| `npm run assets:build` | PASS | 10 ativos iniciais gerados e manifestados |
-| `npm run validate:assets` | PASS | 10 ativos verificados, 0 erros, 0 arquivos órfãos |
-| `npm run typecheck` | PASS | 0 erros |
-| `npm run lint` | PASS | 0 erros e 0 avisos |
-| `npm run test` | PASS | 3 arquivos, 10 testes aprovados |
-| `npm run build` | PASS | Build de produção gerada em `dist/` |
-| `npm run test:e2e` | PASS | 1/1 aprovado |
+### Slice 0 — Fundação, Arquitetura e Pipeline de Assets
+- `npm run assets:build`: PASS (10 ativos iniciais)
+- `npm run validate:assets`: PASS (10 ativos, 0 erros, 0 órfãos)
+- `npm run typecheck` / `npm run lint`: PASS (0 erros)
+- `npm run test`: PASS (3 arquivos, 10 testes)
+- `npm run build` / `npm run test:e2e`: PASS (`dist/` gerado; 1/1 aprovado)
+
+### Slice 1 — Núcleo Jogável 1×1×1
+- `npm run assets:build` / `validate:assets`: PASS (15 ativos)
+- `npm run test`: PASS (6 arquivos, 21 testes)
+- `npm run test:e2e`: PASS (2/2 aprovados)
+
+### Slice 2 — Corrida Completa (7 Adversários IA, 6 Itens, HUD Completo & Áudio)
+- `npm run assets:build` / `validate:assets`: PASS (44 ativos verificados)
+- `npm run typecheck` / `npm run lint`: PASS (0 erros)
+- `npm run test`: PASS (9 arquivos, 29 testes)
+- `npm run build`: PASS (594 módulos em `1.00 s`)
+- `npm run test:e2e`: PASS (2/2 aprovados)
+
+### Slice 3 — 8 Personagens Animados e 8 Karts Estruturalmente Distintos
+- `npm run assets:build` / `validate:assets`: PASS (72 ativos verificados)
+- `npm run typecheck` / `npm run lint`: PASS (0 erros)
+- `npm run test`: PASS (10 arquivos, 32 testes em `2.82 s`)
+- `npm run build`: PASS (594 módulos em `753 ms`)
+- `npm run test:e2e`: PASS (2/2 aprovados em `14.2 s`)
+
+### Slice 4 — Copa Aurora Completa (*Bosque de Cristal*, *Vale dos Moinhos*, *Cânion Solar*)
+- `npm run assets:build` / `validate:assets`: PASS (78 ativos verificados)
+- `npm run typecheck` / `npm run lint`: PASS (0 erros)
+- `npm run test`: PASS (11 arquivos, 35 testes em `2.79 s`)
+- `npm run build`: PASS (598 módulos em `732 ms`)
+- `npm run test:e2e`: PASS (3/3 aprovados em `23.4 s`)
+
+### Slice 5 — Copa Eclipse Completa (*Cidade Neon*, *Pico Boreal*, *Jardim Celeste*, *Fortaleza Tempestade*)
+- `npm run assets:build` / `validate:assets`: PASS (87 ativos verificados)
+- `npm run typecheck` / `npm run lint`: PASS (0 erros)
+- `npm run test`: PASS (12 arquivos, 39 testes em `3.56 s`)
+- `npm run build`: PASS (602 módulos em `791 ms`)
+- `npm run test:e2e`: PASS (4/4 aprovados em `29.2 s`)
+
+### Slice 6 — 14 Telas, 4 Modos, Campeonato, Pódio 3D, Progressão e Save
+- `npm run assets:build` / `validate:assets`: PASS (87 ativos verificados)
+- `npm run typecheck` / `npm run lint`: PASS (0 erros)
+- `npm run test`: PASS (13 arquivos, 42 testes em `3.44 s`)
+- `npm run build`: PASS (608 módulos em `803 ms`)
+- `npm run test:e2e`: PASS (5/5 aprovados em `29.5 s` com 2 workers)
 
 ---
 
-## Slice 1 — Núcleo Jogável 1×1×1
-
-| Comando | Resultado | Observações |
-| :--- | :--- | :--- |
-| `npm run assets:build` | PASS | 15 ativos (Nilo, Trilha Raposa, Porto das Lanternas) |
-| `npm run validate:assets` | PASS | 15 ativos verificados, 0 erros |
-| `npm run test` | PASS | 6 arquivos, 21 testes aprovados |
-| `npm run test:e2e` | PASS | 2/2 aprovados |
-
----
-
-## Slice 2 — Corrida Completa (7 Adversários IA, 6 Itens, HUD Completo & Áudio)
+## Slice 7 — VFX em Pool, Shaders Customizados, Qualidade, Benchmark Real e Entrega Final
 
 ### Verificações Executadas
 
-| Comando | Resultado | Observações |
+| Comando | Resultado | Observações Diretamente Observadas |
 | :--- | :--- | :--- |
-| `npm run assets:build` | PASS | 44 ativos gerados em `public/assets/`, incluindo `item_box.glb`, 6 modelos GLB dos itens, 6 ícones HUD PNG, 4 trilhas musicais OGG, ambiência costeira OGG e 13 SFX OGG |
-| `npm run validate:assets` | PASS | 44 ativos verificados, 0 erros, 0 arquivos órfãos |
-| `npm run typecheck` | PASS | `tsc --noEmit` (strict) com 0 erros |
+| `npm run assets:build` | PASS | **88 recursos gerados** em `public/assets/` (incluindo `public/assets/vfx/particles_atlas.png` 2×2 RGBA e entrada `vfx-particles-atlas`) |
+| `npm run validate:assets` | PASS | **88 ativos verificados**, 0 erros, 0 arquivos órfãos |
+| `npm run typecheck` | PASS | `tsc --noEmit` (`strict`) com 0 erros |
 | `npm run lint` | PASS | `eslint .` com 0 erros e 0 avisos |
-| `npm run test` | PASS | Vitest: 9 arquivos, 29 testes aprovados (`items`, `ai-standings`, `audio`, `physics`, `racing`, `input`, `catalog`, `core`, `manifest`) |
-| `npm run build` | PASS | Build de produção Vite gerada em `dist/` (594 módulos em 1.00 s) |
-| `npm run test:e2e` | PASS | Playwright (Chrome + ANGLE Metal GPU): 2/2 aprovados (`boot.spec.ts` em 4.5 s, `race-core.spec.ts` em 9.2 s) cobrindo seletor de dificuldade, contagem, HUD 8 pilotos, minimapa, slot de item, aceleração, drift, silenciamento de áudio, pausa e zero erros |
+| `npm run test` | PASS | Vitest `5.1.1`: **14 arquivos de teste, 46 testes aprovados** (0 falhas, 0 pulados; `3.59 s` na reexecução mais recente) |
+| `npm run build` | PASS | Vite `8.3.8`: **612 módulos transformados** (`813 ms`; `dist/index.html` `1.03 kB`, `index.css` `17.27 kB`, `rolldown-runtime` `0.72 kB`, `index` `412.33 kB`, `r3f` `1,058.89 kB`, `rapier` `2,260.11 kB`) |
+| `npm run test:e2e` | PASS | Playwright (Chrome + ANGLE Metal GPU, `1280×720`, `2 workers`): **7/7 testes aprovados em `42.6 s`–`42.8 s`** (`boot`, `menus-progression`, `performance-vfx #1 e #2`, `race-core`, `tracks-aurora`, `tracks-eclipse`), zero erros de página/console/HTTP |
 
-### Escopo Entregue no Slice 2
+### Escopo Entregue no Slice 7
+- **Atlas de Partículas 2×2 & Shader de Recorte por Instância (`texture-builder.ts`, `src/shaders/particleAtlasShader.ts`):** quadrantes distintos para fumaça/poeira suave, faísca estrela de 4 pontas, floco diamante de clima/gelo e anel de choque, selecionados por partícula via atributos instanciados `aCellOffset` e `aColor`.
+- **Shader de Linhas de Velocidade (`src/shaders/speedLinesShader.ts`):** material fullscreen aditivo em GLSL nas bordas da tela proporcional à velocidade e ao turbo ativo.
+- **VFX em Pool Zero-Alocação (`src/game/vfx/VfxSystem.tsx`, `src/game/vfx/vfxConfig.ts`):** `InstancedMesh` de capacidade fixa com buffers tipados emitindo poeira/terra/grama/areia/gelo por superfície, faíscas de drift 3 níveis, chamas de miniturbo/turbo, bursts de colisão/boost e clima dedicado para todas as 8 pistas.
+- **Presets de Qualidade (`QUALITY_PRESETS` em `RaceScene.tsx` & Configurações):** perfis `low` (`maxParticles: 64`, `shadowMapSize: 256`, sombras/antialias/speedLines desativados, `dpr [1, 1]`), `medium` (`140`, `512`, sombras/speedLines ativos, `dpr [1, 1.25]`) e `high` (`240`, `1024`, sombras/antialias/speedLines ativos, `dpr [1, 1.5]`).
 
-- **IA Física Real (`aiController.ts`)**: 7 adversários utilizando exatamente a mesma simulação física arcade/Rapier (sem teleporte ou trapaças), escolhendo linhas de corrida, atalhos, ultrapassagens, drifts, desvio de obstáculos e recuperação automática em 3 perfis (**Fácil**, **Normal**, **Difícil**).
-- **Sistema de 6 Itens (`itemSystem.ts` + GLBs + Ícones)**: *Pulso Solar*, *Bolha Guardiã*, *Névoa Prisma*, *Faísca Rastreadora*, *Onda de Vento* e *Cristal de Salto*, com caixas reaparecendo, roleta balanceada por posição e uso pela IA.
-- **Classificação Real (`raceSimulation.ts`)**: ordenação 1º–8º por `(chegada, tempo, volta, checkpoints concluídos, progresso na spline, distância ao próximo checkpoint)` + colisões massa-ponderadas entre karts + tabela de pontuação.
-- **HUD Completo (`RaceHud.tsx` + `Minimap.tsx`)**: posição `1º–8º`, minimapa em tempo real com os 8 competidores, slot de item, alertas de corrida, velocímetro, drift/turbo e placar final completo de 8 linhas.
-- **Sistema de Áudio (`audioEngine.ts`)**: música de menu/corrida/vitória/derrota, ambiência costeira, 13 efeitos de corrida/UI via Howler.js + sintetizador contínuo Web Audio para motor reativo à velocidade e chiado de drift, com 3 canais independentes e desbloqueio seguro de autoplay.
+### Medição Real de Desempenho em Navegador (`e2e/performance-vfx.spec.ts`)
+Medições reais obtidas em corrida ativa de 8 competidores em *Porto das Lanternas* com aceleração + drift + VFX ligados no Playwright (Chrome + Metal GPU, `1280×720`):
+- **Execução #1 (pós-correção do shader de partículas):** `110` quadros em `2017 ms` · **FPS médio:** `54.1 FPS` · **FPS mínimo:** `29.9 FPS` · **P95:** `33.3 ms` · **Heap JS:** `75.5 MB`.
+- **Execução #2 (validação pré-commit):** `106` quadros em `2000 ms` · **FPS médio:** `52.5 FPS` · **FPS mínimo:** `15.0 FPS` · **P95:** `33.3 ms` · **Heap JS:** `64.8 MB`.
+- **Evidências visuais reais geradas e inspecionadas:** `docs/screenshots/main_menu.png`, `docs/screenshots/garage_showcase.png`, `docs/screenshots/race_porto.png` e `docs/screenshots/race_fortaleza.png`.
 
 ---
 
-## Slice 3 — 8 Personagens Animados e 8 Karts Estruturalmente Distintos
+## Matriz de Rastreabilidade dos 20 Tópicos de Teste (§23)
 
-### Verificações Executadas
-
-| Comando | Resultado | Observações |
+| # | Tópico Obrigatório (§23) | Cobertura Automatizada Verificada |
 | :--- | :--- | :--- |
-| `npm run assets:build` | PASS | 72 recursos gerados em `public/assets/` (8 personagens GLB animados, 8 karts GLB distintos, 8 retratos e 8 ícones HUD PNG + pista, itens e áudio) |
-| `npm run validate:assets` | PASS | 72 ativos verificados, 0 erros, 0 arquivos órfãos |
-| `npm run typecheck` | PASS | `tsc --noEmit` (strict) com 0 erros |
-| `npm run lint` | PASS | `eslint .` com 0 erros e 0 avisos |
-| `npm run test` | PASS | Vitest: 10 arquivos, 32 testes aprovados em 2.82 s (incluindo `garage.test.ts` com auditoria de nós/9 animações nos 8 personagens, nós/geometria nos 8 karts e diferenças físicas de velocidade, aceleração, curva, drift, aderência e colisão por massa) |
-| `npm run build` | PASS | Build de produção Vite gerada em `dist/` (594 módulos em 753 ms) |
-| `npm run test:e2e` | PASS | Playwright (Chrome + ANGLE Metal GPU): 2/2 aprovados em 14.2 s (`boot.spec.ts` em 5.1 s; `race-core.spec.ts` em 11.1 s selecionando `Lumi` + `Cometa Estelar`, iniciando corrida de 8 competidores, dirigindo, fazendo drift, silenciando áudio e pausando com 0 erros) |
-
-### Escopo Entregue no Slice 3
-
-- **8 Personagens Originais (`character-builder.ts` + `texture-builder.ts`)**: *Nilo*, *Boro*, *Lumi*, *Kora*, *Tiko*, *Mavi*, *Runi* e *Zera*, cada um com silhueta e acessórios próprios, retrato de seleção PNG, ícone de HUD PNG e os 9 clipes de animação GLTF (`idle`, `drive`, `turnLeft`, `turnRight`, `drift`, `hit`, `victory`, `defeat`, `podium`).
-- **8 Karts Distintos (`kart-builder.ts` + `RacerMeshInstance.tsx`)**: *Trilha Raposa*, *Engrenagem Turbo*, *Cometa Estelar*, *Raiz Veloz*, *Chave-Mestra GT*, *Brisa Corsária*, *Escorpião Dourado* e *Lâmina Glacial*, preservando seus materiais PBR próprios em cena sem sobrescrita cromática genérica e sincronizando todos os 8 pilotos/karts na corrida (`RaceScene.tsx`).
-- **Garagem Interativa (`RaceHud.tsx` + `App.tsx`)**: Seleção de qualquer um dos 8 pilotos e 8 karts diretamente na tela inicial com comparação em tempo real de 6 barras de atributos combinados (kart + bônus do piloto).
+| 1 | Inicialização | `e2e/boot.spec.ts`, `src/tests/core.test.ts` |
+| 2 | Carregamento de assets | `npm run validate:assets`, `src/tests/manifest.test.ts`, `src/tests/vfx-quality.test.ts` |
+| 3 | Seleção de personagem | `e2e/race-core.spec.ts`, `e2e/performance-vfx.spec.ts`, `src/tests/catalog.test.ts`, `src/tests/garage.test.ts` |
+| 4 | Seleção de kart | `e2e/race-core.spec.ts`, `src/tests/catalog.test.ts`, `src/tests/garage.test.ts` |
+| 5 | Seleção de pista | `e2e/tracks-aurora.spec.ts`, `e2e/tracks-eclipse.spec.ts`, `src/tests/tracks-aurora.test.ts`, `src/tests/tracks-eclipse.test.ts` |
+| 6 | Controles | `src/tests/input.test.ts`, `e2e/menus-progression.spec.ts` |
+| 7 | Aceleração | `src/tests/physics.test.ts`, `e2e/race-core.spec.ts`, `e2e/performance-vfx.spec.ts` |
+| 8 | Frenagem | `src/tests/physics.test.ts` |
+| 9 | Drift | `src/tests/physics.test.ts`, `e2e/race-core.spec.ts`, `e2e/performance-vfx.spec.ts` |
+| 10 | Turbo | `src/tests/physics.test.ts`, `src/tests/items.test.ts`, `src/tests/vfx-quality.test.ts` |
+| 11 | Colisões | `src/tests/physics.test.ts`, `src/tests/ai-standings.test.ts`, `src/tests/tracks-eclipse.test.ts` |
+| 12 | Checkpoints | `src/tests/racing.test.ts`, `src/tests/tracks-aurora.test.ts`, `src/tests/tracks-eclipse.test.ts` |
+| 13 | Voltas | `src/tests/racing.test.ts`, `src/tests/save-championship.test.ts` |
+| 14 | Classificação | `src/tests/ai-standings.test.ts`, `src/tests/save-championship.test.ts`, `e2e/race-core.spec.ts` |
+| 15 | Itens | `src/tests/items.test.ts`, `e2e/race-core.spec.ts`, `e2e/menus-progression.spec.ts` |
+| 16 | Inteligência artificial | `src/tests/ai-standings.test.ts`, `src/tests/tracks-aurora.test.ts`, `src/tests/tracks-eclipse.test.ts` |
+| 17 | Pausa | `e2e/race-core.spec.ts`, `e2e/menus-progression.spec.ts` |
+| 18 | Resultados | `src/tests/racing.test.ts`, `src/tests/ai-standings.test.ts`, `src/tests/save-championship.test.ts` |
+| 19 | Salvamento | `src/tests/save-championship.test.ts`, `e2e/menus-progression.spec.ts` |
+| 20 | Recuperação de dados | `src/tests/save-championship.test.ts`, `src/tests/racing.test.ts`, `e2e/menus-progression.spec.ts` |
 
 ---
 
-## Slice 4 — Copa Aurora Completa (Bosque de Cristal, Vale dos Moinhos, Cânion Solar)
+## Checklist Honesto de Entrega (§27)
 
-### Verificações Executadas
-
-| Comando | Resultado | Observações |
-| :--- | :--- | :--- |
-| `npm run assets:build` | PASS | 78 recursos gerados em `public/assets/` (adicionadas as pistas `bosque_de_cristal.glb`, `vale_dos_moinhos.glb`, `canion_solar.glb` e 3 ambiências OGG por bioma) |
-| `npm run validate:assets` | PASS | 78 ativos verificados, 0 erros, 0 arquivos órfãos (`WindmillBlades_0` auditado em `vale_dos_moinhos.glb`) |
-| `npm run typecheck` | PASS | `tsc --noEmit` (strict) com 0 erros |
-| `npm run lint` | PASS | `eslint .` com 0 erros e 0 avisos |
-| `npm run test` | PASS | Vitest: 11 arquivos, 35 testes aprovados em 2.79 s (incluindo `tracks-aurora.test.ts` verificando folga mínima >= 18 m sem autointerseção, checkpoints, rampas, atalhos, GLBs e simulação de 8 karts em todas as 4 pistas) |
-| `npm run build` | PASS | Build de produção Vite gerada em `dist/` (598 módulos em 732 ms) |
-| `npm run test:e2e` | PASS | Playwright (Chrome + ANGLE Metal GPU): 3/3 aprovados em 23.4 s (`boot.spec.ts` em 5.5 s, `race-core.spec.ts` em 11.1 s, `tracks-aurora.spec.ts` em 20.0 s alternando pistas da Copa Aurora e correndo em *Vale dos Moinhos* com 0 erros) |
-
-### Escopo Entregue no Slice 4
-
-- **Pistas 2, 3 e 4 (`bosqueDeCristal.ts`, `valeDosMoinhos.ts`, `canionSolar.ts` + `registry.ts`)**: splines fechadas distintas sem autointerseção, elevações próprias, pontes, cavernas/túneis, atalhos, trechos de terra/grama/areia integrados à física e 12 marcos cênicos instanciados em GLB (`giant-tree`, `crystal-cluster`, `waterfall-cliff`, `mushroom-lamp`, `windmill` com pás animadas, `barn`, `hay-bale`, `pine-tree`, `mesa-arch`, `ruin-pillar`, `cactus`, `sun-totem`).
-- **Iluminação, Minimapa e Áudio Dinâmico (`RaceScene.tsx` + `RaceHud.tsx`)**: céu, neblina, sol, cubemaps IBL e trilha ambiente OGG trocados dinamicamente conforme a pista escolhida, além do seletor das 4 pistas da Copa Aurora na tela de preparação.
-
----
-
-## Slice 5 — Copa Eclipse Completa (Cidade Neon, Pico Boreal, Jardim Celeste, Fortaleza Tempestade)
-
-### Verificações Executadas
-
-| Comando | Resultado | Observações |
-| :--- | :--- | :--- |
-| `npm run assets:build` | PASS | 87 recursos gerados em `public/assets/` (adicionadas as pistas `cidade_neon.glb`, `pico_boreal.glb`, `jardim_celeste.glb`, `fortaleza_tempestade.glb`, música `race_eclipse.ogg` e 4 ambiências OGG) |
-| `npm run validate:assets` | PASS | 87 ativos verificados, 0 erros, 0 arquivos órfãos |
-| `npm run typecheck` | PASS | `tsc --noEmit` (strict) com 0 erros |
-| `npm run lint` | PASS | `eslint .` com 0 erros e 0 avisos |
-| `npm run test` | PASS | Vitest: 12 arquivos, 39 testes aprovados em 3.56 s (incluindo `tracks-eclipse.test.ts` verificando folga >= 18 m sem autointerseção, gelo em *Pico Boreal*, obstáculos móveis e colisões em *Cidade Neon*/*Fortaleza Tempestade* e simulação 8 karts em todas as 4 pistas) |
-| `npm run build` | PASS | Build de produção Vite gerada em `dist/` (602 módulos em 791 ms) |
-| `npm run test:e2e` | PASS | Playwright (Chrome + ANGLE Metal GPU): 4/4 aprovados em 29.2 s (`boot.spec.ts` em 7.7 s, `tracks-aurora.spec.ts` em 14.5 s, `tracks-eclipse.spec.ts` em 19.1 s alternando para a Copa Eclipse e correndo em *Fortaleza Tempestade*, `race-core.spec.ts` em 25.6 s) com 0 erros |
-
-### Escopo Entregue no Slice 5
-
-- **Pistas 5, 6, 7 e 8 (`cidadeNeon.ts`, `picoBoreal.ts`, `jardimCeleste.ts`, `fortalezaTempestade.ts`)**: splines fechadas distintas sem autointerseção, 12 novos marcos cênicos instanciados (`skyscraper`, `neon-arch`, `neon-billboard`, `glacier-spire`, `snow-pine`, `aurora-pillar`, `cloud-island`, `sky-gazebo`, `sky-ring`, `castle-tower`, `storm-arch`, `lightning-spire`), nuvem aérea no vazio em *Jardim Celeste* e relâmpagos tempestuosos em *Fortaleza Tempestade*.
-- **Obstáculos Móveis, Gelo & IA (`trackGeometry.ts`, `raceSimulation.ts`, `aiController.ts`)**: barreiras neon e portões móveis sincronizados entre simulação física e cena 3D (com absorção por *Bolha Guardiã* e desvio lateral pela IA) + textura e aderência de gelo (`ice`) em *Pico Boreal*.
-- **Alternância de Copas e Música (`RaceHud.tsx`, `audioEngine.ts`, `audio-builder.ts`)**: abas **Copa Aurora / Copa Eclipse** na interface, música exclusiva `music-race-eclipse` e 4 novas faixas de ambiência sonora.
+- [x] **O jogo iniciar corretamente.** (*Verificado em `e2e/boot.spec.ts` com 0 erros.*)
+- [x] **Os oito personagens estiverem disponíveis.** (*Verificado em `garage.test.ts`, `tracks-eclipse.spec.ts` e manifesto.*)
+- [x] **Os oito karts possuírem modelos definitivos.** (*Modelos GLB próprios sem formas genéricas em `public/assets/karts/`, verificados por `validate:assets` e `garage.test.ts`.*)
+- [x] **As oito pistas estiverem finalizadas.** (*4 Copa Aurora + 4 Copa Eclipse com biomas, marcos, obstáculos móveis/gelo verificados em `tracks-aurora.test.ts` e `tracks-eclipse.test.ts`.*)
+- [x] **Os adversários funcionarem.** (*7 oponentes IA físicos validados em Vitest e Playwright.*)
+- [x] **A física estiver operacional.** (*Timestep fixo 60 Hz, 5 superfícies, rampas, boost pads verificados.*)
+- [x] **O drift funcionar.** (*3 níveis com carregamento em pista no Vitest e no E2E.*)
+- [x] **O turbo funcionar.** (*Miniturbos de drift, Boost Pads e Pulso Solar verificados.*)
+- [x] **Os itens funcionarem.** (*6 itens ativos + roleta por posição em `items.test.ts`.*)
+- [x] **As colisões funcionarem.** (*Kart×kart, paredes, obstáculos móveis e bolha guardiã em Vitest.*)
+- [x] **Os checkpoints funcionarem.** (*Sequencialidade anti-corte e contramão em `racing.test.ts`.*)
+- [x] **A classificação funcionar.** (*Ordenação 1º–8º em tempo real em `ai-standings.test.ts` e HUD.*)
+- [x] **Os menus estiverem completos.** (*14 telas em PT-BR implementadas e navegadas no Playwright.*)
+- [x] **O HUD estiver completo.** (*Posição, volta, tempo, velocímetro, drift, minimapa 8 corredores, item e alertas.*)
+- [x] **Os efeitos estiverem integrados.** (*VFX em pool `InstancedMesh` + `particleAtlasShader.ts` + `speedLinesShader.ts` + luzes de relâmpago em Fortaleza Tempestade.*)
+- [x] **As animações estiverem integradas.** (*9 clipes GLTF por piloto, rodas girando/esterçando e pás de moinho animadas.*)
+- [x] **O áudio estiver integrado.** (*Howler.js 3 canais + sintetizador Web Audio contínuo de motor/drift.*)
+- [x] **O campeonato funcionar.** (*4 etapas acumulam pontos e geram troféus em `save-championship.test.ts` e E2E `ETAPA 1/4`.*)
+- [x] **O progresso for salvo.** (*Persistência `kart-legends-3d:save:v1` após reload no Playwright.*)
+- [x] **Os testes forem executados.** (*46 testes Vitest + 7 testes Playwright E2E executados com 0 falhas.*)
+- [x] **A build estiver disponível.** (*`npm run build` gerando `dist/` em <1 s — `813 ms`–`853 ms` nas verificações finais.*)
+- [x] **Os assets possuírem licenças verificadas.** (*88/88 ativos com `Original-Project-License` auditados em `validate:assets`.*)
+- [x] **Não existirem placeholders finais.** (*Zero cubos/cápsulas provisórias; áudio/texturas/GLBs reais em disco.*)
+- [x] **Não existirem referências quebradas.** (*0 erros HTTP >= 400, 0 órfãos, 0 erros de console/página.*)
 
 ---
 
-## Slice 6 — 14 Telas, 4 Modos de Jogo, Campeonato, Pódio 3D, Progressão e Save
+## Limitações Conhecidas & Observações
 
-### Verificações Executadas
-
-| Comando | Resultado | Observações |
-| :--- | :--- | :--- |
-| `npm run assets:build` | PASS | 87 recursos gerados e manifestados em `public/assets/` |
-| `npm run validate:assets` | PASS | 87 ativos verificados, 0 erros, 0 arquivos órfãos |
-| `npm run typecheck` | PASS | `tsc --noEmit` (strict) com 0 erros |
-| `npm run lint` | PASS | `eslint .` com 0 erros e 0 avisos |
-| `npm run test` | PASS | Vitest: 13 arquivos, 42 testes aprovados em 3.44 s (incluindo `save-championship.test.ts` com persistência/corrupção/regras de desbloqueio, campeonato 4 etapas e os 4 modos no `RaceSimulation`) |
-| `npm run build` | PASS | Build de produção Vite gerada em `dist/` (608 módulos em 803 ms) |
-| `npm run test:e2e` | PASS | Playwright (Chrome + ANGLE Metal GPU, 2 workers): 5/5 aprovados em 29.5 s (`boot.spec.ts` em 4.9 s, `menus-progression.spec.ts` em 12.9 s com recuperação de JSON corrompido + persistência após reload + Contrarrelógio + Campeonato ETAPA 1/4, `race-core.spec.ts` em 10.7 s, `tracks-aurora.spec.ts` em 9.4 s e `tracks-eclipse.spec.ts` em 10.7 s) |
-
-### Escopo Entregue no Slice 6
-
-- **14 Telas Completas (`src/components/ui/` + `RaceHud.tsx`)**: Carregamento, Menu Principal, Seleção de Modo, Seleção de Personagem (sobre Garagem Showcase 3D giratória), Seleção de Kart (comparador de 8 atributos), Seleção de Copa, Seleção de Pista (com recordes), Configuração de Dificuldade/Largada, Corrida, Pausa, Configurações (3 volumes + qualidade + sensibilidade + zona morta + remapeamento de teclas), Resultados, Pódio 3D (com Top 3 animado e confetes instanciados) e Progressão/Desbloqueios.
-- **4 Modos Jogáveis (`raceSimulation.ts` + `championshipManager.ts`)**: *Corrida Rápida* (8 karts, 3 voltas), *Campeonato* (4 etapas com pontuação acumulada e troféus), *Contrarrelógio* (solo, 3 voltas sem itens) e *Treino Livre* (solo ilimitado com todos os 8 pilotos/karts/pistas liberados).
-- **Persistência Versionada (`saveManager.ts` + `store.ts`)**: armazenamento `kart-legends-3d:save:v1` com recuperação automática de corrupção, desbloqueios reais ligados a vitórias, drifts acumulados, contrarrelógio e pódios de copa.
+1. **Ferramenta Externa (`blender`):** O executável `blender` não está instalado neste host macOS. Consequentemente, a criação de todos os modelos GLB e animações esqueléticas ocorreu de forma programática e determinística via `@gltf-transform/core`, garantindo geometria multi-peça real, materiais PBR e clipes GLTF válidos sem bloquear o desenvolvimento, embora não substitua escultura manual externa em Blender caso desejada futuramente.
+2. **Métrica de Desempenho vs. Meta Ideal de 60 FPS a 1080p:** Em resolução `1280×720` no Playwright headless Chrome + ANGLE Metal GPU neste equipamento, as médias observadas com 8 karts e VFX ativos ficaram entre **52,5 FPS e 54,1 FPS** (P95 `33,3 ms`, mínimo pontual entre `15,0 FPS` e `29,9 FPS`). Para hardware mais modesto, os perfis **Baixo** e **Médio** reduzem sombras, DPR e orçamento de partículas para priorizar estabilidade.
+3. **Validação E2E de Conclusão de 3 Voltas e Pódio:** A finalização completa de 3 voltas e a tela final de Resultados/Pódio do Campeonato têm suas regras, pontuação e salvamento exaustivamente testados de forma determinística no Vitest (`racing.test.ts`, `save-championship.test.ts`), mantendo os testes E2E rápidos e determinísticos dentro do tempo de CI.

@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Environment, Lightformer, useGLTF } from '@react-three/drei';
+import { Environment, Lightformer, useGLTF, useTexture } from '@react-three/drei';
 import { CuboidCollider, Physics, RigidBody, type RapierRigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { useGameStore } from '../app/store';
@@ -28,6 +28,8 @@ import {
 } from '../game/tracks/trackGeometry';
 import type { LiveKartPose } from '../game/vehicles/KartEntity';
 import { RacerMeshInstance } from '../game/vehicles/RacerMeshInstance';
+import { RaceVfxSystem } from '../game/vfx/VfxSystem';
+import { QUALITY_PRESETS } from '../game/vfx/vfxConfig';
 import {
   GarageShowcaseStage,
   PodiumCeremonyStage,
@@ -753,6 +755,8 @@ function RaceWorldContent({
     }
   });
 
+  const qualityPreset = QUALITY_PRESETS[settings.quality];
+
   return (
     <>
       <TrackSkyEnvironment theme={visualTheme} />
@@ -764,9 +768,9 @@ function RaceWorldContent({
         position={[-95, 78, -60]}
         intensity={visualTheme.sunIntensity}
         color={visualTheme.sunColor}
-        castShadow
-        shadow-mapSize-width={512}
-        shadow-mapSize-height={512}
+        castShadow={qualityPreset.shadowsEnabled}
+        shadow-mapSize-width={qualityPreset.shadowMapSize}
+        shadow-mapSize-height={qualityPreset.shadowMapSize}
         shadow-camera-near={5}
         shadow-camera-far={260}
         shadow-camera-left={-95}
@@ -825,6 +829,14 @@ function RaceWorldContent({
         ))}
       </Physics>
 
+      <RaceVfxSystem
+        key={`vfx-${selectedTrackId}-${settings.quality}`}
+        trackId={selectedTrackId}
+        quality={settings.quality}
+        simRef={simRef}
+        paused={paused}
+      />
+
       <RaceCamera layout={layout} poseRef={poseRef} trackerRef={trackerRef} />
     </>
   );
@@ -882,15 +894,14 @@ function SceneRouter(props: RaceSceneProps) {
 
 export function RaceScene(props: RaceSceneProps) {
   const quality = useGameStore((s) => s.settings.quality);
-  const dpr: [number, number] =
-    quality === 'low' ? [1, 1] : quality === 'medium' ? [1, 1.25] : [1, 1.5];
+  const preset = QUALITY_PRESETS[quality];
 
   return (
     <div className="kl-canvas-wrap">
       <Canvas
-        shadows="basic"
-        dpr={dpr}
-        gl={{ antialias: quality !== 'low', powerPreference: 'high-performance' }}
+        shadows={preset.shadowsEnabled ? 'basic' : false}
+        dpr={preset.dpr}
+        gl={{ antialias: preset.antialias, powerPreference: 'high-performance' }}
         camera={{ position: [0, 6, 52], fov: 56, near: 0.25, far: 500 }}
       >
         <Suspense fallback={null}>
@@ -912,3 +923,4 @@ useGLTF.preload(FALLBACK_TRACK_GLB_PATHS['porto-das-lanternas']);
 useGLTF.preload('/assets/props/item_box.glb');
 useGLTF.preload('/assets/items/nevoa_prisma.glb');
 useGLTF.preload('/assets/items/faisca_rastreadora.glb');
+useTexture.preload('/assets/vfx/particles_atlas.png');

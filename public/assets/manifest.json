@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-20T03:03:36.093Z",
+  "generatedAt": "2026-11-20T03:19:54.869Z",
   "project": "KART LEGENDS 3D",
   "assets": [
     {
@@ -430,6 +430,22 @@
       "usedIn": [
         "RaceHud",
         "ItemSlot"
+      ]
+    },
+    {
+      "id": "vfx-particles-atlas",
+      "name": "Atlas de Partículas VFX (2x2)",
+      "type": "vfx",
+      "path": "/assets/vfx/particles_atlas.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 25126,
+      "validationStatus": "validated",
+      "usedIn": [
+        "VfxSystem",
+        "RaceScene"
       ]
     },
     {
@@ -1460,54 +1476,6 @@
       ]
     },
     {
-      "id": "sfx-countdown-beep",
-      "name": "Contagem Regressiva (Beep)",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/countdown_beep.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 4216,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
-      "id": "sfx-countdown-go",
-      "name": "Contagem Regressiva (Largada)",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/countdown_go.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 6986,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
-      "id": "sfx-turbo-boost",
-      "name": "Disparo de Turbo",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/turbo_boost.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 6809,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
       "id": "sfx-collision-hit",
       "name": "Impacto de Colisão",
       "type": "audio-sfx",
@@ -1524,63 +1492,15 @@
       ]
     },
     {
-      "id": "sfx-drift-spark",
-      "name": "Faísca de Drift",
+      "id": "sfx-countdown-beep",
+      "name": "Contagem Regressiva (Beep)",
       "type": "audio-sfx",
-      "path": "/assets/audio/sfx/drift_spark.ogg",
+      "path": "/assets/audio/sfx/countdown_beep.ogg",
       "format": "ogg",
       "origin": "Síntese PCM local + ffmpeg Opus",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 3464,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
-      "id": "sfx-jump-launch",
-      "name": "Impulso de Salto",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/jump_launch.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 3604,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
-      "id": "sfx-item-pickup",
-      "name": "Coleta de Item",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/item_pickup.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 4528,
-      "validationStatus": "validated",
-      "usedIn": [
-        "AudioEngine",
-        "RaceScene"
-      ]
-    },
-    {
-      "id": "sfx-land-thud",
-      "name": "Aterrissagem",
-      "type": "audio-sfx",
-      "path": "/assets/audio/sfx/land_thud.ogg",
-      "format": "ogg",
-      "origin": "Síntese PCM local + ffmpeg Opus",
-      "author": "Kart Legends 3D Audio",
-      "license": "Original-Project-License",
-      "sizeBytes": 3234,
+      "sizeBytes": 4216,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1604,15 +1524,95 @@
       ]
     },
     {
-      "id": "sfx-race-finish",
-      "name": "Chegada da Corrida",
+      "id": "sfx-item-pickup",
+      "name": "Coleta de Item",
       "type": "audio-sfx",
-      "path": "/assets/audio/sfx/race_finish.ogg",
+      "path": "/assets/audio/sfx/item_pickup.ogg",
       "format": "ogg",
       "origin": "Síntese PCM local + ffmpeg Opus",
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
-      "sizeBytes": 12941,
+      "sizeBytes": 4528,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-drift-spark",
+      "name": "Faísca de Drift",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/drift_spark.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 3464,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-land-thud",
+      "name": "Aterrissagem",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/land_thud.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 3234,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-countdown-go",
+      "name": "Contagem Regressiva (Largada)",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/countdown_go.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 6986,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-jump-launch",
+      "name": "Impulso de Salto",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/jump_launch.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 3604,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-turbo-boost",
+      "name": "Disparo de Turbo",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/turbo_boost.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 6809,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",
@@ -1629,6 +1629,22 @@
       "author": "Kart Legends 3D Audio",
       "license": "Original-Project-License",
       "sizeBytes": 9459,
+      "validationStatus": "validated",
+      "usedIn": [
+        "AudioEngine",
+        "RaceScene"
+      ]
+    },
+    {
+      "id": "sfx-race-finish",
+      "name": "Chegada da Corrida",
+      "type": "audio-sfx",
+      "path": "/assets/audio/sfx/race_finish.ogg",
+      "format": "ogg",
+      "origin": "Síntese PCM local + ffmpeg Opus",
+      "author": "Kart Legends 3D Audio",
+      "license": "Original-Project-License",
+      "sizeBytes": 12941,
       "validationStatus": "validated",
       "usedIn": [
         "AudioEngine",

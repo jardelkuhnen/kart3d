@@ -59,6 +59,7 @@ import {
   createChevronSignTexture,
   createCurbTexture,
   createItemIconPng,
+  createVfxSpritesheetPng,
 } from './asset-pipeline/texture-builder';
 import { type TrackBiome, buildTrackGlb } from './asset-pipeline/track-builder';
 
@@ -447,6 +448,14 @@ async function main(): Promise<void> {
       buffer: createItemIconPng(kind, 128),
       usedIn: ['RaceHud', 'ItemSlot'],
     })),
+    {
+      id: 'vfx-particles-atlas',
+      name: 'Atlas de Partículas VFX (2x2)',
+      type: 'vfx' as const,
+      relPath: 'assets/vfx/particles_atlas.png',
+      buffer: createVfxSpritesheetPng(256),
+      usedIn: ['VfxSystem', 'RaceScene'],
+    },
   ];
 
   for (const tex of textureSpecs) {
