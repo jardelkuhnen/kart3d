@@ -396,6 +396,7 @@ export class RaceSimulation {
           racer.sim.z,
           racer.sim.yaw,
           trackQuery,
+          racer.isPlayer,
         );
         if (racer.race.finished && racer.finishTimeMs === null) {
           racer.finishTimeMs = this.tracker.raceElapsedMs;

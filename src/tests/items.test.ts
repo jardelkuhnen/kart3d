@@ -13,6 +13,8 @@ import {
   createInitialKartState,
 } from '../game/physics/kartController';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from '../game/tracks/portoDasLanternas';
+import { TRACK_LAYOUTS } from '../game/tracks/registry';
+import { projectPointOntoTrack } from '../game/tracks/trackGeometry';
 
 function makeAdapter(id: string, rank: number, x: number, z: number, yaw = 0): ItemRacerAdapter {
   const sim = createInitialKartState(x, 0, z, yaw);
@@ -136,5 +138,16 @@ describe('6-Item System & Position-Balanced Distribution', () => {
     expect(p3.sim.vx).toBeGreaterThan(p3InitialVx);
 
     void computeKartPhysicsProfile(getKartById('trilha-raposa'));
+  });
+
+  it('places every item box above true track surface elevation across all 8 tracks (CRÍTICO-03)', () => {
+    for (const layout of Object.values(TRACK_LAYOUTS)) {
+      const manager = new ItemWorldManager(layout);
+      expect(manager.boxes.length).toBeGreaterThan(0);
+      for (const box of manager.boxes) {
+        const q = projectPointOntoTrack(layout, box.position.x, box.position.z, box.position.y);
+        expect(box.position.y).toBeGreaterThanOrEqual(q.groundHeight + 0.5);
+      }
+    }
   });
 });

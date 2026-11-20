@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { FIXED_TIMESTEP } from '../game/core/constants';
 import { RaceProgressTracker, formatRaceTimeMs } from '../game/racing/raceManager';
+import { RaceSimulation } from '../game/racing/raceSimulation';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from '../game/tracks/portoDasLanternas';
 import { projectPointOntoTrack, yawFromTangent } from '../game/tracks/trackGeometry';
 
@@ -83,5 +85,71 @@ describe('Race Progress, Checkpoints & Anti-Cut Validation', () => {
       query,
     );
     expect(racer.wrongWay).toBe(true);
+  });
+
+  it('keeps race active and lets human player continue driving and finish after AI finishes first (CRÍTICO-01)', () => {
+    const sim = new RaceSimulation(
+      PORTO_DAS_LANTERNAS_LAYOUT,
+      'nilo',
+      'trilha-raposa',
+      'hard',
+      1,
+      true,
+      'quick-race',
+    );
+    sim.tracker.phase = 'racing';
+
+    const idleInput = {
+      throttle: 0,
+      brake: 0,
+      steer: 0,
+      drift: false,
+      useItem: false,
+      recover: false,
+    };
+
+    // Simulate until at least one AI racer finishes the 1-lap race while player waits
+    let aiFinished = false;
+    for (let step = 0; step < 3000; step += 1) {
+      sim.step(FIXED_TIMESTEP, idleInput);
+      if (sim.racers.some((r) => !r.isPlayer && r.race.finished)) {
+        aiFinished = true;
+        break;
+      }
+    }
+
+    expect(aiFinished).toBe(true);
+    expect(sim.player.race.finished).toBe(false);
+    expect(sim.phase).toBe('racing');
+
+    // Player must still be able to accelerate normally (no softlock)
+    const gasInput = { ...idleInput, throttle: 1 };
+    for (let step = 0; step < 90; step += 1) {
+      sim.step(FIXED_TIMESTEP, gasInput);
+    }
+    expect(sim.player.sim.forwardSpeed).toBeGreaterThan(15);
+    expect(sim.phase).toBe('racing');
+
+    // Now guide player through all checkpoints + finish line
+    const cps = PORTO_DAS_LANTERNAS_LAYOUT.checkpoints;
+    for (let i = 1; i < cps.length; i += 1) {
+      const cp = cps[i];
+      sim.player.sim.x = cp.position.x;
+      sim.player.sim.y = cp.position.y;
+      sim.player.sim.z = cp.position.z;
+      sim.player.sim.yaw = cp.yaw;
+      sim.step(FIXED_TIMESTEP, gasInput);
+    }
+    const cp0 = cps[0];
+    sim.player.sim.x = cp0.position.x;
+    sim.player.sim.y = cp0.position.y;
+    sim.player.sim.z = cp0.position.z;
+    sim.player.sim.yaw = cp0.yaw;
+    const finishEvents = sim.step(FIXED_TIMESTEP, gasInput);
+
+    expect(sim.player.race.finished).toBe(true);
+    expect(finishEvents.playerFinishedNow).toBe(true);
+    expect(sim.phase).toBe('finished');
+    expect(sim.player.rank).toBeGreaterThanOrEqual(2);
   });
 });

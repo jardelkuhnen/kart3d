@@ -93,6 +93,7 @@ export class RaceProgressTracker {
     z: number,
     yaw: number,
     trackQuery: TrackPointQuery,
+    isHumanPlayer = true,
   ): { lapCompleted: boolean; raceFinishedNow: boolean } {
     if (racer.finished || this.phase !== 'racing') {
       return { lapCompleted: false, raceFinishedNow: false };
@@ -156,7 +157,9 @@ export class RaceProgressTracker {
 
       if (racer.currentLap >= racer.totalLaps) {
         racer.finished = true;
-        this.phase = 'finished';
+        if (isHumanPlayer) {
+          this.phase = 'finished';
+        }
         raceFinishedNow = true;
       } else {
         racer.currentLap += 1;
