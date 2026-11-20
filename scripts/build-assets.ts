@@ -4,7 +4,16 @@ import { fileURLToPath } from 'node:url';
 import { Document } from '@gltf-transform/core';
 import type { AssetManifest, AssetManifestEntry } from '../src/game/core/types';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from '../src/game/tracks/portoDasLanternas';
-import { generateUiClickOgg, generateUiConfirmOgg } from './asset-pipeline/audio-builder';
+import {
+  generateAmbienceCoastalOgg,
+  generateDefeatThemeOgg,
+  generateMenuThemeOgg,
+  generateRaceMusicOgg,
+  generateRaceSfxLibrary,
+  generateUiClickOgg,
+  generateUiConfirmOgg,
+  generateVictoryFanfareOgg,
+} from './asset-pipeline/audio-builder';
 import { NILO_BUILD_SPEC, buildCharacterGlb } from './asset-pipeline/character-builder';
 import {
   addMeshToNode,
@@ -14,14 +23,25 @@ import {
   createPbrMaterial,
   writeGlb,
 } from './asset-pipeline/glb-builder';
+import {
+  buildBolhaGuardiaGlb,
+  buildCristalDeSaltoGlb,
+  buildFaiscaRastreadoraGlb,
+  buildItemBoxGlb,
+  buildNevoaPrismaGlb,
+  buildOndaDeVentoGlb,
+  buildPulsoSolarGlb,
+} from './asset-pipeline/item-builder';
 import { TRILHA_RAPOSA_BUILD_SPEC, buildKartGlb } from './asset-pipeline/kart-builder';
 import {
+  type ItemIconKind,
   createAsphaltTextures,
   createBoostPadTexture,
   createCharacterPortraitPng,
   createCheckeredStartTexture,
   createChevronSignTexture,
   createCurbTexture,
+  createItemIconPng,
 } from './asset-pipeline/texture-builder';
 import { buildPortoDasLanternasGlb } from './asset-pipeline/track-builder';
 
@@ -384,6 +404,23 @@ async function main(): Promise<void> {
       buffer: niloIconPng,
       usedIn: ['RaceHud', 'Minimap'],
     },
+    ...(
+      [
+        ['pulso-solar', 'Ícone HUD — Pulso Solar', 'item_pulso_solar.png'],
+        ['bolha-guardia', 'Ícone HUD — Bolha Guardiã', 'item_bolha_guardia.png'],
+        ['nevoa-prisma', 'Ícone HUD — Névoa Prisma', 'item_nevoa_prisma.png'],
+        ['faisca-rastreadora', 'Ícone HUD — Faísca Rastreadora', 'item_faisca_rastreadora.png'],
+        ['onda-de-vento', 'Ícone HUD — Onda de Vento', 'item_onda_de_vento.png'],
+        ['cristal-de-salto', 'Ícone HUD — Cristal de Salto', 'item_cristal_de_salto.png'],
+      ] as Array<[ItemIconKind, string, string]>
+    ).map(([kind, label, file]) => ({
+      id: `ui-item-${kind}`,
+      name: label,
+      type: 'ui' as const,
+      relPath: `assets/ui/${file}`,
+      buffer: createItemIconPng(kind, 128),
+      usedIn: ['RaceHud', 'ItemSlot'],
+    })),
   ];
 
   for (const tex of textureSpecs) {
@@ -540,7 +577,93 @@ async function main(): Promise<void> {
     ],
   });
 
-  // 6. Audio SFX
+  // 6. Item Box & 6 Original Items GLBs
+  const itemBoxSize = await buildItemBoxGlb(path.join(PUBLIC_DIR, 'assets/props/item_box.glb'));
+  entries.push({
+    id: 'prop-item-box',
+    name: 'Caixa de Item Prismática',
+    type: 'prop',
+    path: '/assets/props/item_box.glb',
+    format: 'glb',
+    origin: 'Pipeline local GLTF (item-builder.ts)',
+    author: 'Kart Legends 3D Pipeline',
+    license: 'Original-Project-License',
+    sizeBytes: itemBoxSize,
+    validationStatus: 'validated',
+    usedIn: ['RaceScene', 'ItemBoxes'],
+    requiredNodes: ['ItemBoxRoot', 'ItemBoxShell', 'ItemBoxCore'],
+  });
+
+  const itemBuilders: Array<{
+    id: string;
+    name: string;
+    file: string;
+    rootNode: string;
+    builder: (out: string) => Promise<number>;
+  }> = [
+    {
+      id: 'item-pulso-solar',
+      name: 'Item 3D — Pulso Solar',
+      file: 'pulso_solar.glb',
+      rootNode: 'PulsoSolarRoot',
+      builder: buildPulsoSolarGlb,
+    },
+    {
+      id: 'item-bolha-guardia',
+      name: 'Item 3D — Bolha Guardiã',
+      file: 'bolha_guardia.glb',
+      rootNode: 'BolhaGuardiaRoot',
+      builder: buildBolhaGuardiaGlb,
+    },
+    {
+      id: 'item-nevoa-prisma',
+      name: 'Item 3D — Névoa Prisma',
+      file: 'nevoa_prisma.glb',
+      rootNode: 'NevoaPrismaRoot',
+      builder: buildNevoaPrismaGlb,
+    },
+    {
+      id: 'item-faisca-rastreadora',
+      name: 'Item 3D — Faísca Rastreadora',
+      file: 'faisca_rastreadora.glb',
+      rootNode: 'FaiscaRastreadoraRoot',
+      builder: buildFaiscaRastreadoraGlb,
+    },
+    {
+      id: 'item-onda-de-vento',
+      name: 'Item 3D — Onda de Vento',
+      file: 'onda_de_vento.glb',
+      rootNode: 'OndaDeVentoRoot',
+      builder: buildOndaDeVentoGlb,
+    },
+    {
+      id: 'item-cristal-de-salto',
+      name: 'Item 3D — Cristal de Salto',
+      file: 'cristal_de_salto.glb',
+      rootNode: 'CristalDeSaltoRoot',
+      builder: buildCristalDeSaltoGlb,
+    },
+  ];
+
+  for (const itemSpec of itemBuilders) {
+    const sizeBytes = await itemSpec.builder(path.join(PUBLIC_DIR, 'assets/items', itemSpec.file));
+    entries.push({
+      id: itemSpec.id,
+      name: itemSpec.name,
+      type: 'item',
+      path: `/assets/items/${itemSpec.file}`,
+      format: 'glb',
+      origin: 'Pipeline local GLTF (item-builder.ts)',
+      author: 'Kart Legends 3D Pipeline',
+      license: 'Original-Project-License',
+      sizeBytes,
+      validationStatus: 'validated',
+      usedIn: ['RaceScene', 'ItemSystem'],
+      requiredNodes: [itemSpec.rootNode],
+    });
+  }
+
+  // 7. Audio Music, Ambience & SFX
   const uiClickSize = await generateUiClickOgg(path.join(PUBLIC_DIR, 'assets/audio/sfx/ui_click.ogg'));
   entries.push({
     id: 'sfx-ui-click',
@@ -571,6 +694,83 @@ async function main(): Promise<void> {
     sizeBytes: uiConfirmSize,
     validationStatus: 'validated',
     usedIn: ['UISystem'],
+  });
+
+  const musicSpecs: Array<{
+    id: string;
+    name: string;
+    file: string;
+    gen: (out: string) => Promise<number>;
+  }> = [
+    { id: 'music-menu', name: 'Música — Menu Principal', file: 'menu_theme.ogg', gen: generateMenuThemeOgg },
+    { id: 'music-race-aurora', name: 'Música — Corrida Copa Aurora', file: 'race_aurora.ogg', gen: generateRaceMusicOgg },
+    { id: 'music-victory', name: 'Música — Vitória', file: 'victory_fanfare.ogg', gen: generateVictoryFanfareOgg },
+    { id: 'music-defeat', name: 'Música — Derrota / Consolação', file: 'defeat_theme.ogg', gen: generateDefeatThemeOgg },
+  ];
+
+  for (const m of musicSpecs) {
+    const sizeBytes = await m.gen(path.join(PUBLIC_DIR, 'assets/audio/music', m.file));
+    entries.push({
+      id: m.id,
+      name: m.name,
+      type: 'audio-music',
+      path: `/assets/audio/music/${m.file}`,
+      format: 'ogg',
+      origin: 'Síntese PCM local + ffmpeg Opus',
+      author: 'Kart Legends 3D Audio',
+      license: 'Original-Project-License',
+      sizeBytes,
+      validationStatus: 'validated',
+      usedIn: ['AudioEngine'],
+    });
+  }
+
+  const sfxDir = path.join(PUBLIC_DIR, 'assets/audio/sfx');
+  const raceSfxSizes = await generateRaceSfxLibrary(sfxDir);
+  const sfxLabels: Record<string, string> = {
+    countdown_beep: 'Contagem Regressiva (Beep)',
+    countdown_go: 'Contagem Regressiva (Largada)',
+    drift_spark: 'Faísca de Drift',
+    turbo_boost: 'Disparo de Turbo',
+    collision_hit: 'Impacto de Colisão',
+    jump_launch: 'Impulso de Salto',
+    land_thud: 'Aterrissagem',
+    item_pickup: 'Coleta de Item',
+    item_use: 'Utilização de Item',
+    lap_complete: 'Volta Concluída',
+    race_finish: 'Chegada da Corrida',
+  };
+  for (const [key, sizeBytes] of Object.entries(raceSfxSizes)) {
+    entries.push({
+      id: `sfx-${key.replace(/_/g, '-')}`,
+      name: sfxLabels[key] ?? key,
+      type: 'audio-sfx',
+      path: `/assets/audio/sfx/${key}.ogg`,
+      format: 'ogg',
+      origin: 'Síntese PCM local + ffmpeg Opus',
+      author: 'Kart Legends 3D Audio',
+      license: 'Original-Project-License',
+      sizeBytes,
+      validationStatus: 'validated',
+      usedIn: ['AudioEngine', 'RaceScene'],
+    });
+  }
+
+  const ambienceSize = await generateAmbienceCoastalOgg(
+    path.join(sfxDir, 'ambience_coastal.ogg'),
+  );
+  entries.push({
+    id: 'sfx-ambience-coastal',
+    name: 'Ambiência — Costa e Ondas',
+    type: 'audio-sfx',
+    path: '/assets/audio/sfx/ambience_coastal.ogg',
+    format: 'ogg',
+    origin: 'Síntese PCM local + ffmpeg Opus',
+    author: 'Kart Legends 3D Audio',
+    license: 'Original-Project-License',
+    sizeBytes: ambienceSize,
+    validationStatus: 'validated',
+    usedIn: ['AudioEngine', 'PortoDasLanternas'],
   });
 
   const manifest: AssetManifest = {

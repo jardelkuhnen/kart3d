@@ -13,10 +13,10 @@ Todos os ativos utilizados neste projeto devem possuir licença explicitamente a
 
 - **Personagens GLB (`public/assets/characters/`)**: `nilo.glb` (rig animado com 9 clipes GLTF) — Criado localmente via `scripts/asset-pipeline/character-builder.ts`. Licença: `Original-Project-License`.
 - **Karts GLB (`public/assets/karts/`)**: `trilha_raposa.glb` (chassi multi-peça e 4 rodas independentes) — Criado localmente via `scripts/asset-pipeline/kart-builder.ts`. Licença: `Original-Project-License`.
-- **Pistas GLB (`public/assets/tracks/`)**: `porto_das_lanternas.glb` (pista costeira completa com pórtico, farol, casas, barcos, mercado, ponte, túnel, rampas e atalho) — Criado localmente via `scripts/asset-pipeline/track-builder.ts`. Licença: `Original-Project-License`.
-- **Props GLB (`public/assets/props/`)**: `start_gantry.glb`, `chevron_board.glb`, `boost_pad.glb` — Criados localmente via `@gltf-transform/core`. Licença: `Original-Project-License`.
-- **Texturas e UI (`.png`)**: `asphalt_albedo.png`, `asphalt_roughness.png`, `curb_albedo.png`, `start_line_albedo.png`, `chevron_sign_albedo.png`, `portrait_nilo.png`, `icon_nilo.png` — Criados localmente via `scripts/asset-pipeline/texture-builder.ts`. Licença: `Original-Project-License`.
-- **Áudio (`.ogg`)**: `ui_click.ogg`, `ui_confirm.ogg` — Sintetizados localmente via PCM + `ffmpeg` (`libopus`). Licença: `Original-Project-License`.
+- **Pistas GLB (`public/assets/tracks/`)**: `porto_das_lanternas.glb` — Criado localmente via `scripts/asset-pipeline/track-builder.ts`. Licença: `Original-Project-License`.
+- **Itens & Props GLB (`public/assets/items/`, `public/assets/props/`)**: `item_box.glb`, `pulso_solar.glb`, `bolha_guardia.glb`, `nevoa_prisma.glb`, `faisca_rastreadora.glb`, `onda_de_vento.glb`, `cristal_de_salto.glb`, `start_gantry.glb`, `chevron_board.glb`, `boost_pad.glb` — Criados localmente via `scripts/asset-pipeline/item-builder.ts` e `@gltf-transform/core`. Licença: `Original-Project-License`.
+- **Texturas e UI (`.png`)**: Texturas PBR de pista, retrato/ícone de Nilo e os 6 ícones dos itens (`item_*.png`) — Criados localmente via `scripts/asset-pipeline/texture-builder.ts`. Licença: `Original-Project-License`.
+- **Áudio Original (`.ogg`)**: Músicas (`menu_theme.ogg`, `race_aurora.ogg`, `victory_fanfare.ogg`, `defeat_theme.ogg`), ambiência (`ambience_coastal.ogg`) e 13 efeitos sonoros de corrida e interface — Sintetizados localmente via PCM + `ffmpeg` (`libopus`). Licença: `Original-Project-License`.
 
 ## Dependências de Runtime e Ferramentas
 

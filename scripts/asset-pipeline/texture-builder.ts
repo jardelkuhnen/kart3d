@@ -452,3 +452,114 @@ export function createCharacterPortraitPng(
     return [r, g, b, 255];
   });
 }
+
+export type ItemIconKind =
+  | 'pulso-solar'
+  | 'bolha-guardia'
+  | 'nevoa-prisma'
+  | 'faisca-rastreadora'
+  | 'onda-de-vento'
+  | 'cristal-de-salto';
+
+/**
+ * Crisp 128x128 high-contrast HUD item icon PNG for each of the 6 original items.
+ */
+export function createItemIconPng(kind: ItemIconKind, size = 128): Buffer {
+  const palettes: Record<ItemIconKind, { bg1: RgbColor; bg2: RgbColor; fg: RgbColor; glow: RgbColor }> = {
+    'pulso-solar': {
+      bg1: [120, 53, 15],
+      bg2: [217, 119, 6],
+      fg: [254, 240, 138],
+      glow: [245, 158, 11],
+    },
+    'bolha-guardia': {
+      bg1: [12, 74, 110],
+      bg2: [2, 132, 199],
+      fg: [224, 242, 254],
+      glow: [56, 189, 248],
+    },
+    'nevoa-prisma': {
+      bg1: [88, 28, 135],
+      bg2: [190, 24, 93],
+      fg: [252, 231, 243],
+      glow: [236, 72, 153],
+    },
+    'faisca-rastreadora': {
+      bg1: [127, 29, 29],
+      bg2: [220, 38, 38],
+      fg: [254, 215, 170],
+      glow: [249, 115, 22],
+    },
+    'onda-de-vento': {
+      bg1: [19, 78, 74],
+      bg2: [13, 148, 136],
+      fg: [204, 251, 241],
+      glow: [45, 212, 191],
+    },
+    'cristal-de-salto': {
+      bg1: [59, 7, 100],
+      bg2: [126, 34, 206],
+      fg: [243, 232, 255],
+      glow: [192, 132, 252],
+    },
+  };
+
+  const pal = palettes[kind];
+  return renderPng(size, size, (_x, _y, u, v) => {
+    const cx = u - 0.5;
+    const cy = v - 0.5;
+    const dist = Math.hypot(cx, cy);
+    if (dist > 0.48) return [0, 0, 0, 0];
+    if (dist > 0.44) return [pal.glow[0], pal.glow[1], pal.glow[2], 255];
+
+    let r = lerp(pal.bg1[0], pal.bg2[0], 1 - v);
+    let g = lerp(pal.bg1[1], pal.bg2[1], 1 - v);
+    let b = lerp(pal.bg1[2], pal.bg2[2], 1 - v);
+
+    let hit = false;
+    const ang = Math.atan2(cy, cx);
+
+    switch (kind) {
+      case 'pulso-solar': {
+        const rays = 0.22 + 0.09 * Math.max(0, Math.cos(ang * 8));
+        hit = dist < rays;
+        break;
+      }
+      case 'bolha-guardia': {
+        hit = (dist > 0.21 && dist < 0.3) || dist < 0.11;
+        break;
+      }
+      case 'nevoa-prisma': {
+        const c1 = Math.hypot(cx + 0.1, cy + 0.04) < 0.14;
+        const c2 = Math.hypot(cx - 0.1, cy + 0.05) < 0.14;
+        const c3 = Math.hypot(cx, cy - 0.1) < 0.15;
+        hit = c1 || c2 || c3;
+        break;
+      }
+      case 'faisca-rastreadora': {
+        const diamond = Math.abs(cx) * 1.3 + Math.abs(cy) < 0.3;
+        const ring = Math.abs(dist - 0.28) < 0.035;
+        hit = diamond || ring;
+        break;
+      }
+      case 'onda-de-vento': {
+        const spiral = Math.abs(dist - (0.14 + ((ang + Math.PI) / (Math.PI * 2)) * 0.22)) < 0.04;
+        hit = spiral || dist < 0.08;
+        break;
+      }
+      case 'cristal-de-salto': {
+        const spire = Math.abs(cx) * 1.9 + Math.abs(cy) < 0.34;
+        const chev = cy < -0.15 && Math.abs(Math.abs(cx) - (cy + 0.32)) < 0.05;
+        hit = spire || chev;
+        break;
+      }
+    }
+
+    if (hit) {
+      r = pal.fg[0];
+      g = pal.fg[1];
+      b = pal.fg[2];
+    }
+    return [r, g, b, 255];
+  });
+}

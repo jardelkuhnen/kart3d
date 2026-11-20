@@ -1,14 +1,15 @@
-import { Component, type ReactNode, useCallback, useEffect, useState } from 'react';
-import { Howl } from 'howler';
+import { Component, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useGameStore } from './store';
 import { RaceHud } from '../components/hud/RaceHud';
 import { getCharacterById } from '../data/characters';
 import { getKartById } from '../data/karts';
 import { getTrackById } from '../data/tracks';
+import { GameAudioEngine } from '../game/audio/audioEngine';
 import { loadAssetManifest, resolveAssetPath } from '../game/core/assetLoader';
-import { DEFAULT_LAPS } from '../game/core/constants';
+import { DEFAULT_LAPS, DEFAULT_SETTINGS, TOTAL_RACERS } from '../game/core/constants';
+import type { Difficulty } from '../game/core/types';
 import type { RacePhase } from '../game/racing/raceManager';
-import type { KartHudTelemetry } from '../game/vehicles/KartEntity';
+import type { FullHudSnapshot } from '../game/racing/raceSimulation';
 import { RaceScene, type RaceStageSync } from '../scenes/RaceScene';
 
 interface ErrorBoundaryState {
@@ -35,7 +36,7 @@ class SceneErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundar
   }
 }
 
-const INITIAL_TELEMETRY: KartHudTelemetry = {
+const INITIAL_TELEMETRY: FullHudSnapshot = {
   speedKmh: 0,
   surface: 'asphalt',
   driftActive: false,
@@ -52,7 +53,15 @@ const INITIAL_TELEMETRY: KartHudTelemetry = {
   finished: false,
   recovering: false,
   onShortcut: false,
-  progressRatio: 0,
+  rank: 1,
+  totalRacers: TOTAL_RACERS,
+  heldItem: null,
+  rouletteActive: false,
+  rouletteDisplayItem: null,
+  shieldActive: false,
+  hitActive: false,
+  standings: [],
+  minimapRacers: [],
 };
 
 export function App() {
@@ -61,10 +70,15 @@ export function App() {
   const selectedCharacterId = useGameStore((s) => s.selectedCharacterId);
   const selectedKartId = useGameStore((s) => s.selectedKartId);
   const selectedTrackId = useGameStore((s) => s.selectedTrackId);
+  const difficulty = useGameStore((s) => s.difficulty);
   const settings = useGameStore((s) => s.settings);
   const setManifest = useGameStore((s) => s.setManifest);
   const setManifestError = useGameStore((s) => s.setManifestError);
+  const setDifficulty = useGameStore((s) => s.setDifficulty);
+  const updateSettings = useGameStore((s) => s.updateSettings);
   const setScreen = useGameStore((s) => s.setScreen);
+
+  const audioEngine = useMemo(() => new GameAudioEngine(DEFAULT_SETTINGS.audio), []);
 
   const [phaseRequest, setPhaseRequest] = useState<RacePhase>('intro');
   const [stageSync, setStageSync] = useState<RaceStageSync>({
@@ -73,7 +87,21 @@ export function App() {
   });
   const [paused, setPaused] = useState(false);
   const [resetToken, setResetToken] = useState(0);
-  const [telemetry, setTelemetry] = useState<KartHudTelemetry>(INITIAL_TELEMETRY);
+  const [telemetry, setTelemetry] = useState<FullHudSnapshot>(INITIAL_TELEMETRY);
+
+  useEffect(() => {
+    audioEngine.setManifest(manifest);
+  }, [audioEngine, manifest]);
+
+  useEffect(() => {
+    audioEngine.applySettings(settings.audio);
+  }, [audioEngine, settings.audio]);
+
+  useEffect(() => {
+    return () => {
+      audioEngine.dispose();
+    };
+  }, [audioEngine]);
 
   useEffect(() => {
     let active = true;
@@ -93,35 +121,47 @@ export function App() {
     };
   }, [setManifest, setManifestError, setScreen]);
 
-  const playConfirmSound = useCallback(() => {
-    if (!manifest) return;
-    try {
-      const path = resolveAssetPath(manifest, 'sfx-ui-confirm');
-      const sfx = new Howl({ src: [path], volume: settings.audio.sfxVolume });
-      sfx.play();
-    } catch {
-      // Ignore audio errors if manifest unavailable
-    }
-  }, [manifest, settings.audio.sfxVolume]);
+  const handleSelectDifficulty = useCallback(
+    (level: Difficulty) => {
+      audioEngine.unlock();
+      audioEngine.playSfx('sfx-ui-click');
+      setDifficulty(level);
+    },
+    [audioEngine, setDifficulty],
+  );
 
   const handleStartRace = useCallback(() => {
-    playConfirmSound();
+    audioEngine.unlock();
+    audioEngine.playSfx('sfx-ui-confirm');
     setPaused(false);
     setPhaseRequest('countdown');
     setResetToken((n) => n + 1);
-  }, [playConfirmSound]);
+  }, [audioEngine]);
 
   const handleRestartRace = useCallback(() => {
-    playConfirmSound();
+    audioEngine.unlock();
+    audioEngine.playSfx('sfx-ui-confirm');
     setPaused(false);
     setTelemetry(INITIAL_TELEMETRY);
     setPhaseRequest('countdown');
     setResetToken((n) => n + 1);
-  }, [playConfirmSound]);
+  }, [audioEngine]);
 
   const handleTogglePause = useCallback(() => {
+    audioEngine.unlock();
+    audioEngine.playSfx('sfx-ui-click');
     setPaused((prev) => !prev);
-  }, []);
+  }, [audioEngine]);
+
+  const handleToggleMute = useCallback(() => {
+    audioEngine.unlock();
+    updateSettings({
+      audio: {
+        ...settings.audio,
+        muted: !settings.audio.muted,
+      },
+    });
+  }, [audioEngine, settings.audio, updateSettings]);
 
   const characterDef = getCharacterById(selectedCharacterId);
   const kartDef = getKartById(selectedKartId);
@@ -146,6 +186,7 @@ export function App() {
               phaseRequest={phaseRequest}
               paused={paused}
               resetToken={resetToken}
+              audioEngine={audioEngine}
               onTelemetry={setTelemetry}
               onStageSync={setStageSync}
               onPauseToggle={handleTogglePause}
@@ -157,13 +198,18 @@ export function App() {
             characterName={characterDef.name}
             kartName={kartDef.name}
             characterIconPath={characterIconPath}
+            manifest={manifest}
             phase={stageSync.phase}
             countdownLabel={stageSync.countdownLabel}
             paused={paused}
+            difficulty={difficulty}
+            muted={settings.audio.muted}
             telemetry={telemetry}
+            onSelectDifficulty={handleSelectDifficulty}
             onStartRace={handleStartRace}
             onRestartRace={handleRestartRace}
             onTogglePause={handleTogglePause}
+            onToggleMute={handleToggleMute}
           />
         </>
       )}

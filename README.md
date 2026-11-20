@@ -2,7 +2,7 @@
 
 Jogo original de corrida de kart arcade 3D para navegador, construído com **React**, **TypeScript (strict)**, **Three.js / React Three Fiber**, **Rapier Physics**, **Zustand** e **Howler.js**.
 
-> **Status Atual:** Slice 1 concluído (Núcleo jogável 1×1×1 com o piloto **Nilo** animado por GLTF `AnimationMixer`, kart **Trilha Raposa** multi-peça, pista **Porto das Lanternas**, física arcade em 60 Hz integrada ao Rapier, drift de 3 níveis com miniturbo, rampas, atalho de terra, câmera dinâmica, controles teclado/Gamepad e sistema de voltas/checkpoints anti-corte).
+> **Status Atual:** Slice 2 concluído (Corrida completa de 8 pilotos — 1 jogador + 7 IAs com física real em 3 níveis de dificuldade, 6 itens originais com modelos 3D e ícones de HUD, classificação 1º–8º por checkpoints/progresso, minimapa em tempo real e sistema completo de áudio com motor reativo à velocidade).
 
 ## Requisitos de Ambiente
 
@@ -24,6 +24,7 @@ npm run assets:build
 - `S` / `Seta Baixo`: Frear / Marcha à ré
 - `A` / `D` ou `Setas`: Virar
 - `Espaço`: Saltar / Drift (Níveis 1, 2 e 3 com Miniturbo ao soltar)
+- `Shift`: Utilizar item equipado
 - `R`: Recuperar kart no último checkpoint válido
 - `Esc`: Pausar / Retomar
 - Suporte completo à **Gamepad API**

@@ -71,8 +71,8 @@ function addWheelAssembly(
   const rimNode = addMeshToNode(doc, wheelNode, `${name}_Rim`, rimGeom, rimMat);
   rimNode.setRotation(quatAxis(0, 0, 1, Math.PI * 0.5));
 
-  // Sculpted hubcap spokes tucked neatly inside the rim width along X
-  const hubGeom = buildBoxBeveled(width * 1.04, 0.045, radius * 0.92, 0.012);
+  // Sculpted hubcap spokes tucked neatly inside the rim diameter
+  const hubGeom = buildBoxBeveled(width * 0.92, 0.045, radius * 0.56, 0.012);
   addMeshToNode(doc, wheelNode, `${name}_HubBar`, hubGeom, hubMat);
   const hubCross = addMeshToNode(doc, wheelNode, `${name}_HubCross`, hubGeom, hubMat);
   hubCross.setRotation(quatAxis(1, 0, 0, Math.PI * 0.5));

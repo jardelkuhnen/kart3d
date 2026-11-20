@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-test.describe('KART LEGENDS 3D — Slice 1 Core Gameplay Loop', () => {
-  test('starts race, runs countdown, accelerates, drifts, pauses and recovers cleanly', async ({
+test.describe('KART LEGENDS 3D — Slice 2 Full 8-Racer Race, Items, HUD & Audio', () => {
+  test('selects difficulty, starts 8-racer race, shows minimap & item slot, drives, drifts, toggles mute and pauses cleanly', async ({
     page,
   }) => {
     const pageErrors: string[] = [];
@@ -21,15 +21,25 @@ test.describe('KART LEGENDS 3D — Slice 1 Core Gameplay Loop', () => {
 
     await page.goto('/');
 
+    // Difficulty selector works cleanly
+    const hardBtn = page.getByRole('button', { name: 'Difícil' });
+    await expect(hardBtn).toBeVisible({ timeout: 15_000 });
+    await hardBtn.click();
+
     const startBtn = page.getByRole('button', { name: 'INICIAR CORRIDA' });
-    await expect(startBtn).toBeVisible({ timeout: 15_000 });
     await startBtn.click();
 
-    // Countdown transitions cleanly through 3 -> JÁ! and enters live racing
+    // Countdown transitions to JÁ!
     await expect(page.getByTestId('countdown-callout')).toBeVisible({ timeout: 5_000 });
     await expect(page.getByTestId('countdown-callout')).toHaveText('JÁ!', { timeout: 10_000 });
 
-    // Accelerate straight using KeyW and verify speedometer climbs above 35 km/h
+    // Rank badge, Minimap with 8 racers and Item Slot are visible
+    await expect(page.getByTestId('rank-badge')).toHaveText(/^[1-8]º$/);
+    await expect(page.getByTestId('minimap')).toBeVisible();
+    await expect(page.getByTestId('minimap-racer')).toHaveCount(8);
+    await expect(page.getByTestId('item-slot')).toBeVisible();
+
+    // Accelerate with KeyW and verify speed climbs
     await page.keyboard.down('KeyW');
     await expect
       .poll(
@@ -41,7 +51,7 @@ test.describe('KART LEGENDS 3D — Slice 1 Core Gameplay Loop', () => {
       )
       .toBeGreaterThan(35);
 
-    // Engage drift with Space + KeyA and verify HUD drift state triggers
+    // Drift with Space + KeyA and trigger ShiftLeft item slot
     await page.keyboard.down('Space');
     await page.keyboard.down('KeyA');
     await expect(page.getByText(/CARREGANDO DRIFT|DRIFT NV\./i)).toBeVisible({
@@ -49,16 +59,19 @@ test.describe('KART LEGENDS 3D — Slice 1 Core Gameplay Loop', () => {
     });
     await page.keyboard.up('KeyA');
     await page.keyboard.up('Space');
+    await page.keyboard.press('ShiftLeft');
     await page.keyboard.up('KeyW');
 
-    // Race timer should have advanced beyond 00:00.000
+    // Race timer ticks up
     const timerText = await page.getByTestId('race-timer').textContent();
     expect(timerText).not.toBe('00:00.000');
 
-    // Trigger recovery key R safely without errors
-    await page.keyboard.press('KeyR');
+    // Mute toggle works cleanly
+    const muteBtn = page.getByRole('button', { name: /Silenciar Som/i });
+    await muteBtn.click();
+    await expect(page.getByRole('button', { name: /Ativar Som/i })).toBeVisible();
 
-    // Toggle pause via Escape and resume via button
+    // Pause via Escape & resume via button
     await page.keyboard.press('Escape');
     await expect(page.getByRole('heading', { name: 'CORRIDA PAUSADA' })).toBeVisible({
       timeout: 3_000,

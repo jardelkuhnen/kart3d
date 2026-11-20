@@ -1,20 +1,21 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, Lightformer, useGLTF } from '@react-three/drei';
-import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier';
+import { CuboidCollider, Physics, RigidBody, type RapierRigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { useGameStore } from '../app/store';
 import { getCharacterById } from '../data/characters';
-import { getKartById } from '../data/karts';
+import { GameAudioEngine } from '../game/audio/audioEngine';
 import { RaceCamera } from '../game/camera/RaceCamera';
 import { disposeObject3D, resolveAssetPath } from '../game/core/assetLoader';
-import { DEFAULT_LAPS, FIXED_TIMESTEP } from '../game/core/constants';
+import { DEFAULT_LAPS, FIXED_TIMESTEP, FixedStepClock } from '../game/core/constants';
 import { InputManager } from '../game/input/inputManager';
-import { computeKartPhysicsProfile } from '../game/physics/kartController';
-import { type RacePhase, RaceProgressTracker, createInitialRacerState } from '../game/racing/raceManager';
+import { RaceProgressTracker, type RacePhase } from '../game/racing/raceManager';
+import { type FullHudSnapshot, RaceSimulation } from '../game/racing/raceSimulation';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from '../game/tracks/portoDasLanternas';
 import { yawFromTangent } from '../game/tracks/trackGeometry';
-import { KartEntity, type KartHudTelemetry, type LiveKartPose } from '../game/vehicles/KartEntity';
+import type { LiveKartPose } from '../game/vehicles/KartEntity';
+import { RacerMeshInstance } from '../game/vehicles/RacerMeshInstance';
 
 export interface RaceStageSync {
   phase: RacePhase;
@@ -25,7 +26,8 @@ export interface RaceSceneProps {
   phaseRequest: RacePhase;
   paused: boolean;
   resetToken: number;
-  onTelemetry: (telemetry: KartHudTelemetry) => void;
+  audioEngine: GameAudioEngine;
+  onTelemetry: (telemetry: FullHudSnapshot) => void;
   onStageSync: (sync: RaceStageSync) => void;
   onPauseToggle: () => void;
 }
@@ -35,14 +37,12 @@ function CoastalSunsetSky() {
     <group>
       <color attach="background" args={['#2b6cb0']} />
       <fog attach="fog" args={['#f6ad55', 110, 320]} />
-      {/* Warm sunset sky dome */}
       <mesh scale={[-1, 1, 1]}>
-        <sphereGeometry args={[360, 24, 16]} />
+        <sphereGeometry args={[360, 20, 14]} />
         <meshBasicMaterial side={THREE.BackSide} color="#3b82f6" fog={false} />
       </mesh>
-      {/* Distant golden sunset sun disc */}
       <mesh position={[-240, 64, -180]}>
-        <sphereGeometry args={[18, 16, 16]} />
+        <sphereGeometry args={[18, 14, 14]} />
         <meshBasicMaterial color="#fde68a" fog={false} />
       </mesh>
     </group>
@@ -100,10 +100,9 @@ function PortoTrackWorld({ trackModelPath }: { trackModelPath: string }) {
     }
   });
 
-  // Generate fixed Rapier stone wall colliders matching left & right track boundaries
   const wallColliders = useMemo(() => {
     const samples = PORTO_DAS_LANTERNAS_LAYOUT.samples;
-    const step = 4;
+    const step = 6;
     const segments: Array<{
       key: string;
       pos: [number, number, number];
@@ -114,10 +113,7 @@ function PortoTrackWorld({ trackModelPath }: { trackModelPath: string }) {
     for (let i = 0; i < samples.length; i += step) {
       const curr = samples[i];
       const next = samples[(i + step) % samples.length];
-      const segLen = Math.hypot(
-        next.point.x - curr.point.x,
-        next.point.z - curr.point.z,
-      );
+      const segLen = Math.hypot(next.point.x - curr.point.x, next.point.z - curr.point.z);
       const midX = (curr.point.x + next.point.x) * 0.5;
       const midY = (curr.point.y + next.point.y) * 0.5;
       const midZ = (curr.point.z + next.point.z) * 0.5;
@@ -157,10 +153,133 @@ function PortoTrackWorld({ trackModelPath }: { trackModelPath: string }) {
   );
 }
 
+interface DynamicWorldItemsState {
+  activeBoxes: Array<{ id: string; x: number; y: number; z: number }>;
+  hazards: Array<{ id: string; x: number; y: number; z: number }>;
+  projectiles: Array<{ id: string; x: number; y: number; z: number; yaw: number }>;
+  winds: Array<{ id: string; x: number; y: number; z: number; scale: number; opacity: number }>;
+}
+
+function WorldItemsRenderer({
+  simRef,
+  paused,
+}: {
+  simRef: React.MutableRefObject<RaceSimulation>;
+  paused: boolean;
+}) {
+  const itemBoxGltf = useGLTF('/assets/props/item_box.glb');
+  const nevoaGltf = useGLTF('/assets/items/nevoa_prisma.glb');
+  const faiscaGltf = useGLTF('/assets/items/faisca_rastreadora.glb');
+
+  const [snapshot, setSnapshot] = useState<DynamicWorldItemsState>({
+    activeBoxes: [],
+    hazards: [],
+    projectiles: [],
+    winds: [],
+  });
+  const timerRef = useRef(0);
+  const spinGroupRef = useRef<THREE.Group | null>(null);
+
+  const boxClones = useMemo(
+    () =>
+      PORTO_DAS_LANTERNAS_LAYOUT.itemBoxZones.flat().map(() => itemBoxGltf.scene.clone(true)),
+    [itemBoxGltf.scene],
+  );
+  const hazardClones = useMemo(
+    () => Array.from({ length: 8 }, () => nevoaGltf.scene.clone(true)),
+    [nevoaGltf.scene],
+  );
+  const projectileClones = useMemo(
+    () => Array.from({ length: 8 }, () => faiscaGltf.scene.clone(true)),
+    [faiscaGltf.scene],
+  );
+
+  useEffect(() => {
+    return () => {
+      boxClones.forEach(disposeObject3D);
+      hazardClones.forEach(disposeObject3D);
+      projectileClones.forEach(disposeObject3D);
+    };
+  }, [boxClones, hazardClones, projectileClones]);
+
+  useFrame((state, delta) => {
+    if (paused) return;
+    if (spinGroupRef.current) {
+      const t = state.clock.elapsedTime;
+      spinGroupRef.current.children.forEach((child, i) => {
+        child.rotation.y = t * 1.8 + i * 0.5;
+        child.position.y = Math.sin(t * 3 + i) * 0.14;
+      });
+    }
+
+    timerRef.current += delta;
+    if (timerRef.current >= 0.05) {
+      timerRef.current = 0;
+      const items = simRef.current.items;
+      setSnapshot({
+        activeBoxes: items.boxes
+          .filter((b) => b.active)
+          .map((b) => ({ id: b.id, x: b.position.x, y: b.position.y, z: b.position.z })),
+        hazards: items.hazards
+          .slice(0, 8)
+          .map((h) => ({ id: h.id, x: h.x, y: h.y, z: h.z })),
+        projectiles: items.projectiles
+          .slice(0, 8)
+          .map((p) => ({ id: p.id, x: p.x, y: p.y, z: p.z, yaw: p.yaw })),
+        winds: items.windPulses.map((w) => {
+          const prog = w.age / w.maxAge;
+          return {
+            id: w.id,
+            x: w.x,
+            y: w.y,
+            z: w.z,
+            scale: 1 + prog * w.radius,
+            opacity: Math.max(0, 0.75 * (1 - prog)),
+          };
+        }),
+      });
+    }
+  });
+
+  return (
+    <group>
+      <group ref={spinGroupRef}>
+        {snapshot.activeBoxes.map((b, idx) => (
+          <group key={b.id} position={[b.x, b.y, b.z]}>
+            <primitive object={boxClones[idx % boxClones.length]} />
+          </group>
+        ))}
+      </group>
+      {snapshot.hazards.map((h, idx) => (
+        <group key={h.id} position={[h.x, h.y, h.z]} scale={1.7}>
+          <primitive object={hazardClones[idx]} />
+        </group>
+      ))}
+      {snapshot.projectiles.map((p, idx) => (
+        <group key={p.id} position={[p.x, p.y, p.z]} rotation={[0, p.yaw, 0]} scale={1.25}>
+          <primitive object={projectileClones[idx]} />
+        </group>
+      ))}
+      {snapshot.winds.map((w) => (
+        <mesh
+          key={w.id}
+          position={[w.x, w.y, w.z]}
+          rotation={[-Math.PI * 0.5, 0, 0]}
+          scale={w.scale}
+        >
+          <ringGeometry args={[0.78, 1.0, 24]} />
+          <meshBasicMaterial color="#2dd4bf" transparent opacity={w.opacity} side={THREE.DoubleSide} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function RaceWorldContent({
   phaseRequest,
   paused,
   resetToken,
+  audioEngine,
   onTelemetry,
   onStageSync,
   onPauseToggle,
@@ -168,15 +287,10 @@ function RaceWorldContent({
   const manifest = useGameStore((s) => s.manifest);
   const selectedCharacterId = useGameStore((s) => s.selectedCharacterId);
   const selectedKartId = useGameStore((s) => s.selectedKartId);
+  const difficulty = useGameStore((s) => s.difficulty);
   const settings = useGameStore((s) => s.settings);
 
   const characterDef = getCharacterById(selectedCharacterId);
-  const kartDef = getKartById(selectedKartId);
-  const profile = useMemo(
-    () => computeKartPhysicsProfile(kartDef, characterDef),
-    [kartDef, characterDef],
-  );
-
   const assetPaths = useMemo(() => {
     if (!manifest) {
       return {
@@ -187,21 +301,29 @@ function RaceWorldContent({
     }
     return {
       character: resolveAssetPath(manifest, characterDef.modelAssetId),
-      kart: resolveAssetPath(manifest, kartDef.modelAssetId),
+      kart: resolveAssetPath(manifest, 'kart-trilha-raposa'),
       track: resolveAssetPath(manifest, 'track-porto-das-lanternas'),
     };
-  }, [manifest, characterDef.modelAssetId, kartDef.modelAssetId]);
+  }, [manifest, characterDef.modelAssetId]);
 
   const startSlot = PORTO_DAS_LANTERNAS_LAYOUT.startGridSlots[0];
 
-  const trackerRef = useRef(
-    new RaceProgressTracker(
+  const simRef = useRef(
+    new RaceSimulation(
       PORTO_DAS_LANTERNAS_LAYOUT,
+      selectedCharacterId,
+      selectedKartId,
+      difficulty,
       DEFAULT_LAPS,
       phaseRequest !== 'intro',
     ),
   );
-  const racerStateRef = useRef(createInitialRacerState(DEFAULT_LAPS));
+  const playerRapierRef = useRef<RapierRigidBody | null>(null);
+  const clockRef = useRef(new FixedStepClock(FIXED_TIMESTEP));
+  const telemetryTimerRef = useRef(0);
+  const lastSyncRef = useRef<string>('');
+  const goFlashTimerRef = useRef(0);
+
   const poseRef = useRef<LiveKartPose>({
     x: startSlot.position.x,
     y: startSlot.position.y,
@@ -214,6 +336,15 @@ function RaceWorldContent({
     steerAngle: 0,
     groundHeight: startSlot.position.y,
   });
+
+  // Expose live phase tracker ref for RaceCamera (synced in useEffect)
+  const trackerRef = useRef(
+    new RaceProgressTracker(
+      PORTO_DAS_LANTERNAS_LAYOUT,
+      DEFAULT_LAPS,
+      phaseRequest !== 'intro',
+    ),
+  );
 
   const inputManagerRef = useRef(
     new InputManager(
@@ -237,54 +368,147 @@ function RaceWorldContent({
     return () => manager.detach();
   }, []);
 
-  // Handle resetToken changes or phase switches from UI
+  // Re-initialize full 8-racer simulation on restart or difficulty/mode reset
   useEffect(() => {
-    const freshTracker = new RaceProgressTracker(
+    const freshSim = new RaceSimulation(
       PORTO_DAS_LANTERNAS_LAYOUT,
+      selectedCharacterId,
+      selectedKartId,
+      difficulty,
       DEFAULT_LAPS,
       phaseRequest !== 'intro',
     );
     if (phaseRequest === 'countdown') {
-      freshTracker.startCountdown();
+      freshSim.startCountdown();
+      audioEngine.playMusic('music-race-aurora');
+      audioEngine.playAmbience('sfx-ambience-coastal');
+    } else if (phaseRequest === 'intro') {
+      audioEngine.stopRaceAudio();
     }
-    trackerRef.current = freshTracker;
-    racerStateRef.current = freshTracker.createRacerState();
-    onStageSync({
-      phase: freshTracker.phase,
-      countdownLabel: freshTracker.phase === 'countdown' ? '3' : null,
-    });
-  }, [resetToken, phaseRequest, onStageSync]);
 
-  const lastSyncRef = useRef<string>('');
-  const goFlashTimerRef = useRef(0);
+    simRef.current = freshSim;
+    trackerRef.current = freshSim.tracker;
+    clockRef.current.reset();
+
+    if (playerRapierRef.current) {
+      playerRapierRef.current.setTranslation(
+        { x: startSlot.position.x, y: startSlot.position.y, z: startSlot.position.z },
+        true,
+      );
+      playerRapierRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    }
+
+    onStageSync({
+      phase: freshSim.phase,
+      countdownLabel: freshSim.phase === 'countdown' ? '3' : null,
+    });
+    onTelemetry(freshSim.buildHudSnapshot());
+  }, [
+    resetToken,
+    phaseRequest,
+    selectedCharacterId,
+    selectedKartId,
+    difficulty,
+    audioEngine,
+    onStageSync,
+    onTelemetry,
+    startSlot.position.x,
+    startSlot.position.y,
+    startSlot.position.z,
+  ]);
 
   useFrame((_state, delta) => {
     const pausePressed = inputManagerRef.current.consumePausePressed();
-    if (pausePressed && trackerRef.current.phase !== 'intro') {
+    if (pausePressed && simRef.current.phase !== 'intro') {
       onPauseToggle();
     }
 
-    const tracker = trackerRef.current;
+    if (paused) {
+      audioEngine.updateEngineTelemetry(0, false, false, 0, false, false, false);
+      return;
+    }
+
+    const sim = simRef.current;
+    const playerInput = inputManagerRef.current.pollKartOnly();
+
+    clockRef.current.advance(delta, (dt) => {
+      const rapierBody = playerRapierRef.current;
+      if (rapierBody && sim.player.sim.recoverTimer <= 0) {
+        const pos = rapierBody.translation();
+        sim.player.sim.x = pos.x;
+        sim.player.sim.z = pos.z;
+      }
+
+      const prevRecover = sim.player.sim.recoverTimer;
+      const events = sim.step(dt, playerInput);
+
+      if (rapierBody) {
+        const pSim = sim.player.sim;
+        if (prevRecover <= 0 && pSim.recoverTimer > 0) {
+          rapierBody.setTranslation({ x: pSim.x, y: pSim.y, z: pSim.z }, true);
+          rapierBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        } else {
+          const cur = rapierBody.translation();
+          const vyCorr = (pSim.y - cur.y) / dt;
+          rapierBody.setLinvel({ x: pSim.vx, y: vyCorr, z: pSim.vz }, true);
+        }
+      }
+
+      // Trigger discrete gameplay SFX
+      if (events.countdownNumber !== null) audioEngine.playSfx('sfx-countdown-beep');
+      if (events.raceStartedNow) audioEngine.playSfx('sfx-countdown-go');
+      if (events.playerDriftTierUp !== null) {
+        audioEngine.playSfx('sfx-drift-spark', 0.9 + events.playerDriftTierUp * 0.14);
+      }
+      if (events.playerTurboTriggered) audioEngine.playSfx('sfx-turbo-boost');
+      if (events.playerCollision) audioEngine.playSfx('sfx-collision-hit');
+      if (events.playerJumped) audioEngine.playSfx('sfx-jump-launch');
+      if (events.playerLanded) audioEngine.playSfx('sfx-land-thud');
+      if (events.playerItemPickup) audioEngine.playSfx('sfx-item-pickup');
+      if (events.playerItemUsed) audioEngine.playSfx('sfx-item-use');
+      if (events.playerLapCompleted) audioEngine.playSfx('sfx-lap-complete');
+      if (events.playerFinishedNow) {
+        audioEngine.playSfx('sfx-race-finish');
+        audioEngine.stopAmbience();
+        audioEngine.playMusic(sim.player.rank <= 3 ? 'music-victory' : 'music-defeat', false);
+      }
+    });
+
+    // Update continuous engine & drift screech audio
+    const pSim = sim.player.sim;
+    audioEngine.updateEngineTelemetry(
+      Math.abs(pSim.forwardSpeed) * 3.6,
+      playerInput.throttle > 0.1,
+      playerInput.brake > 0.1,
+      pSim.driftTier,
+      pSim.driftActive,
+      pSim.boostTimer > 0,
+      sim.phase === 'racing' && !sim.player.race.finished,
+    );
+
+    // Sync Countdown / Phase transitions cleanly
     let countdownLabel: string | null = null;
-    if (tracker.phase === 'countdown') {
-      const n = Math.ceil(tracker.countdownRemainingSec);
+    if (sim.phase === 'countdown') {
+      const n = Math.ceil(sim.tracker.countdownRemainingSec);
       countdownLabel = n > 0 ? String(Math.min(3, n)) : 'JÁ!';
       goFlashTimerRef.current = 0.9;
-    } else if (tracker.phase === 'racing' && goFlashTimerRef.current > 0) {
+    } else if (sim.phase === 'racing' && goFlashTimerRef.current > 0) {
       goFlashTimerRef.current = Math.max(0, goFlashTimerRef.current - delta);
       countdownLabel = goFlashTimerRef.current > 0 ? 'JÁ!' : null;
     }
 
-    const syncKey = `${tracker.phase}:${countdownLabel ?? ''}`;
+    const syncKey = `${sim.phase}:${countdownLabel ?? ''}`;
     if (syncKey !== lastSyncRef.current) {
       lastSyncRef.current = syncKey;
-      onStageSync({ phase: tracker.phase, countdownLabel });
+      onStageSync({ phase: sim.phase, countdownLabel });
+    }
+
+    telemetryTimerRef.current += delta;
+    if (telemetryTimerRef.current >= 0.05) {
+      telemetryTimerRef.current = 0;
+      onTelemetry(sim.buildHudSnapshot());
     }
   });
-
-  const pollKartInput = useCallback(() => {
-    return inputManagerRef.current.pollKartOnly();
-  }, []);
 
   return (
     <>
@@ -334,28 +558,28 @@ function RaceWorldContent({
 
       <Physics gravity={[0, -28, 0]} timeStep={FIXED_TIMESTEP}>
         <PortoTrackWorld trackModelPath={assetPaths.track} />
-        <KartEntity
-          kartModelPath={assetPaths.kart}
-          characterModelPath={assetPaths.character}
-          layout={PORTO_DAS_LANTERNAS_LAYOUT}
-          profile={profile}
-          startPosition={startSlot.position}
-          startYaw={startSlot.yaw}
-          trackerRef={trackerRef}
-          racerStateRef={racerStateRef}
-          pollInput={pollKartInput}
-          poseRef={poseRef}
-          onTelemetry={onTelemetry}
-          paused={paused}
-          resetToken={resetToken}
-        />
+        <WorldItemsRenderer simRef={simRef} paused={paused} />
+        {Array.from({ length: 8 }, (_, idx) => (
+          <RacerMeshInstance
+            key={idx}
+            racerIndex={idx}
+            simRef={simRef}
+            kartModelPath={assetPaths.kart}
+            characterModelPath={assetPaths.character}
+            poseRef={idx === 0 ? poseRef : undefined}
+            onPlayerRapierSync={
+              idx === 0
+                ? (body) => {
+                    playerRapierRef.current = body;
+                  }
+                : undefined
+            }
+            paused={paused}
+          />
+        ))}
       </Physics>
 
-      <RaceCamera
-        layout={PORTO_DAS_LANTERNAS_LAYOUT}
-        poseRef={poseRef}
-        trackerRef={trackerRef}
-      />
+      <RaceCamera layout={PORTO_DAS_LANTERNAS_LAYOUT} poseRef={poseRef} trackerRef={trackerRef} />
     </>
   );
 }
@@ -384,3 +608,6 @@ export function RaceScene(props: RaceSceneProps) {
 useGLTF.preload('/assets/characters/nilo.glb');
 useGLTF.preload('/assets/karts/trilha_raposa.glb');
 useGLTF.preload('/assets/tracks/porto_das_lanternas.glb');
+useGLTF.preload('/assets/props/item_box.glb');
+useGLTF.preload('/assets/items/nevoa_prisma.glb');
+useGLTF.preload('/assets/items/faisca_rastreadora.glb');

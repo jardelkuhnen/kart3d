@@ -1,94 +1,164 @@
-import { DRIFT_TIERS, SURFACE_PROPERTIES } from '../../game/core/constants';
+import { getItemById } from '../../data/items';
+import { DIFFICULTY_CONFIG, DRIFT_TIERS, SURFACE_PROPERTIES } from '../../game/core/constants';
+import type { AssetManifest, Difficulty } from '../../game/core/types';
+import { resolveAssetPath } from '../../game/core/assetLoader';
 import { formatRaceTimeMs, type RacePhase } from '../../game/racing/raceManager';
-import type { KartHudTelemetry } from '../../game/vehicles/KartEntity';
+import type { FullHudSnapshot } from '../../game/racing/raceSimulation';
+import { PORTO_DAS_LANTERNAS_LAYOUT } from '../../game/tracks/portoDasLanternas';
+import { Minimap } from './Minimap';
 
 export interface RaceHudProps {
   trackName: string;
   characterName: string;
   kartName: string;
   characterIconPath: string;
+  manifest: AssetManifest | null;
   phase: RacePhase;
   countdownLabel: string | null;
   paused: boolean;
-  telemetry: KartHudTelemetry;
+  difficulty: Difficulty;
+  muted: boolean;
+  telemetry: FullHudSnapshot;
+  onSelectDifficulty: (difficulty: Difficulty) => void;
   onStartRace: () => void;
   onRestartRace: () => void;
   onTogglePause: () => void;
+  onToggleMute: () => void;
 }
+
+const RANK_ORDINAL_CLASSES = ['gold', 'silver', 'bronze'];
 
 export function RaceHud({
   trackName,
   characterName,
   kartName,
   characterIconPath,
+  manifest,
   phase,
   countdownLabel,
   paused,
+  difficulty,
+  muted,
   telemetry,
+  onSelectDifficulty,
   onStartRace,
   onRestartRace,
   onTogglePause,
+  onToggleMute,
 }: RaceHudProps) {
   const driftTierColor =
     telemetry.driftTier > 0
       ? DRIFT_TIERS[telemetry.driftTier - 1].sparkColor
       : '#94a3b8';
-
   const surfaceLabel = SURFACE_PROPERTIES[telemetry.surface].label;
+
+  const displayItemId = telemetry.rouletteActive
+    ? telemetry.rouletteDisplayItem
+    : telemetry.heldItem;
+  const displayItemDef = displayItemId ? getItemById(displayItemId) : null;
+  const displayItemIcon =
+    displayItemDef && manifest ? resolveAssetPath(manifest, displayItemDef.iconAssetId) : null;
+
+  const rankClass = RANK_ORDINAL_CLASSES[telemetry.rank - 1] ?? 'standard';
+  const isFinalLap = telemetry.currentLap === telemetry.totalLaps && phase === 'racing';
 
   return (
     <div className="kl-hud-overlay">
-      {/* Top Bar: Race Telemetry + Controls */}
+      {/* Top Bar: Rank + Minimap (Left), Item Slot (Center), Controls + Audio (Right) */}
       <header className="kl-topbar">
-        <section className="kl-panel kl-race-badge" aria-label="Dados da Corrida">
-          <img
-            src={characterIconPath}
-            alt={characterName}
-            className="kl-driver-avatar"
-            width={44}
-            height={44}
-          />
-          <div>
-            <div className="kl-race-meta-row">
-              <span className="kl-lap-pill">
-                VOLTA {telemetry.currentLap}/{telemetry.totalLaps}
-              </span>
-              <span className="kl-track-chip">{trackName}</span>
-            </div>
-            <div className="kl-timer-readout" data-testid="race-timer">
-              {formatRaceTimeMs(telemetry.raceTimeMs)}
-            </div>
+        <div className="kl-left-cluster">
+          <div className="kl-panel kl-rank-card" aria-label="Posição na Corrida">
+            <span className={`kl-rank-num ${rankClass}`} data-testid="rank-badge">
+              {telemetry.rank}º
+            </span>
+            <span className="kl-rank-total">/ {telemetry.totalRacers}</span>
           </div>
-        </section>
 
+          {phase !== 'intro' && (
+            <Minimap layout={PORTO_DAS_LANTERNAS_LAYOUT} racers={telemetry.minimapRacers} />
+          )}
+        </div>
+
+        {/* Center Item Slot */}
         {phase !== 'intro' && (
-          <div className="kl-race-actions">
-            <button type="button" className="kl-btn kl-btn-secondary" onClick={onRestartRace}>
-              Reiniciar
-            </button>
-            <button type="button" className="kl-btn kl-btn-secondary" onClick={onTogglePause}>
-              {paused ? 'Retomar (ESC)' : 'Pausar (ESC)'}
-            </button>
+          <div
+            className={`kl-panel kl-item-slot ${telemetry.rouletteActive ? 'spinning' : ''}`}
+            data-testid="item-slot"
+            aria-label="Item Equipado"
+          >
+            {displayItemDef && displayItemIcon ? (
+              <>
+                <img
+                  src={displayItemIcon}
+                  alt={displayItemDef.name}
+                  className="kl-item-icon"
+                  width={54}
+                  height={54}
+                />
+                <span className="kl-item-label">
+                  {telemetry.rouletteActive ? 'SORTEANDO...' : `${displayItemDef.name} (SHIFT)`}
+                </span>
+              </>
+            ) : (
+              <span className="kl-item-empty">SEM ITEM</span>
+            )}
           </div>
         )}
+
+        <div className="kl-race-actions">
+          <button
+            type="button"
+            className="kl-btn kl-btn-secondary"
+            onClick={onToggleMute}
+            aria-label={muted ? 'Ativar Som' : 'Silenciar Som'}
+          >
+            {muted ? 'Som: Mudo' : 'Som: Ligado'}
+          </button>
+          {phase !== 'intro' && (
+            <>
+              <button type="button" className="kl-btn kl-btn-secondary" onClick={onRestartRace}>
+                Reiniciar
+              </button>
+              <button type="button" className="kl-btn kl-btn-secondary" onClick={onTogglePause}>
+                {paused ? 'Retomar (ESC)' : 'Pausar (ESC)'}
+              </button>
+            </>
+          )}
+        </div>
       </header>
 
-      {/* Center Banners: Intro Launcher / Countdown / Wrong-Way / Finish / Pause */}
+      {/* Center Stage: Launch / Countdown / Alerts / Pause / Scoreboard */}
       <div className="kl-center-stage">
         {phase === 'intro' && (
           <section className="kl-panel kl-launch-card" aria-label="Iniciar Corrida">
-            <span className="kl-brand-badge">SLICE 1 · NÚCLEO JOGÁVEL 1×1×1</span>
+            <span className="kl-brand-badge">SLICE 2 · CORRIDA COMPLETA (8 PILOTOS)</span>
             <h1 className="kl-title">KART LEGENDS 3D</h1>
             <p className="kl-subtitle">
               {trackName} · Piloto: <strong>{characterName}</strong> · Kart:{' '}
               <strong>{kartName}</strong>
             </p>
+
+            <div className="kl-difficulty-group" role="group" aria-label="Dificuldade da IA">
+              {(['easy', 'normal', 'hard'] as Difficulty[]).map((level) => (
+                <button
+                  key={level}
+                  type="button"
+                  className={`kl-diff-pill ${difficulty === level ? 'active' : ''}`}
+                  onClick={() => onSelectDifficulty(level)}
+                >
+                  {DIFFICULTY_CONFIG[level].label}
+                </button>
+              ))}
+            </div>
+            <p className="kl-diff-desc">{DIFFICULTY_CONFIG[difficulty].description}</p>
+
             <div className="kl-controls-summary">
               <span>WASD / Setas: Dirigir</span>
               <span>ESPAÇO: Drift 3 Níveis</span>
+              <span>SHIFT: Usar Item</span>
               <span>R: Recuperar</span>
-              <span>ESC: Pausar</span>
             </div>
+
             <button
               type="button"
               className="kl-btn kl-btn-large"
@@ -109,9 +179,27 @@ export function RaceHud({
           </div>
         )}
 
+        {isFinalLap && !paused && !countdownLabel && (
+          <div className="kl-alert-banner final-lap" role="status">
+            VOLTA FINAL!
+          </div>
+        )}
+
         {telemetry.wrongWay && phase === 'racing' && !paused && (
           <div className="kl-alert-banner danger" role="status">
             CONTRAMÃO! DÊ A VOLTA!
+          </div>
+        )}
+
+        {telemetry.shieldActive && phase === 'racing' && !paused && (
+          <div className="kl-alert-banner shield" role="status">
+            BOLHA GUARDIÃ ATIVA!
+          </div>
+        )}
+
+        {telemetry.hitActive && phase === 'racing' && !paused && (
+          <div className="kl-alert-banner danger" role="status">
+            IMPACTO!
           </div>
         )}
 
@@ -131,7 +219,8 @@ export function RaceHud({
           <section className="kl-panel kl-modal-card" role="dialog" aria-label="Jogo Pausado">
             <h2 className="kl-title">CORRIDA PAUSADA</h2>
             <p className="kl-subtitle">
-              {trackName} — Volta {telemetry.currentLap}/{telemetry.totalLaps}
+              {trackName} — Volta {telemetry.currentLap}/{telemetry.totalLaps} · {telemetry.rank}º
+              lugar
             </p>
             <div className="kl-modal-actions">
               <button type="button" className="kl-btn" onClick={onTogglePause}>
@@ -146,26 +235,49 @@ export function RaceHud({
 
         {phase === 'finished' && (
           <section
-            className="kl-panel kl-modal-card"
+            className="kl-panel kl-scoreboard-card"
             role="dialog"
-            aria-label="Corrida Concluída"
+            aria-label="Classificação Final"
           >
-            <span className="kl-brand-badge">CHEGADA!</span>
-            <h2 className="kl-title">CORRIDA CONCLUÍDA</h2>
+            <span className="kl-brand-badge">RESULTADO OFICIAL</span>
+            <h2 className="kl-title">
+              {telemetry.rank <= 3
+                ? `PÓDIO! ${telemetry.rank}º LUGAR`
+                : `CHEGADA EM ${telemetry.rank}º LUGAR`}
+            </h2>
             <p className="kl-subtitle">
               Tempo Total: <strong>{formatRaceTimeMs(telemetry.raceTimeMs)}</strong>
               {telemetry.bestLapMs !== null && (
                 <> · Melhor Volta: <strong>{formatRaceTimeMs(telemetry.bestLapMs)}</strong></>
               )}
             </p>
-            <div className="kl-lap-splits">
-              {telemetry.lapTimesMs.map((lapMs, idx) => (
-                <div key={idx} className="kl-lap-split-row">
-                  <span>Volta {idx + 1}</span>
-                  <strong>{formatRaceTimeMs(lapMs)}</strong>
+
+            <div className="kl-scoreboard-list">
+              {telemetry.standings.map((row) => (
+                <div
+                  key={row.id}
+                  className={`kl-scoreboard-row ${row.isPlayer ? 'player' : ''} ${
+                    row.rank === 1 ? 'first' : ''
+                  }`}
+                >
+                  <span className="kl-sb-rank">{row.rank}º</span>
+                  <span
+                    className="kl-sb-dot"
+                    style={{ backgroundColor: row.primaryColor }}
+                    aria-hidden="true"
+                  />
+                  <span className="kl-sb-name">
+                    {row.name} {row.isPlayer ? '(VOCÊ)' : ''}
+                  </span>
+                  <span className="kl-sb-kart">{row.kartName}</span>
+                  <span className="kl-sb-time">
+                    {row.finishTimeMs !== null ? formatRaceTimeMs(row.finishTimeMs) : `Volta ${row.currentLap}`}
+                  </span>
+                  <span className="kl-sb-pts">+{row.points} pts</span>
                 </div>
               ))}
             </div>
+
             <div className="kl-modal-actions">
               <button type="button" className="kl-btn" onClick={onRestartRace}>
                 Correr Novamente
@@ -175,15 +287,28 @@ export function RaceHud({
         )}
       </div>
 
-      {/* Bottom Telemetry Bar */}
+      {/* Bottom Bar: Driver + Lap + Timer (Left) & Speedometer + Drift/Turbo (Right) */}
       <footer className="kl-bottom-bar">
-        <div className="kl-panel kl-controls-hint">
-          <span>W/↑ Acelerar</span>
-          <span>S/↓ Freio/Ré</span>
-          <span>A/D Curvas</span>
-          <span>ESPAÇO Drift</span>
-          <span>R Recuperar</span>
-        </div>
+        <section className="kl-panel kl-race-badge" aria-label="Volta e Cronômetro">
+          <img
+            src={characterIconPath}
+            alt={characterName}
+            className="kl-driver-avatar"
+            width={44}
+            height={44}
+          />
+          <div>
+            <div className="kl-race-meta-row">
+              <span className="kl-lap-pill">
+                VOLTA {telemetry.currentLap}/{telemetry.totalLaps}
+              </span>
+              <span className="kl-track-chip">{trackName}</span>
+            </div>
+            <div className="kl-timer-readout" data-testid="race-timer">
+              {formatRaceTimeMs(telemetry.raceTimeMs)}
+            </div>
+          </div>
+        </section>
 
         <section className="kl-panel kl-telemetry-cluster" aria-label="Velocímetro e Drift">
           <div className="kl-speed-box">

@@ -1,6 +1,6 @@
 # ASSET MANIFEST — KART LEGENDS 3D
 
-Gerado automaticamente por `npm run assets:build` em 2026-11-20T02:04:32.264Z.
+Gerado automaticamente por `npm run assets:build` em 2026-11-20T02:12:10.663Z.
 
 | ID | Nome | Tipo | Caminho | Formato | Origem | Licença | Tamanho (bytes) | Status | Uso |
 | --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- |
@@ -11,11 +11,40 @@ Gerado automaticamente por `npm run assets:build` em 2026-11-20T02:04:32.264Z.
 | `tex-chevron-sign-albedo` | Placa Direcional de Curva | `texture` | `/assets/textures/chevron_sign_albedo.png` | `png` | Pipeline local de texturas PBR e UI (texture-builder.ts) | `Original-Project-License` | 3086 | `validated` | ChevronBoardProp, TrackSigns |
 | `ui-portrait-nilo` | Retrato de Seleção — Nilo | `ui` | `/assets/ui/portrait_nilo.png` | `png` | Pipeline local de texturas PBR e UI (texture-builder.ts) | `Original-Project-License` | 23651 | `validated` | CharacterSelect, RaceHud |
 | `ui-icon-nilo` | Ícone de HUD — Nilo | `ui` | `/assets/ui/icon_nilo.png` | `png` | Pipeline local de texturas PBR e UI (texture-builder.ts) | `Original-Project-License` | 9296 | `validated` | RaceHud, Minimap |
+| `ui-item-pulso-solar` | Ícone HUD — Pulso Solar | `ui` | `/assets/ui/item_pulso_solar.png` | `png` | Pipeline local de texturas PBR e UI (texture-builder.ts) | `Original-Project-License` | 4411 | `validated` | RaceHud, ItemSlot |
+| `ui-item-bolha-guardia` | Ícone HUD — Bolha Guardiã | `ui` | `/assets/ui/item_bolha_guardia.png` | `png` | Pipeline local de texturas PBR e UI (texture-builder.ts) | `Original-Project-License` | 4867 | `validated` | RaceHud, ItemSlot |
+| `ui-item-nevoa-prisma` | Ícone HUD — Névoa Prisma | `ui` | `/assets/ui/item_nevoa_prisma.png` | `png` | Pipeline local de texturas PBR e UI (texture-builder.ts) | `Original-Project-License` | 3876 | `validated` | RaceHud, ItemSlot |
+| `ui-item-faisca-rastreadora` | Ícone HUD — Faísca Rastreadora | `ui` | `/assets/ui/item_faisca_rastreadora.png` | `png` | Pipeline local de texturas PBR e UI (texture-builder.ts) | `Original-Project-License` | 4672 | `validated` | RaceHud, ItemSlot |
+| `ui-item-onda-de-vento` | Ícone HUD — Onda de Vento | `ui` | `/assets/ui/item_onda_de_vento.png` | `png` | Pipeline local de texturas PBR e UI (texture-builder.ts) | `Original-Project-License` | 4909 | `validated` | RaceHud, ItemSlot |
+| `ui-item-cristal-de-salto` | Ícone HUD — Cristal de Salto | `ui` | `/assets/ui/item_cristal_de_salto.png` | `png` | Pipeline local de texturas PBR e UI (texture-builder.ts) | `Original-Project-License` | 5417 | `validated` | RaceHud, ItemSlot |
 | `prop-start-gantry` | Pórtico de Largada Metálico | `prop` | `/assets/props/start_gantry.glb` | `glb` | Pipeline local GLTF (@gltf-transform/core) | `Original-Project-License` | 139488 | `validated` | AllTracks |
 | `prop-chevron-board` | Sinalizador Direcional de Curva | `prop` | `/assets/props/chevron_board.glb` | `glb` | Pipeline local GLTF (@gltf-transform/core) | `Original-Project-License` | 11280 | `validated` | TrackCorners |
 | `prop-boost-pad` | Placa de Impulso Luminosa | `prop` | `/assets/props/boost_pad.glb` | `glb` | Pipeline local GLTF (@gltf-transform/core) | `Original-Project-License` | 36860 | `validated` | TrackBoostPads |
 | `character-nilo` | Piloto Nilo — Raposa Exploradora | `character` | `/assets/characters/nilo.glb` | `glb` | Pipeline local GLTF animado (character-builder.ts) | `Original-Project-License` | 136320 | `validated` | RaceScene, CharacterRig |
-| `kart-trilha-raposa` | Kart Trilha Raposa | `kart` | `/assets/karts/trilha_raposa.glb` | `glb` | Pipeline local GLTF de veículos (kart-builder.ts) | `Original-Project-License` | 155760 | `validated` | RaceScene, KartEntity |
+| `kart-trilha-raposa` | Kart Trilha Raposa | `kart` | `/assets/karts/trilha_raposa.glb` | `glb` | Pipeline local GLTF de veículos (kart-builder.ts) | `Original-Project-License` | 155776 | `validated` | RaceScene, KartEntity |
 | `track-porto-das-lanternas` | Pista 1 — Porto das Lanternas | `track` | `/assets/tracks/porto_das_lanternas.glb` | `glb` | Pipeline local GLTF de pistas (track-builder.ts) | `Original-Project-License` | 1135732 | `validated` | RaceScene, PortoDasLanternas |
+| `prop-item-box` | Caixa de Item Prismática | `prop` | `/assets/props/item_box.glb` | `glb` | Pipeline local GLTF (item-builder.ts) | `Original-Project-License` | 15008 | `validated` | RaceScene, ItemBoxes |
+| `item-pulso-solar` | Item 3D — Pulso Solar | `item` | `/assets/items/pulso_solar.glb` | `glb` | Pipeline local GLTF (item-builder.ts) | `Original-Project-License` | 12792 | `validated` | RaceScene, ItemSystem |
+| `item-bolha-guardia` | Item 3D — Bolha Guardiã | `item` | `/assets/items/bolha_guardia.glb` | `glb` | Pipeline local GLTF (item-builder.ts) | `Original-Project-License` | 23516 | `validated` | RaceScene, ItemSystem |
+| `item-nevoa-prisma` | Item 3D — Névoa Prisma | `item` | `/assets/items/nevoa_prisma.glb` | `glb` | Pipeline local GLTF (item-builder.ts) | `Original-Project-License` | 10600 | `validated` | RaceScene, ItemSystem |
+| `item-faisca-rastreadora` | Item 3D — Faísca Rastreadora | `item` | `/assets/items/faisca_rastreadora.glb` | `glb` | Pipeline local GLTF (item-builder.ts) | `Original-Project-License` | 11400 | `validated` | RaceScene, ItemSystem |
+| `item-onda-de-vento` | Item 3D — Onda de Vento | `item` | `/assets/items/onda_de_vento.glb` | `glb` | Pipeline local GLTF (item-builder.ts) | `Original-Project-License` | 26800 | `validated` | RaceScene, ItemSystem |
+| `item-cristal-de-salto` | Item 3D — Cristal de Salto | `item` | `/assets/items/cristal_de_salto.glb` | `glb` | Pipeline local GLTF (item-builder.ts) | `Original-Project-License` | 2868 | `validated` | RaceScene, ItemSystem |
 | `sfx-ui-click` | Som de Clique de Interface | `audio-sfx` | `/assets/audio/sfx/ui_click.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 2026 | `validated` | UISystem |
 | `sfx-ui-confirm` | Som de Confirmação de Interface | `audio-sfx` | `/assets/audio/sfx/ui_confirm.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 5502 | `validated` | UISystem |
+| `music-menu` | Música — Menu Principal | `audio-music` | `/assets/audio/music/menu_theme.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 65031 | `validated` | AudioEngine |
+| `music-race-aurora` | Música — Corrida Copa Aurora | `audio-music` | `/assets/audio/music/race_aurora.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 120228 | `validated` | AudioEngine |
+| `music-victory` | Música — Vitória | `audio-music` | `/assets/audio/music/victory_fanfare.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 21027 | `validated` | AudioEngine |
+| `music-defeat` | Música — Derrota / Consolação | `audio-music` | `/assets/audio/music/defeat_theme.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 21744 | `validated` | AudioEngine |
+| `sfx-countdown-beep` | Contagem Regressiva (Beep) | `audio-sfx` | `/assets/audio/sfx/countdown_beep.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 4216 | `validated` | AudioEngine, RaceScene |
+| `sfx-collision-hit` | Impacto de Colisão | `audio-sfx` | `/assets/audio/sfx/collision_hit.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 5120 | `validated` | AudioEngine, RaceScene |
+| `sfx-countdown-go` | Contagem Regressiva (Largada) | `audio-sfx` | `/assets/audio/sfx/countdown_go.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 6986 | `validated` | AudioEngine, RaceScene |
+| `sfx-jump-launch` | Impulso de Salto | `audio-sfx` | `/assets/audio/sfx/jump_launch.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 3604 | `validated` | AudioEngine, RaceScene |
+| `sfx-item-pickup` | Coleta de Item | `audio-sfx` | `/assets/audio/sfx/item_pickup.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 4528 | `validated` | AudioEngine, RaceScene |
+| `sfx-lap-complete` | Volta Concluída | `audio-sfx` | `/assets/audio/sfx/lap_complete.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 9459 | `validated` | AudioEngine, RaceScene |
+| `sfx-land-thud` | Aterrissagem | `audio-sfx` | `/assets/audio/sfx/land_thud.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 3234 | `validated` | AudioEngine, RaceScene |
+| `sfx-item-use` | Utilização de Item | `audio-sfx` | `/assets/audio/sfx/item_use.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 4239 | `validated` | AudioEngine, RaceScene |
+| `sfx-drift-spark` | Faísca de Drift | `audio-sfx` | `/assets/audio/sfx/drift_spark.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 3464 | `validated` | AudioEngine, RaceScene |
+| `sfx-turbo-boost` | Disparo de Turbo | `audio-sfx` | `/assets/audio/sfx/turbo_boost.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 6809 | `validated` | AudioEngine, RaceScene |
+| `sfx-race-finish` | Chegada da Corrida | `audio-sfx` | `/assets/audio/sfx/race_finish.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 12941 | `validated` | AudioEngine, RaceScene |
+| `sfx-ambience-coastal` | Ambiência — Costa e Ondas | `audio-sfx` | `/assets/audio/sfx/ambience_coastal.ogg` | `ogg` | Síntese PCM local + ffmpeg Opus | `Original-Project-License` | 42061 | `validated` | AudioEngine, PortoDasLanternas |
