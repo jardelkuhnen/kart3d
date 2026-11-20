@@ -159,6 +159,7 @@ export class InputManager {
   private bindings: ControlBindings;
   private steeringSensitivity: number;
   private gamepadDeadzone: number;
+  private captureGameplayKeys = false;
   private attached = false;
 
   constructor(
@@ -181,20 +182,40 @@ export class InputManager {
     this.gamepadDeadzone = gamepadDeadzone;
   }
 
+  public setCaptureGameplayKeys(active: boolean): void {
+    this.captureGameplayKeys = active;
+    if (!active) {
+      this.pressedCodes.clear();
+    }
+  }
+
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
+    const targetTag =
+      event.target instanceof HTMLElement
+        ? event.target.tagName
+        : typeof document !== 'undefined' && document.activeElement instanceof HTMLElement
+          ? document.activeElement.tagName
+          : '';
+    const isTextOrRangeControl =
+      targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT';
+
     if (
-      event.code === 'Space' ||
-      event.code === 'ArrowUp' ||
-      event.code === 'ArrowDown' ||
-      event.code === 'ArrowLeft' ||
-      event.code === 'ArrowRight'
+      this.captureGameplayKeys &&
+      !isTextOrRangeControl &&
+      (event.code === 'Space' ||
+        event.code === 'ArrowUp' ||
+        event.code === 'ArrowDown' ||
+        event.code === 'ArrowLeft' ||
+        event.code === 'ArrowRight')
     ) {
       event.preventDefault();
     }
     if (!this.pressedCodes.has(event.code) && this.bindings.pause.includes(event.code)) {
       this.pauseEdgeTriggered = true;
     }
-    this.pressedCodes.add(event.code);
+    if (this.captureGameplayKeys) {
+      this.pressedCodes.add(event.code);
+    }
   };
 
   private readonly handleKeyUp = (event: KeyboardEvent): void => {

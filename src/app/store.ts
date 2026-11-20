@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getTracksByCup } from '../data/tracks';
+import { getTracksByCup, getTrackById } from '../data/tracks';
 import type {
   AssetManifest,
   CharacterId,
@@ -21,10 +21,62 @@ import type { StandingEntry } from '../game/racing/raceSimulation';
 import {
   applyChampionshipCompletionToSave,
   applyRaceResultToSave,
+  isCupUnlocked,
   loadSaveData,
   persistSaveData,
   resetSaveData,
 } from '../game/save/saveManager';
+
+export function sanitizeSelectionsForMode(
+  mode: GameMode,
+  saveData: SaveDataV1,
+  current: {
+    selectedCharacterId: CharacterId;
+    selectedKartId: KartId;
+    selectedCupId: CupId;
+    selectedTrackId: TrackId;
+  },
+): {
+  selectedCharacterId: CharacterId;
+  selectedKartId: KartId;
+  selectedCupId: CupId;
+  selectedTrackId: TrackId;
+} {
+  if (mode === 'practice') {
+    return current;
+  }
+
+  const selectedCharacterId = saveData.unlockedCharacters.includes(current.selectedCharacterId)
+    ? current.selectedCharacterId
+    : (saveData.unlockedCharacters[0] ?? 'nilo');
+
+  const selectedKartId = saveData.unlockedKarts.includes(current.selectedKartId)
+    ? current.selectedKartId
+    : (saveData.unlockedKarts[0] ?? 'trilha-raposa');
+
+  const selectedCupId: CupId = isCupUnlocked(saveData, current.selectedCupId, mode)
+    ? current.selectedCupId
+    : 'aurora';
+
+  const cupTracks = getTracksByCup(selectedCupId);
+  const currentTrackValid =
+    saveData.unlockedTracks.includes(current.selectedTrackId) &&
+    getTrackById(current.selectedTrackId).cupId === selectedCupId;
+
+  const firstUnlockedInCup =
+    cupTracks.find((tr) => saveData.unlockedTracks.includes(tr.id))?.id ??
+    saveData.unlockedTracks[0] ??
+    'porto-das-lanternas';
+
+  const selectedTrackId = currentTrackValid ? current.selectedTrackId : firstUnlockedInCup;
+
+  return {
+    selectedCharacterId,
+    selectedKartId,
+    selectedCupId,
+    selectedTrackId,
+  };
+}
 
 export interface RaceCompletionSummary {
   mode: GameMode;
@@ -122,7 +174,11 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
       screen: state.previousScreen === 'settings' ? 'main-menu' : state.previousScreen,
     })),
   dismissSaveRecoveredNotice: () => set({ saveRecoveredNotice: false }),
-  setMode: (mode) => set({ mode }),
+  setMode: (mode) =>
+    set((state) => ({
+      mode,
+      ...sanitizeSelectionsForMode(mode, state.saveData, state),
+    })),
   setDifficulty: (difficulty) => set({ difficulty }),
   setSelectedCharacterId: (selectedCharacterId) => set({ selectedCharacterId }),
   setSelectedKartId: (selectedKartId) => set({ selectedKartId }),

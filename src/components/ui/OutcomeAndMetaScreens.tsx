@@ -29,6 +29,20 @@ export function SettingsScreen({
   const [listeningAction, setListeningAction] = useState<keyof ControlBindings | null>(null);
 
   useEffect(() => {
+    if (listeningAction) return undefined;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.code === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        onPlaySfx('click');
+        closeSettings();
+      }
+    };
+    window.addEventListener('keydown', handleEscape, { capture: true });
+    return () => window.removeEventListener('keydown', handleEscape, { capture: true });
+  }, [listeningAction, closeSettings, onPlaySfx]);
+
+  useEffect(() => {
     if (!listeningAction) return undefined;
     const handleKeyDown = (e: KeyboardEvent) => {
       e.preventDefault();

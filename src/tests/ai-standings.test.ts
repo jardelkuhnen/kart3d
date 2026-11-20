@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import { computeAiKartInput, createAiDriverState } from '../game/ai/aiController';
 import { FIXED_TIMESTEP } from '../game/core/constants';
+import { createRacerItemState } from '../game/items/itemSystem';
+import { createInitialKartState } from '../game/physics/kartController';
 import { RaceSimulation, computeStandings } from '../game/racing/raceSimulation';
 import { PORTO_DAS_LANTERNAS_LAYOUT } from '../game/tracks/portoDasLanternas';
+import { TRACK_LAYOUTS } from '../game/tracks/registry';
+import {
+  getSampleAtDistance,
+  projectPointOntoTrack,
+  yawFromTangent,
+} from '../game/tracks/trackGeometry';
 
 describe('8-Racer Physics AI, Collisions & Standings', () => {
   it('initializes 1 human + 7 AI racers on distinct grid slots and advances all AI physically along the track', () => {
@@ -126,5 +135,75 @@ describe('8-Racer Physics AI, Collisions & Standings', () => {
     );
     expect(separation).toBeGreaterThan(0.9);
     expect(events.playerCollision).toBe(true);
+  });
+
+  it('targets real shortcut entryS per track instead of fixed 0.44-0.54 fraction (ALTO-01)', () => {
+    for (const layout of Object.values(TRACK_LAYOUTS)) {
+      const sc = layout.shortcuts[0];
+      expect(sc.entryS).toBeGreaterThanOrEqual(0);
+      expect(sc.entryS).toBeLessThanOrEqual(layout.totalLength);
+
+      // 1. At 0.48 * totalLength on tracks where shortcut is far away, shortcut-seeking AI must
+      //    behave identically to non-shortcut AI (never yanking off-track toward a distant shortcut).
+      const midSample = getSampleAtDistance(layout.samples, layout.totalLength, layout.totalLength * 0.48);
+      const distToScEntry = Math.hypot(
+        midSample.point.x - sc.samples[0].point.x,
+        midSample.point.z - sc.samples[0].point.z,
+      );
+      if (distToScEntry > 50) {
+        const aiSeeker = createAiDriverState(0); // shortcutTendency 0.85
+        const aiMainOnly = { ...createAiDriverState(0), shortcutTendency: 0.0 };
+        const sim = createInitialKartState(
+          midSample.point.x,
+          midSample.point.y,
+          midSample.point.z,
+          yawFromTangent(midSample.tangent),
+        );
+        sim.forwardSpeed = 28;
+        const query = projectPointOntoTrack(layout, sim.x, sim.z, sim.y);
+        const baseCtx = {
+          layout,
+          difficulty: 'hard' as const,
+          selfId: 'ai-test',
+          selfSim: sim,
+          selfTrackQuery: query,
+          selfItem: createRacerItemState(),
+          selfRank: 2,
+          otherKarts: [],
+          hazards: [],
+          incomingProjectiles: [],
+          dt: FIXED_TIMESTEP,
+        };
+        const seekerInput = computeAiKartInput(aiSeeker, baseCtx);
+        const mainInput = computeAiKartInput(aiMainOnly, baseCtx);
+        expect(seekerInput.steer, `${layout.id} at 0.48`).toBeCloseTo(mainInput.steer, 6);
+      }
+
+      // 2. Directly on the shortcut, Hard AI with high shortcutTendency steers progressively along shortcut
+      const scEntry = sc.samples[2];
+      const simOnSc = createInitialKartState(
+        scEntry.point.x,
+        scEntry.point.y,
+        scEntry.point.z,
+        yawFromTangent(scEntry.tangent),
+      );
+      simOnSc.forwardSpeed = 26;
+      const qSc = projectPointOntoTrack(layout, simOnSc.x, simOnSc.z, simOnSc.y);
+      expect(qSc.onShortcut, `${layout.id} onShortcut`).toBe(true);
+      const scInput = computeAiKartInput(createAiDriverState(0), {
+        layout,
+        difficulty: 'hard',
+        selfId: 'ai-sc',
+        selfSim: simOnSc,
+        selfTrackQuery: qSc,
+        selfItem: createRacerItemState(),
+        selfRank: 2,
+        otherKarts: [],
+        hazards: [],
+        incomingProjectiles: [],
+        dt: FIXED_TIMESTEP,
+      });
+      expect(Math.abs(scInput.steer), `${layout.id} aligned on shortcut`).toBeLessThan(0.6);
+    }
   });
 });

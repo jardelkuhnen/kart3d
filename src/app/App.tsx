@@ -146,6 +146,7 @@ export function App() {
 
   useEffect(() => {
     const raceActive = screen === 'race' && !paused;
+    inputManager.setCaptureGameplayKeys(raceActive);
     inputManager.setAutoAccelerate(
       raceActive && touchControlsVisible && settings.touch.autoAccelerate,
     );
@@ -182,7 +183,11 @@ export function App() {
         (lastRaceResult?.mode === 'time-trial') ||
         ((lastRaceResult?.playerRank ?? 8) <= 3);
       audioEngine.playMusic(won ? 'music-victory' : 'music-defeat', screen === 'podium');
-    } else if (screen !== 'race' && screen !== 'pause' && !(screen === 'settings' && previousScreen === 'race')) {
+    } else if (
+      screen !== 'race' &&
+      screen !== 'pause' &&
+      !(screen === 'settings' && (previousScreen === 'race' || previousScreen === 'pause'))
+    ) {
       audioEngine.stopAmbience();
       audioEngine.updateEngineTelemetry(0, false, false, 0, false, false, false);
       audioEngine.playMusic('music-menu', true);
@@ -348,6 +353,7 @@ export function App() {
               sceneMode={sceneMode}
               phaseRequest={phaseRequest}
               paused={paused || screen !== 'race'}
+              canTogglePause={screen === 'race' || screen === 'pause'}
               resetToken={resetToken}
               audioEngine={audioEngine}
               inputManager={inputManager}

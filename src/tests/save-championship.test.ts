@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { sanitizeSelectionsForMode } from '../app/store';
 import { createInitialSaveData } from '../game/core/constants';
 import {
   createChampionship,
@@ -231,5 +232,27 @@ describe('Slice 6 — Save Persistence, Corruption Recovery, Unlocks, Championsh
     expect(practiceSim.racers).toHaveLength(1);
     expect(practiceSim.items.boxes.length).toBeGreaterThan(0);
     expect(practiceSim.tracker.totalLaps).toBe(99);
+  });
+
+  it('sanitizes locked character, kart, cup and track selections when switching out of practice mode (ALTO-03)', () => {
+    const freshSave = createInitialSaveData();
+    const lockedSelection = {
+      selectedCharacterId: 'zera' as const,
+      selectedKartId: 'lamina-glacial' as const,
+      selectedCupId: 'eclipse' as const,
+      selectedTrackId: 'fortaleza-tempestade' as const,
+    };
+
+    // In practice mode, locked selections are permitted
+    expect(sanitizeSelectionsForMode('practice', freshSave, lockedSelection)).toEqual(lockedSelection);
+
+    // Switching to Quick Race / Championship / Time Trial must revert all locked items
+    for (const officialMode of ['quick-race', 'championship', 'time-trial'] as const) {
+      const sanitized = sanitizeSelectionsForMode(officialMode, freshSave, lockedSelection);
+      expect(freshSave.unlockedCharacters).toContain(sanitized.selectedCharacterId);
+      expect(freshSave.unlockedKarts).toContain(sanitized.selectedKartId);
+      expect(sanitized.selectedCupId).toBe('aurora');
+      expect(freshSave.unlockedTracks).toContain(sanitized.selectedTrackId);
+    }
   });
 });

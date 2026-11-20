@@ -1,23 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
-import { BallCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { CharacterRig } from '../characters/CharacterRig';
-import { disposeClonedMaterialsOnly } from '../core/assetLoader';
 import { DRIFT_TIERS } from '../core/constants';
-import type { CharacterAnimState } from '../core/types';
+import type { CharacterAnimState, LiveKartPose } from '../core/types';
 import type { RaceSimulation, RacerEntityState } from '../racing/raceSimulation';
-import type { LiveKartPose } from './KartEntity';
 
 export interface RacerMeshInstanceProps {
   racerIndex: number;
   simRef: React.MutableRefObject<RaceSimulation>;
   kartModelPath: string;
   characterModelPath: string;
-  initialPosition?: [number, number, number];
   poseRef?: React.MutableRefObject<LiveKartPose>;
-  onPlayerRapierSync?: (body: RapierRigidBody | null) => void;
   paused: boolean;
 }
 
@@ -43,15 +38,12 @@ export function RacerMeshInstance({
   simRef,
   kartModelPath,
   characterModelPath,
-  initialPosition,
   poseRef,
-  onPlayerRapierSync,
   paused,
 }: RacerMeshInstanceProps) {
   const gltf = useGLTF(kartModelPath);
   const kartScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
 
-  const bodyRef = useRef<RapierRigidBody | null>(null);
   const visualRootRef = useRef<THREE.Group | null>(null);
   const driverMirrorRef = useRef<THREE.Group | null>(null);
   const driverSeatOffsetRef = useRef<THREE.Group | null>(null);
@@ -89,11 +81,6 @@ export function RacerMeshInstance({
       if (obj instanceof THREE.Mesh) {
         obj.castShadow = isPlayer;
         obj.receiveShadow = true;
-
-        // Clone material per racer instance so disposeObject3D never disposes shared GLTF materials
-        if (obj.material instanceof THREE.MeshStandardMaterial) {
-          obj.material = obj.material.clone();
-        }
       }
       if (obj.name === 'ChassisGroup') chassis = obj;
       if (obj.name === 'SteeringWheel') steeringWheel = obj;
@@ -116,19 +103,7 @@ export function RacerMeshInstance({
     if (driverSeatOffsetRef.current) {
       driverSeatOffsetRef.current.position.copy(driverMountOffset);
     }
-
-    return () => {
-      disposeClonedMaterialsOnly(kartScene);
-    };
   }, [kartScene, isPlayer]);
-
-  useEffect(() => {
-    if (isPlayer && onPlayerRapierSync) {
-      onPlayerRapierSync(bodyRef.current);
-      return () => onPlayerRapierSync(null);
-    }
-    return undefined;
-  }, [isPlayer, onPlayerRapierSync]);
 
   useFrame((state) => {
     if (paused) return;
@@ -247,24 +222,7 @@ export function RacerMeshInstance({
   });
 
   return (
-    <>
-      {isPlayer && (
-        <RigidBody
-          ref={bodyRef}
-          type="dynamic"
-          position={initialPosition ?? [0, 0.35, 0]}
-          lockRotations
-          gravityScale={0}
-          linearDamping={0}
-          colliders={false}
-          restitution={0.2}
-          friction={0}
-        >
-          <BallCollider args={[0.88]} position={[0, 0.88, 0]} />
-        </RigidBody>
-      )}
-
-      <group ref={visualRootRef}>
+    <group ref={visualRootRef}>
         <primitive object={kartScene} />
 
         <group ref={driverMirrorRef}>
@@ -311,6 +269,5 @@ export function RacerMeshInstance({
           <meshBasicMaterial color="#38bdf8" wireframe transparent opacity={0.45} />
         </mesh>
       </group>
-    </>
   );
 }

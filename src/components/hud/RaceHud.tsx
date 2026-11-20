@@ -167,32 +167,52 @@ export function RaceHud({
         )}
 
         <div className="kl-race-actions">
+          {!touchControlsVisible && (
+            <button
+              type="button"
+              className="kl-btn kl-btn-secondary"
+              data-testid="hud-recover-btn"
+              aria-label="Recuperar Kart na Pista"
+              disabled={paused || phase !== 'racing'}
+              onClick={onRecoverKart}
+            >
+              Recuperar (R)
+            </button>
+          )}
           <button
             type="button"
-            className="kl-btn kl-btn-secondary"
-            data-testid="hud-recover-btn"
-            aria-label="Recuperar Kart na Pista"
-            disabled={paused || phase !== 'racing'}
-            onClick={onRecoverKart}
-          >
-            Recuperar (R)
-          </button>
-          <button
-            type="button"
-            className="kl-btn kl-btn-secondary"
+            className="kl-btn kl-btn-secondary kl-action-mute"
             onClick={onToggleMute}
             aria-label={muted ? 'Ativar Som' : 'Silenciar Som'}
           >
             {muted ? 'Som: Mudo' : 'Som: Ligado'}
           </button>
-          <button type="button" className="kl-btn kl-btn-secondary" onClick={onRestartRace}>
+          <button
+            type="button"
+            className="kl-btn kl-btn-secondary kl-action-restart"
+            onClick={onRestartRace}
+          >
             Reiniciar
           </button>
-          <button type="button" className="kl-btn kl-btn-secondary" onClick={onTogglePause}>
-            {paused ? 'Retomar (ESC)' : 'Pausar (ESC)'}
+          <button
+            type="button"
+            className="kl-btn kl-btn-secondary kl-action-pause"
+            onClick={onTogglePause}
+          >
+            {touchControlsVisible
+              ? paused
+                ? 'Retomar'
+                : 'Pausar'
+              : paused
+                ? 'Retomar (ESC)'
+                : 'Pausar (ESC)'}
           </button>
           {mode === 'practice' && (
-            <button type="button" className="kl-btn kl-btn-secondary" onClick={onExitToMenu}>
+            <button
+              type="button"
+              className="kl-btn kl-btn-secondary kl-action-end-practice"
+              onClick={onExitToMenu}
+            >
               Encerrar Treino
             </button>
           )}
@@ -250,7 +270,11 @@ export function RaceHud({
 
       {/* Bottom Bar: Driver + Lap + Timer (Left) & Speedometer + Drift/Turbo (Right) */}
       <footer className="kl-bottom-bar">
-        <section className="kl-panel kl-race-badge" aria-label="Volta e Cronômetro">
+        <section
+          className="kl-panel kl-race-badge"
+          data-testid="hud-race-badge"
+          aria-label="Volta e Cronômetro"
+        >
           <img
             src={characterIconPath}
             alt={characterName}
@@ -276,7 +300,11 @@ export function RaceHud({
           </div>
         </section>
 
-        <section className="kl-panel kl-telemetry-cluster" aria-label="Velocímetro e Drift">
+        <section
+          className="kl-panel kl-telemetry-cluster"
+          data-testid="hud-telemetry-cluster"
+          aria-label="Velocímetro e Drift"
+        >
           <div className="kl-speed-box">
             <span className="kl-speed-number" data-testid="speedometer-value">
               {telemetry.speedKmh}

@@ -64,6 +64,8 @@ export interface ShortcutPathDef {
   id: string;
   surface: SurfaceType;
   halfWidth: number;
+  entryS: number;
+  exitS: number;
   controlPoints: readonly TrackVec3[];
   samples: readonly TrackSplineSample[];
 }
@@ -341,7 +343,7 @@ export function offsetPointOnTrack(
   };
 }
 
-function findNearestSample(
+export function findNearestSample(
   samples: readonly TrackSplineSample[],
   x: number,
   z: number,
@@ -555,10 +557,16 @@ export function assembleTrackLayout(input: TrackAssemblyInput): TrackLayoutDef {
 
   const shortcuts: ShortcutPathDef[] = input.shortcuts.map((sc) => {
     const sampled = sampleTrackSpline(sc.controlPoints, sc.sampleCount ?? 36, sc.halfWidth, false);
+    const firstPt = sampled.samples[0].point;
+    const lastPt = sampled.samples[sampled.samples.length - 1].point;
+    const entryMatch = findNearestSample(samples, firstPt.x, firstPt.z, firstPt.y);
+    const exitMatch = findNearestSample(samples, lastPt.x, lastPt.z, lastPt.y);
     return {
       id: sc.id,
       surface: sc.surface,
       halfWidth: sc.halfWidth,
+      entryS: entryMatch.sample.s,
+      exitS: exitMatch.sample.s,
       controlPoints: sc.controlPoints,
       samples: sampled.samples,
     };

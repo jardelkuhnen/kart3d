@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { RacePhase, RaceProgressTracker } from '../racing/raceManager';
 import { type TrackLayoutDef, evaluateCatmullRom } from '../tracks/trackGeometry';
-import type { LiveKartPose } from '../vehicles/KartEntity';
+import type { LiveKartPose } from '../core/types';
 
 export interface RaceCameraProps {
   layout: TrackLayoutDef;

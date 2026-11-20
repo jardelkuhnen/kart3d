@@ -69,21 +69,50 @@ export function computeAiKartInput(
     aiState.stuckTimer = 0;
   }
 
-  // Choose target point on shortcut if approaching Harbor Shortcut with decent alignment/skill
+  // Choose target point on an actual nearby shortcut based on its real entryS/exitS (ALTO-01)
   let targetX: number;
   let targetZ: number;
-  const shortcut = layout.shortcuts[0];
-  const shortcutEligible =
-    shortcut &&
-    ctx.difficulty !== 'easy' &&
-    aiState.shortcutTendency > 0.5 &&
-    selfTrackQuery.nearestSample.s > layout.totalLength * 0.44 &&
-    selfTrackQuery.nearestSample.s < layout.totalLength * 0.54;
+  let activeShortcutTarget: { x: number; z: number } | null = null;
 
-  if (shortcutEligible) {
-    const mid = shortcut.samples[Math.floor(shortcut.samples.length * 0.55)];
-    targetX = mid.point.x;
-    targetZ = mid.point.z;
+  if (ctx.difficulty !== 'easy' && aiState.shortcutTendency > 0.5 && layout.shortcuts.length > 0) {
+    const curS = selfTrackQuery.nearestSample.s;
+    const totalLen = Math.max(1, layout.totalLength);
+    for (const sc of layout.shortcuts) {
+      if (sc.samples.length < 2) continue;
+      // Signed circular delta from shortcut entryS to current kart s
+      let deltaFromEntry = curS - sc.entryS;
+      if (deltaFromEntry > totalLen * 0.5) deltaFromEntry -= totalLen;
+      if (deltaFromEntry < -totalLen * 0.5) deltaFromEntry += totalLen;
+
+      // Circular span of the shortcut along main track
+      const span = ((sc.exitS - sc.entryS) % totalLen + totalLen) % totalLen;
+      const approachingEntry = deltaFromEntry >= -26 && deltaFromEntry <= Math.max(18, span * 0.85);
+
+      if (selfTrackQuery.onShortcut || approachingEntry) {
+        let bestIdx = 0;
+        let bestDistSq = Infinity;
+        for (let idx = 0; idx < sc.samples.length; idx += 1) {
+          const sp = sc.samples[idx].point;
+          const dSq = (sp.x - selfSim.x) ** 2 + (sp.z - selfSim.z) ** 2;
+          if (dSq < bestDistSq) {
+            bestDistSq = dSq;
+            bestIdx = idx;
+          }
+        }
+        // Only engage if the shortcut is actually within sensible proximity and not already exited
+        if (bestIdx < sc.samples.length - 2 && (selfTrackQuery.onShortcut || bestDistSq < 36 * 36)) {
+          const targetIdx = Math.min(sc.samples.length - 1, bestIdx + 4);
+          const pt = sc.samples[targetIdx].point;
+          activeShortcutTarget = { x: pt.x, z: pt.z };
+          break;
+        }
+      }
+    }
+  }
+
+  if (activeShortcutTarget) {
+    targetX = activeShortcutTarget.x;
+    targetZ = activeShortcutTarget.z;
   } else {
     const lookAheadSteps = ctx.difficulty === 'hard' ? 7 : ctx.difficulty === 'normal' ? 8 : 10;
     const targetSample = samples[(selfTrackQuery.nearestSample.index + lookAheadSteps) % n];

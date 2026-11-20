@@ -252,3 +252,16 @@ export interface SaveDataV1 {
   };
   settings: GameSettings;
 }
+
+export interface LiveKartPose {
+  x: number;
+  y: number;
+  z: number;
+  yaw: number;
+  visualSlipYaw: number;
+  forwardSpeed: number;
+  boostActive: boolean;
+  driftActive: boolean;
+  steerAngle: number;
+  groundHeight: number;
+}
