@@ -6,3 +6,6 @@ test-results/
 .DS_Store
 *.log
 coverage/
+__pycache__/
+*.pyc
+scripts/blender/.cache/
