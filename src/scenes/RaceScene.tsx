@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, Lightformer, useGLTF, useTexture } from '@react-three/drei';
 import { CuboidCollider, Physics, RigidBody, type RapierRigidBody } from '@react-three/rapier';
@@ -9,7 +9,7 @@ import { getKartById } from '../data/karts';
 import { getTrackById } from '../data/tracks';
 import { GameAudioEngine } from '../game/audio/audioEngine';
 import { RaceCamera } from '../game/camera/RaceCamera';
-import { disposeObject3D, resolveAssetPath } from '../game/core/assetLoader';
+import { resolveAssetPath } from '../game/core/assetLoader';
 import { publicUrl } from '../game/core/publicUrl';
 import { DEFAULT_LAPS, FIXED_TIMESTEP, FixedStepClock } from '../game/core/constants';
 import { clampCanvasDpr, detectMobileDevice } from '../game/core/mobile';
@@ -191,7 +191,6 @@ function TrackWorld({
     boatNodesRef.current = boats;
     windmillNodesRef.current = windmills;
     return () => {
-      disposeObject3D(trackScene);
       boatNodesRef.current = [];
       windmillNodesRef.current = [];
     };
@@ -325,33 +324,45 @@ function MovingTrackHazards({
         >
           {h.style === 'neon-barrier' ? (
             <>
-              <mesh position={[0, 1.0, 0]}>
-                <cylinderGeometry args={[0.55, 0.72, 2.0, 12]} />
+              <mesh position={[0, 0.22, 0]} castShadow>
+                <cylinderGeometry args={[0.82, 0.92, 0.44, 12]} />
+                <meshStandardMaterial color="#1e1b4b" metalness={0.75} roughness={0.28} />
+              </mesh>
+              <mesh position={[0, 1.25, 0]} castShadow>
+                <cylinderGeometry args={[0.38, 0.56, 1.75, 12]} />
                 <meshStandardMaterial
                   color="#ec4899"
                   emissive="#f43f5e"
-                  emissiveIntensity={1.4}
-                  roughness={0.25}
+                  emissiveIntensity={1.6}
+                  roughness={0.2}
                 />
               </mesh>
-              <mesh position={[0, 2.25, 0]}>
-                <octahedronGeometry args={[0.5, 0]} />
-                <meshBasicMaterial color="#38bdf8" />
+              <mesh position={[0, 1.15, 0]} rotation={[Math.PI * 0.5, 0, 0]}>
+                <torusGeometry args={[0.68, 0.08, 10, 20]} />
+                <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={1.5} roughness={0.18} />
+              </mesh>
+              <mesh position={[0, 2.45, 0]}>
+                <octahedronGeometry args={[0.45, 0]} />
+                <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={1.8} roughness={0.12} />
               </mesh>
             </>
           ) : (
             <>
-              <mesh position={[0, 1.35, 0]}>
-                <boxGeometry args={[2.3, 2.7, 0.85]} />
-                <meshStandardMaterial
-                  color="#374151"
-                  metalness={0.6}
-                  roughness={0.4}
-                />
+              <mesh position={[0, 1.38, 0]} castShadow>
+                <boxGeometry args={[2.5, 2.75, 0.72]} />
+                <meshStandardMaterial color="#1f2937" metalness={0.72} roughness={0.38} />
               </mesh>
-              <mesh position={[0, 1.35, 0]}>
-                <octahedronGeometry args={[0.75, 0]} />
-                <meshBasicMaterial color="#a78bfa" />
+              <mesh position={[-1.12, 1.48, 0]} castShadow>
+                <boxGeometry args={[0.32, 3.0, 0.88]} />
+                <meshStandardMaterial color="#4b5563" metalness={0.65} roughness={0.42} />
+              </mesh>
+              <mesh position={[1.12, 1.48, 0]} castShadow>
+                <boxGeometry args={[0.32, 3.0, 0.88]} />
+                <meshStandardMaterial color="#4b5563" metalness={0.65} roughness={0.42} />
+              </mesh>
+              <mesh position={[0, 1.45, 0]}>
+                <octahedronGeometry args={[0.68, 0]} />
+                <meshStandardMaterial color="#c084fc" emissive="#a855f7" emissiveIntensity={1.8} roughness={0.15} />
               </mesh>
             </>
           )}
@@ -361,12 +372,9 @@ function MovingTrackHazards({
   );
 }
 
-interface DynamicWorldItemsState {
-  activeBoxes: Array<{ id: string; x: number; y: number; z: number }>;
-  hazards: Array<{ id: string; x: number; y: number; z: number }>;
-  projectiles: Array<{ id: string; x: number; y: number; z: number; yaw: number }>;
-  winds: Array<{ id: string; x: number; y: number; z: number; scale: number; opacity: number }>;
-}
+const MAX_WORLD_HAZARDS = 8;
+const MAX_WORLD_PROJECTILES = 8;
+const MAX_WORLD_WINDS = 6;
 
 function WorldItemsRenderer({
   layout,
@@ -381,103 +389,143 @@ function WorldItemsRenderer({
   const nevoaGltf = useGLTF(publicUrl('/assets/items/nevoa_prisma.glb'));
   const faiscaGltf = useGLTF(publicUrl('/assets/items/faisca_rastreadora.glb'));
 
-  const [snapshot, setSnapshot] = useState<DynamicWorldItemsState>({
-    activeBoxes: [],
-    hazards: [],
-    projectiles: [],
-    winds: [],
-  });
-  const timerRef = useRef(0);
-  const spinGroupRef = useRef<THREE.Group | null>(null);
-
+  const boxSlots = useMemo(() => layout.itemBoxZones.flat(), [layout]);
   const boxClones = useMemo(
-    () => layout.itemBoxZones.flat().map(() => itemBoxGltf.scene.clone(true)),
-    [itemBoxGltf.scene, layout],
+    () => boxSlots.map(() => itemBoxGltf.scene.clone(true)),
+    [itemBoxGltf.scene, boxSlots],
   );
   const hazardClones = useMemo(
-    () => Array.from({ length: 8 }, () => nevoaGltf.scene.clone(true)),
+    () => Array.from({ length: MAX_WORLD_HAZARDS }, () => nevoaGltf.scene.clone(true)),
     [nevoaGltf.scene],
   );
   const projectileClones = useMemo(
-    () => Array.from({ length: 8 }, () => faiscaGltf.scene.clone(true)),
+    () => Array.from({ length: MAX_WORLD_PROJECTILES }, () => faiscaGltf.scene.clone(true)),
     [faiscaGltf.scene],
   );
 
-  useEffect(() => {
-    return () => {
-      boxClones.forEach(disposeObject3D);
-      hazardClones.forEach(disposeObject3D);
-      projectileClones.forEach(disposeObject3D);
-    };
-  }, [boxClones, hazardClones, projectileClones]);
+  const boxOuterRefs = useRef<Array<THREE.Group | null>>([]);
+  const boxSpinRefs = useRef<Array<THREE.Group | null>>([]);
+  const hazardRefs = useRef<Array<THREE.Group | null>>([]);
+  const projectileRefs = useRef<Array<THREE.Group | null>>([]);
+  const windRefs = useRef<Array<THREE.Mesh | null>>([]);
 
-  useFrame((state, delta) => {
+  useFrame((state) => {
     if (paused) return;
-    if (spinGroupRef.current) {
-      const t = state.clock.elapsedTime;
-      spinGroupRef.current.children.forEach((child, i) => {
-        child.rotation.y = t * 1.8 + i * 0.5;
-        child.position.y = Math.sin(t * 3 + i) * 0.14;
-      });
+    const t = state.clock.elapsedTime;
+    const items = simRef.current.items;
+
+    // Preserve true world b.y on outer group; apply spin + hover bobbing ONLY on inner group (fixes CRÍTICO-03)
+    for (let i = 0; i < boxSlots.length; i += 1) {
+      const outer = boxOuterRefs.current[i];
+      const inner = boxSpinRefs.current[i];
+      const boxState = items.boxes[i];
+      if (!outer || !inner) continue;
+      if (!boxState || !boxState.active) {
+        outer.visible = false;
+        continue;
+      }
+      outer.visible = true;
+      outer.position.set(boxState.position.x, boxState.position.y, boxState.position.z);
+      inner.rotation.y = t * 1.85 + i * 0.5;
+      inner.position.y = Math.sin(t * 3.0 + i) * 0.16;
     }
 
-    timerRef.current += delta;
-    if (timerRef.current >= 0.05) {
-      timerRef.current = 0;
-      const items = simRef.current.items;
-      setSnapshot({
-        activeBoxes: items.boxes
-          .filter((b) => b.active)
-          .map((b) => ({ id: b.id, x: b.position.x, y: b.position.y, z: b.position.z })),
-        hazards: items.hazards
-          .slice(0, 8)
-          .map((h) => ({ id: h.id, x: h.x, y: h.y, z: h.z })),
-        projectiles: items.projectiles
-          .slice(0, 8)
-          .map((p) => ({ id: p.id, x: p.x, y: p.y, z: p.z, yaw: p.yaw })),
-        winds: items.windPulses.map((w) => {
-          const prog = w.age / w.maxAge;
-          return {
-            id: w.id,
-            x: w.x,
-            y: w.y,
-            z: w.z,
-            scale: 1 + prog * w.radius,
-            opacity: Math.max(0, 0.75 * (1 - prog)),
-          };
-        }),
-      });
+    for (let i = 0; i < MAX_WORLD_HAZARDS; i += 1) {
+      const grp = hazardRefs.current[i];
+      const haz = items.hazards[i];
+      if (!grp) continue;
+      if (!haz) {
+        grp.visible = false;
+        continue;
+      }
+      grp.visible = true;
+      grp.position.set(haz.x, haz.y, haz.z);
+      grp.rotation.y = t * 1.1 + i;
+    }
+
+    for (let i = 0; i < MAX_WORLD_PROJECTILES; i += 1) {
+      const grp = projectileRefs.current[i];
+      const proj = items.projectiles[i];
+      if (!grp) continue;
+      if (!proj) {
+        grp.visible = false;
+        continue;
+      }
+      grp.visible = true;
+      grp.position.set(proj.x, proj.y, proj.z);
+      grp.rotation.set(0, proj.yaw, 0);
+    }
+
+    for (let i = 0; i < MAX_WORLD_WINDS; i += 1) {
+      const mesh = windRefs.current[i];
+      const wind = items.windPulses[i];
+      if (!mesh) continue;
+      if (!wind) {
+        mesh.visible = false;
+        continue;
+      }
+      const prog = wind.age / wind.maxAge;
+      mesh.visible = true;
+      mesh.position.set(wind.x, wind.y, wind.z);
+      mesh.scale.setScalar(1 + prog * wind.radius);
+      (mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.75 * (1 - prog));
     }
   });
 
   return (
     <group>
-      <group ref={spinGroupRef}>
-        {snapshot.activeBoxes.map((b, idx) => (
-          <group key={b.id} position={[b.x, b.y, b.z]}>
-            <primitive object={boxClones[idx % boxClones.length]} />
+      {boxSlots.map((slot, idx) => (
+        <group
+          key={`box-${idx}`}
+          ref={(el) => {
+            boxOuterRefs.current[idx] = el;
+          }}
+          position={[slot.x, slot.y, slot.z]}
+        >
+          <group
+            ref={(el) => {
+              boxSpinRefs.current[idx] = el;
+            }}
+          >
+            <primitive object={boxClones[idx]} />
           </group>
-        ))}
-      </group>
-      {snapshot.hazards.map((h, idx) => (
-        <group key={h.id} position={[h.x, h.y, h.z]} scale={1.7}>
-          <primitive object={hazardClones[idx]} />
         </group>
       ))}
-      {snapshot.projectiles.map((p, idx) => (
-        <group key={p.id} position={[p.x, p.y, p.z]} rotation={[0, p.yaw, 0]} scale={1.25}>
-          <primitive object={projectileClones[idx]} />
+      {hazardClones.map((clone, idx) => (
+        <group
+          key={`haz-${idx}`}
+          ref={(el) => {
+            hazardRefs.current[idx] = el;
+          }}
+          scale={1.7}
+          visible={false}
+        >
+          <primitive object={clone} />
         </group>
       ))}
-      {snapshot.winds.map((w) => (
+      {projectileClones.map((clone, idx) => (
+        <group
+          key={`proj-${idx}`}
+          ref={(el) => {
+            projectileRefs.current[idx] = el;
+          }}
+          scale={1.25}
+          visible={false}
+        >
+          <primitive object={clone} />
+        </group>
+      ))}
+      {Array.from({ length: MAX_WORLD_WINDS }, (_, idx) => (
         <mesh
-          key={w.id}
-          position={[w.x, w.y, w.z]}
+          key={`wind-${idx}`}
+          ref={(el) => {
+            windRefs.current[idx] = el;
+          }}
           rotation={[-Math.PI * 0.5, 0, 0]}
-          scale={w.scale}
+          visible={false}
         >
           <ringGeometry args={[0.78, 1.0, 24]} />
-          <meshBasicMaterial color="#2dd4bf" transparent opacity={w.opacity} side={THREE.DoubleSide} />
+          <meshBasicMaterial color="#2dd4bf" transparent opacity={0.75} side={THREE.DoubleSide} />
         </mesh>
       ))}
     </group>
@@ -585,6 +633,8 @@ function RaceWorldContent({
   const lastSyncRef = useRef<string>('');
   const goFlashTimerRef = useRef(0);
   const recoverQueuedRef = useRef(false);
+  const sunLightRef = useRef<THREE.DirectionalLight | null>(null);
+  const sunTargetRef = useRef<THREE.Object3D | null>(null);
 
   const poseRef = useRef<LiveKartPose>({
     x: startSlot.position.x,
@@ -775,6 +825,17 @@ function RaceWorldContent({
       onStageSync({ phase: sim.phase, countdownLabel });
     }
 
+    // Keep directional shadow frustum tightly centered on the player kart for crisp shadows everywhere
+    if (sunLightRef.current && sunTargetRef.current) {
+      const pSim = simRef.current.player.sim;
+      sunTargetRef.current.position.set(pSim.x, pSim.y, pSim.z);
+      sunTargetRef.current.updateMatrixWorld();
+      sunLightRef.current.position.set(pSim.x - 42, pSim.y + 52, pSim.z - 32);
+      if (sunLightRef.current.target !== sunTargetRef.current) {
+        sunLightRef.current.target = sunTargetRef.current;
+      }
+    }
+
     telemetryTimerRef.current += delta;
     if (telemetryTimerRef.current >= 0.05) {
       telemetryTimerRef.current = 0;
@@ -791,19 +852,22 @@ function RaceWorldContent({
       <hemisphereLight
         args={[visualTheme.hemiSkyColor, visualTheme.hemiGroundColor, visualTheme.hemiIntensity * 0.55]}
       />
+      <object3D ref={sunTargetRef} position={[0, 0, 0]} />
       <directionalLight
-        position={[-95, 78, -60]}
+        ref={sunLightRef}
+        position={[-42, 52, -32]}
         intensity={visualTheme.sunIntensity}
         color={visualTheme.sunColor}
         castShadow={qualityPreset.shadowsEnabled}
         shadow-mapSize-width={qualityPreset.shadowMapSize}
         shadow-mapSize-height={qualityPreset.shadowMapSize}
+        shadow-bias={-0.0005}
         shadow-camera-near={5}
-        shadow-camera-far={260}
-        shadow-camera-left={-95}
-        shadow-camera-right={95}
-        shadow-camera-top={95}
-        shadow-camera-bottom={-95}
+        shadow-camera-far={165}
+        shadow-camera-left={-46}
+        shadow-camera-right={46}
+        shadow-camera-top={46}
+        shadow-camera-bottom={-46}
       />
 
       <Environment key={selectedTrackId} resolution={64} frames={1}>
@@ -929,7 +993,12 @@ export function RaceScene(props: RaceSceneProps) {
       <Canvas
         shadows={preset.shadowsEnabled ? 'basic' : false}
         dpr={canvasDpr}
-        gl={{ antialias: preset.antialias, powerPreference: 'high-performance' }}
+        gl={{
+          antialias: preset.antialias,
+          powerPreference: 'high-performance',
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.06,
+        }}
         camera={{ position: [0, 6, 52], fov: 56, near: 0.25, far: 500 }}
       >
         <Suspense fallback={null}>

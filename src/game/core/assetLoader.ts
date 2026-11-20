@@ -106,7 +106,21 @@ export function resolveAudioSources(manifest: AssetManifest, assetId: string): s
   const mp3Entry = manifest.assets.find(
     (item) => item.id === mp3Id && item.validationStatus === 'validated',
   );
-  return mp3Entry ? [primary, mp3Entry.path] : [primary];
+  return mp3Entry ? [primary, publicUrl(mp3Entry.path)] : [primary];
+}
+
+export function disposeClonedMaterialsOnly(root: THREE.Object3D): void {
+  root.traverse((obj) => {
+    if (obj instanceof THREE.Mesh || obj instanceof THREE.Points || obj instanceof THREE.Line) {
+      if (Array.isArray(obj.material)) {
+        for (const mat of obj.material) {
+          mat.dispose();
+        }
+      } else if (obj.material) {
+        obj.material.dispose();
+      }
+    }
+  });
 }
 
 export function disposeMaterial(material: THREE.Material): void {

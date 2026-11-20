@@ -2,16 +2,21 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { disposeObject3D } from '../core/assetLoader';
 import type { CharacterAnimState } from '../core/types';
 
 export interface CharacterRigProps {
   modelPath: string;
   animState: CharacterAnimState;
   steerAngle?: number;
+  steerAngleRef?: React.MutableRefObject<number>;
 }
 
-export function CharacterRig({ modelPath, animState, steerAngle = 0 }: CharacterRigProps) {
+export function CharacterRig({
+  modelPath,
+  animState,
+  steerAngle = 0,
+  steerAngleRef,
+}: CharacterRigProps) {
   const gltf = useGLTF(modelPath);
 
   const clonedScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
@@ -19,8 +24,10 @@ export function CharacterRig({ modelPath, animState, steerAngle = 0 }: Character
   const actionsRef = useRef<Record<string, THREE.AnimationAction>>({});
   const activeStateRef = useRef<CharacterAnimState | null>(null);
   const headNodeRef = useRef<THREE.Object3D | null>(null);
+  const appliedSteerOffsetRef = useRef(0);
 
   useEffect(() => {
+    appliedSteerOffsetRef.current = 0;
     clonedScene.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         obj.castShadow = true;
@@ -57,11 +64,11 @@ export function CharacterRig({ modelPath, animState, steerAngle = 0 }: Character
     return () => {
       mixer.stopAllAction();
       mixer.uncacheRoot(clonedScene);
-      disposeObject3D(clonedScene);
       mixerRef.current = null;
       actionsRef.current = {};
       activeStateRef.current = null;
       headNodeRef.current = null;
+      appliedSteerOffsetRef.current = 0;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clonedScene, gltf.animations]);
@@ -83,13 +90,23 @@ export function CharacterRig({ modelPath, animState, steerAngle = 0 }: Character
   }, [animState]);
 
   useFrame((_state, delta) => {
+    const head = headNodeRef.current;
+    // Undo previous steer offset before mixer evaluates so clamped clips never accumulate rotation
+    if (head && appliedSteerOffsetRef.current !== 0) {
+      head.rotation.y -= appliedSteerOffsetRef.current;
+      appliedSteerOffsetRef.current = 0;
+    }
+
     const mixer = mixerRef.current;
     if (mixer) {
       mixer.update(Math.min(delta, 0.05));
     }
-    if (headNodeRef.current) {
-      // Subtle responsive head anticipation into turns on top of clip pose
-      headNodeRef.current.rotation.y += -steerAngle * 0.12;
+
+    if (head) {
+      const liveSteer = steerAngleRef ? steerAngleRef.current : steerAngle;
+      const offset = -liveSteer * 0.18;
+      head.rotation.y += offset;
+      appliedSteerOffsetRef.current = offset;
     }
   });
 
