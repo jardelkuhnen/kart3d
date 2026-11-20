@@ -1,3 +1,4 @@
+import { publicUrl } from '../core/publicUrl';
 import type { TrackId } from '../core/types';
 import { BOSQUE_DE_CRISTAL_LAYOUT } from './bosqueDeCristal';
 import { CANION_SOLAR_LAYOUT } from './canionSolar';
@@ -40,14 +41,14 @@ export const TRACK_LAYOUTS: Record<TrackId, TrackLayoutDef> = {
 };
 
 export const FALLBACK_TRACK_GLB_PATHS: Record<TrackId, string> = {
-  'porto-das-lanternas': '/assets/tracks/porto_das_lanternas.glb',
-  'bosque-de-cristal': '/assets/tracks/bosque_de_cristal.glb',
-  'vale-dos-moinhos': '/assets/tracks/vale_dos_moinhos.glb',
-  'canion-solar': '/assets/tracks/canion_solar.glb',
-  'cidade-neon': '/assets/tracks/cidade_neon.glb',
-  'pico-boreal': '/assets/tracks/pico_boreal.glb',
-  'jardim-celeste': '/assets/tracks/jardim_celeste.glb',
-  'fortaleza-tempestade': '/assets/tracks/fortaleza_tempestade.glb',
+  'porto-das-lanternas': publicUrl('/assets/tracks/porto_das_lanternas.glb'),
+  'bosque-de-cristal': publicUrl('/assets/tracks/bosque_de_cristal.glb'),
+  'vale-dos-moinhos': publicUrl('/assets/tracks/vale_dos_moinhos.glb'),
+  'canion-solar': publicUrl('/assets/tracks/canion_solar.glb'),
+  'cidade-neon': publicUrl('/assets/tracks/cidade_neon.glb'),
+  'pico-boreal': publicUrl('/assets/tracks/pico_boreal.glb'),
+  'jardim-celeste': publicUrl('/assets/tracks/jardim_celeste.glb'),
+  'fortaleza-tempestade': publicUrl('/assets/tracks/fortaleza_tempestade.glb'),
 };
 
 const PORTO_THEME: TrackVisualTheme = {

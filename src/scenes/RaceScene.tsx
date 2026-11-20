@@ -10,6 +10,7 @@ import { getTrackById } from '../data/tracks';
 import { GameAudioEngine } from '../game/audio/audioEngine';
 import { RaceCamera } from '../game/camera/RaceCamera';
 import { disposeObject3D, resolveAssetPath } from '../game/core/assetLoader';
+import { publicUrl } from '../game/core/publicUrl';
 import { DEFAULT_LAPS, FIXED_TIMESTEP, FixedStepClock } from '../game/core/constants';
 import { clampCanvasDpr, detectMobileDevice } from '../game/core/mobile';
 import type { CharacterId, KartId } from '../game/core/types';
@@ -350,9 +351,9 @@ function WorldItemsRenderer({
   simRef: React.MutableRefObject<RaceSimulation>;
   paused: boolean;
 }) {
-  const itemBoxGltf = useGLTF('/assets/props/item_box.glb');
-  const nevoaGltf = useGLTF('/assets/items/nevoa_prisma.glb');
-  const faiscaGltf = useGLTF('/assets/items/faisca_rastreadora.glb');
+  const itemBoxGltf = useGLTF(publicUrl('/assets/props/item_box.glb'));
+  const nevoaGltf = useGLTF(publicUrl('/assets/items/nevoa_prisma.glb'));
+  const faiscaGltf = useGLTF(publicUrl('/assets/items/faisca_rastreadora.glb'));
 
   const [snapshot, setSnapshot] = useState<DynamicWorldItemsState>({
     activeBoxes: [],
@@ -458,25 +459,25 @@ function WorldItemsRenderer({
 }
 
 const FALLBACK_CHARACTER_PATHS: Record<CharacterId, string> = {
-  nilo: '/assets/characters/nilo.glb',
-  boro: '/assets/characters/boro.glb',
-  lumi: '/assets/characters/lumi.glb',
-  kora: '/assets/characters/kora.glb',
-  tiko: '/assets/characters/tiko.glb',
-  mavi: '/assets/characters/mavi.glb',
-  runi: '/assets/characters/runi.glb',
-  zera: '/assets/characters/zera.glb',
+  nilo: publicUrl('/assets/characters/nilo.glb'),
+  boro: publicUrl('/assets/characters/boro.glb'),
+  lumi: publicUrl('/assets/characters/lumi.glb'),
+  kora: publicUrl('/assets/characters/kora.glb'),
+  tiko: publicUrl('/assets/characters/tiko.glb'),
+  mavi: publicUrl('/assets/characters/mavi.glb'),
+  runi: publicUrl('/assets/characters/runi.glb'),
+  zera: publicUrl('/assets/characters/zera.glb'),
 };
 
 const FALLBACK_KART_PATHS: Record<KartId, string> = {
-  'trilha-raposa': '/assets/karts/trilha_raposa.glb',
-  'engrenagem-turbo': '/assets/karts/engrenagem_turbo.glb',
-  'cometa-estelar': '/assets/karts/cometa_estelar.glb',
-  'raiz-veloz': '/assets/karts/raiz_veloz.glb',
-  'chave-mestra-gt': '/assets/karts/chave_mestra_gt.glb',
-  'brisa-corsaria': '/assets/karts/brisa_corsaria.glb',
-  'escorpiao-dourado': '/assets/karts/escorpiao_dourado.glb',
-  'lamina-glacial': '/assets/karts/lamina_glacial.glb',
+  'trilha-raposa': publicUrl('/assets/karts/trilha_raposa.glb'),
+  'engrenagem-turbo': publicUrl('/assets/karts/engrenagem_turbo.glb'),
+  'cometa-estelar': publicUrl('/assets/karts/cometa_estelar.glb'),
+  'raiz-veloz': publicUrl('/assets/karts/raiz_veloz.glb'),
+  'chave-mestra-gt': publicUrl('/assets/karts/chave_mestra_gt.glb'),
+  'brisa-corsaria': publicUrl('/assets/karts/brisa_corsaria.glb'),
+  'escorpiao-dourado': publicUrl('/assets/karts/escorpiao_dourado.glb'),
+  'lamina-glacial': publicUrl('/assets/karts/lamina_glacial.glb'),
 };
 
 function RaceWorldContent({
@@ -903,7 +904,7 @@ for (const kartPath of Object.values(FALLBACK_KART_PATHS)) {
 }
 // Preload only default track on boot; remaining tracks preload on demand when selected
 useGLTF.preload(FALLBACK_TRACK_GLB_PATHS['porto-das-lanternas']);
-useGLTF.preload('/assets/props/item_box.glb');
-useGLTF.preload('/assets/items/nevoa_prisma.glb');
-useGLTF.preload('/assets/items/faisca_rastreadora.glb');
-useTexture.preload('/assets/vfx/particles_atlas.png');
+useGLTF.preload(publicUrl('/assets/props/item_box.glb'));
+useGLTF.preload(publicUrl('/assets/items/nevoa_prisma.glb'));
+useGLTF.preload(publicUrl('/assets/items/faisca_rastreadora.glb'));
+useTexture.preload(publicUrl('/assets/vfx/particles_atlas.png'));

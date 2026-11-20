@@ -5,6 +5,7 @@ import { CuboidCollider, Physics, RigidBody, type RapierRigidBody } from '@react
 import * as THREE from 'three';
 import { useGameStore } from '../app/store';
 import { disposeObject3D } from '../game/core/assetLoader';
+import { publicUrl } from '../game/core/publicUrl';
 import { FIXED_TIMESTEP, FixedStepClock } from '../game/core/constants';
 
 function configureTiledTexture(
@@ -24,10 +25,10 @@ function configureTiledTexture(
 
 function TrackFoundationMesh() {
   const rawTextures = useTexture({
-    asphaltMap: '/assets/textures/asphalt_albedo.png',
-    asphaltRoughness: '/assets/textures/asphalt_roughness.png',
-    curbMap: '/assets/textures/curb_albedo.png',
-    startLineMap: '/assets/textures/start_line_albedo.png',
+    asphaltMap: publicUrl('/assets/textures/asphalt_albedo.png'),
+    asphaltRoughness: publicUrl('/assets/textures/asphalt_roughness.png'),
+    curbMap: publicUrl('/assets/textures/curb_albedo.png'),
+    startLineMap: publicUrl('/assets/textures/start_line_albedo.png'),
   });
 
   const textures = useMemo(() => {
@@ -103,9 +104,9 @@ function TrackFoundationMesh() {
 }
 
 function CalibrationProps() {
-  const gantryGltf = useGLTF('/assets/props/start_gantry.glb');
-  const chevronGltf = useGLTF('/assets/props/chevron_board.glb');
-  const boostPadGltf = useGLTF('/assets/props/boost_pad.glb');
+  const gantryGltf = useGLTF(publicUrl('/assets/props/start_gantry.glb'));
+  const chevronGltf = useGLTF(publicUrl('/assets/props/chevron_board.glb'));
+  const boostPadGltf = useGLTF(publicUrl('/assets/props/boost_pad.glb'));
 
   const gantryScene = useMemo(() => gantryGltf.scene.clone(true), [gantryGltf.scene]);
   const chevronLeft = useMemo(() => chevronGltf.scene.clone(true), [chevronGltf.scene]);
@@ -270,6 +271,6 @@ export function CalibrationStage() {
   );
 }
 
-useGLTF.preload('/assets/props/start_gantry.glb');
-useGLTF.preload('/assets/props/chevron_board.glb');
-useGLTF.preload('/assets/props/boost_pad.glb');
+useGLTF.preload(publicUrl('/assets/props/start_gantry.glb'));
+useGLTF.preload(publicUrl('/assets/props/chevron_board.glb'));
+useGLTF.preload(publicUrl('/assets/props/boost_pad.glb'));

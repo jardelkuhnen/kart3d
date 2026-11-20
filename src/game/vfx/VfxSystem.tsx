@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { DRIFT_TIERS } from '../core/constants';
+import { publicUrl } from '../core/publicUrl';
 import type { QualityLevel, TrackId } from '../core/types';
 import type { RaceSimulation } from '../racing/raceSimulation';
 import { createParticleAtlasMaterial } from '../../shaders/particleAtlasShader';
@@ -157,7 +158,7 @@ export function RaceVfxSystem({
 }) {
   const preset = QUALITY_PRESETS[quality];
   const weather = BIOME_WEATHER_CONFIG[trackId];
-  const atlasTex = useTexture('/assets/vfx/particles_atlas.png');
+  const atlasTex = useTexture(publicUrl('/assets/vfx/particles_atlas.png'));
 
   const meshRef = useRef<THREE.InstancedMesh | null>(null);
   const poolRef = useRef<ParticlePool | null>(null);
