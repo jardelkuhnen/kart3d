@@ -3,7 +3,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Document } from '@gltf-transform/core';
 import type { AssetManifest, AssetManifestEntry } from '../src/game/core/types';
+import { PORTO_DAS_LANTERNAS_LAYOUT } from '../src/game/tracks/portoDasLanternas';
 import { generateUiClickOgg, generateUiConfirmOgg } from './asset-pipeline/audio-builder';
+import { NILO_BUILD_SPEC, buildCharacterGlb } from './asset-pipeline/character-builder';
 import {
   addMeshToNode,
   buildBoxBeveled,
@@ -12,17 +14,32 @@ import {
   createPbrMaterial,
   writeGlb,
 } from './asset-pipeline/glb-builder';
+import { TRILHA_RAPOSA_BUILD_SPEC, buildKartGlb } from './asset-pipeline/kart-builder';
 import {
   createAsphaltTextures,
   createBoostPadTexture,
+  createCharacterPortraitPng,
   createCheckeredStartTexture,
   createChevronSignTexture,
   createCurbTexture,
 } from './asset-pipeline/texture-builder';
+import { buildPortoDasLanternasGlb } from './asset-pipeline/track-builder';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, '..');
 const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
+
+const REQUIRED_CHARACTER_ANIMS = [
+  'idle',
+  'drive',
+  'turnLeft',
+  'turnRight',
+  'drift',
+  'hit',
+  'victory',
+  'defeat',
+  'podium',
+];
 
 async function buildStartGantryGlb(
   outPath: string,
@@ -74,7 +91,6 @@ async function buildStartGantryGlb(
     roughnessFactor: 0.2,
   });
 
-  // Left and right support pillars + footed plinths
   const pillarPositionsX = [-7.8, 7.8];
   for (let i = 0; i < pillarPositionsX.length; i += 1) {
     const px = pillarPositionsX[i];
@@ -96,13 +112,11 @@ async function buildStartGantryGlb(
     const colNode = addMeshToNode(doc, root, `PillarColumn_${side}`, colGeom, steelMat);
     colNode.setTranslation([px, 0.6, 0]);
 
-    // Speaker/light pod mounted mid-pillar
     const podGeom = buildBoxBeveled(0.95, 1.4, 0.75, 0.06);
     const podNode = addMeshToNode(doc, root, `SpeakerPod_${side}`, podGeom, darkMetalMat);
     podNode.setTranslation([px * 0.9, 3.6, 0]);
   }
 
-  // Overhead truss rails (front & back tubular chords + diagonal cross-braces)
   const topY = 6.3;
   const botY = 5.4;
   for (const [label, yVal, zVal] of [
@@ -147,12 +161,10 @@ async function buildStartGantryGlb(
     addMeshToNode(doc, root, `TrussBraceB_${seg}`, braceBackGeom, steelMat);
   }
 
-  // Main checkered race banner suspended across the span
   const bannerGeom = buildBoxBeveled(12.6, 1.35, 0.34, 0.04);
   const bannerNode = addMeshToNode(doc, root, 'StartBanner', bannerGeom, bannerMat);
   bannerNode.setTranslation([0, 5.75, 0]);
 
-  // Center countdown signal box with 3 glowing race lights
   const signalBoxGeom = buildBoxBeveled(2.7, 0.72, 0.48, 0.05);
   const signalBox = addMeshToNode(doc, root, 'SignalHousing', signalBoxGeom, darkMetalMat);
   signalBox.setTranslation([0, 4.72, 0.05]);
@@ -285,16 +297,33 @@ async function writeMarkdownManifest(manifest: AssetManifest): Promise<void> {
 async function main(): Promise<void> {
   const entries: AssetManifestEntry[] = [];
 
-  // 1. Textures
+  // 1. Textures & Character Portraits / Icons
   const asphalt = createAsphaltTextures(512);
   const curbPng = createCurbTexture(256);
   const startLinePng = createCheckeredStartTexture(512);
   const chevronPng = createChevronSignTexture(256);
   const boostPadPng = createBoostPadTexture(256);
+  const niloPortraitPng = createCharacterPortraitPng(
+    [251, 146, 60],
+    [180, 83, 9],
+    [249, 115, 22],
+    [13, 148, 136],
+    256,
+    false,
+  );
+  const niloIconPng = createCharacterPortraitPng(
+    [251, 146, 60],
+    [180, 83, 9],
+    [249, 115, 22],
+    [13, 148, 136],
+    128,
+    true,
+  );
 
   const textureSpecs: Array<{
     id: string;
     name: string;
+    type: AssetManifestEntry['type'];
     relPath: string;
     buffer: Buffer;
     usedIn: string[];
@@ -302,37 +331,58 @@ async function main(): Promise<void> {
     {
       id: 'tex-asphalt-albedo',
       name: 'Textura de Asfalto (Albedo)',
+      type: 'texture',
       relPath: 'assets/textures/asphalt_albedo.png',
       buffer: asphalt.albedo,
-      usedIn: ['CalibrationStage', 'TrackSurfaces'],
+      usedIn: ['TrackSurfaces'],
     },
     {
       id: 'tex-asphalt-roughness',
       name: 'Textura de Asfalto (Rugosidade)',
+      type: 'texture',
       relPath: 'assets/textures/asphalt_roughness.png',
       buffer: asphalt.roughness,
-      usedIn: ['CalibrationStage', 'TrackSurfaces'],
+      usedIn: ['TrackSurfaces'],
     },
     {
       id: 'tex-curb-albedo',
       name: 'Textura de Zebra de Curva',
+      type: 'texture',
       relPath: 'assets/textures/curb_albedo.png',
       buffer: curbPng,
-      usedIn: ['CalibrationStage', 'TrackCurbs'],
+      usedIn: ['TrackCurbs'],
     },
     {
       id: 'tex-start-line-albedo',
       name: 'Faixa Quadriculada de Largada',
+      type: 'texture',
       relPath: 'assets/textures/start_line_albedo.png',
       buffer: startLinePng,
-      usedIn: ['CalibrationStage', 'StartGantry', 'TrackStartLine'],
+      usedIn: ['StartGantry', 'TrackStartLine'],
     },
     {
       id: 'tex-chevron-sign-albedo',
       name: 'Placa Direcional de Curva',
+      type: 'texture',
       relPath: 'assets/textures/chevron_sign_albedo.png',
       buffer: chevronPng,
       usedIn: ['ChevronBoardProp', 'TrackSigns'],
+    },
+    {
+      id: 'ui-portrait-nilo',
+      name: 'Retrato de Seleção — Nilo',
+      type: 'ui',
+      relPath: 'assets/ui/portrait_nilo.png',
+      buffer: niloPortraitPng,
+      usedIn: ['CharacterSelect', 'RaceHud'],
+    },
+    {
+      id: 'ui-icon-nilo',
+      name: 'Ícone de HUD — Nilo',
+      type: 'ui',
+      relPath: 'assets/ui/icon_nilo.png',
+      buffer: niloIconPng,
+      usedIn: ['RaceHud', 'Minimap'],
     },
   ];
 
@@ -341,10 +391,10 @@ async function main(): Promise<void> {
     entries.push({
       id: tex.id,
       name: tex.name,
-      type: 'texture',
+      type: tex.type,
       path: `/${tex.relPath}`,
       format: 'png',
-      origin: 'Pipeline local de texturas PBR (texture-builder.ts)',
+      origin: 'Pipeline local de texturas PBR e UI (texture-builder.ts)',
       author: 'Kart Legends 3D Pipeline',
       license: 'Original-Project-License',
       sizeBytes,
@@ -354,8 +404,10 @@ async function main(): Promise<void> {
   }
 
   // 2. Props GLB
-  const startGantryPath = path.join(PUBLIC_DIR, 'assets/props/start_gantry.glb');
-  const startGantrySize = await buildStartGantryGlb(startGantryPath, startLinePng);
+  const startGantrySize = await buildStartGantryGlb(
+    path.join(PUBLIC_DIR, 'assets/props/start_gantry.glb'),
+    startLinePng,
+  );
   entries.push({
     id: 'prop-start-gantry',
     name: 'Pórtico de Largada Metálico',
@@ -367,12 +419,14 @@ async function main(): Promise<void> {
     license: 'Original-Project-License',
     sizeBytes: startGantrySize,
     validationStatus: 'validated',
-    usedIn: ['CalibrationStage', 'AllTracks'],
+    usedIn: ['AllTracks'],
     requiredNodes: ['StartGantryRoot', 'StartBanner', 'SignalHousing'],
   });
 
-  const chevronBoardPath = path.join(PUBLIC_DIR, 'assets/props/chevron_board.glb');
-  const chevronBoardSize = await buildChevronBoardGlb(chevronBoardPath, chevronPng);
+  const chevronBoardSize = await buildChevronBoardGlb(
+    path.join(PUBLIC_DIR, 'assets/props/chevron_board.glb'),
+    chevronPng,
+  );
   entries.push({
     id: 'prop-chevron-board',
     name: 'Sinalizador Direcional de Curva',
@@ -384,12 +438,14 @@ async function main(): Promise<void> {
     license: 'Original-Project-License',
     sizeBytes: chevronBoardSize,
     validationStatus: 'validated',
-    usedIn: ['CalibrationStage', 'TrackCorners'],
+    usedIn: ['TrackCorners'],
     requiredNodes: ['ChevronBoardRoot', 'ChevronPanel'],
   });
 
-  const boostPadPath = path.join(PUBLIC_DIR, 'assets/props/boost_pad.glb');
-  const boostPadSize = await buildBoostPadGlb(boostPadPath, boostPadPng);
+  const boostPadSize = await buildBoostPadGlb(
+    path.join(PUBLIC_DIR, 'assets/props/boost_pad.glb'),
+    boostPadPng,
+  );
   entries.push({
     id: 'prop-boost-pad',
     name: 'Placa de Impulso Luminosa',
@@ -401,13 +457,91 @@ async function main(): Promise<void> {
     license: 'Original-Project-License',
     sizeBytes: boostPadSize,
     validationStatus: 'validated',
-    usedIn: ['CalibrationStage', 'TrackBoostPads'],
+    usedIn: ['TrackBoostPads'],
     requiredNodes: ['BoostPadRoot', 'BoostDeck'],
   });
 
-  // 3. Audio SFX
-  const uiClickPath = path.join(PUBLIC_DIR, 'assets/audio/sfx/ui_click.ogg');
-  const uiClickSize = await generateUiClickOgg(uiClickPath);
+  // 3. Definitive Character GLB (Slice 1: Nilo with all 9 GLTF animation clips)
+  const niloSize = await buildCharacterGlb(
+    NILO_BUILD_SPEC,
+    path.join(PUBLIC_DIR, 'assets/characters/nilo.glb'),
+  );
+  entries.push({
+    id: 'character-nilo',
+    name: 'Piloto Nilo — Raposa Exploradora',
+    type: 'character',
+    path: '/assets/characters/nilo.glb',
+    format: 'glb',
+    origin: 'Pipeline local GLTF animado (character-builder.ts)',
+    author: 'Kart Legends 3D Pipeline',
+    license: 'Original-Project-License',
+    sizeBytes: niloSize,
+    validationStatus: 'validated',
+    usedIn: ['RaceScene', 'CharacterRig'],
+    requiredNodes: ['Character_nilo_Root', 'Torso', 'Head', 'ArmL', 'ArmR', 'EarL', 'EarR', 'TailBase'],
+    requiredAnimations: REQUIRED_CHARACTER_ANIMS,
+  });
+
+  // 4. Definitive Kart GLB (Slice 1: Trilha Raposa)
+  const trilhaRaposaSize = await buildKartGlb(
+    TRILHA_RAPOSA_BUILD_SPEC,
+    path.join(PUBLIC_DIR, 'assets/karts/trilha_raposa.glb'),
+  );
+  entries.push({
+    id: 'kart-trilha-raposa',
+    name: 'Kart Trilha Raposa',
+    type: 'kart',
+    path: '/assets/karts/trilha_raposa.glb',
+    format: 'glb',
+    origin: 'Pipeline local GLTF de veículos (kart-builder.ts)',
+    author: 'Kart Legends 3D Pipeline',
+    license: 'Original-Project-License',
+    sizeBytes: trilhaRaposaSize,
+    validationStatus: 'validated',
+    usedIn: ['RaceScene', 'KartEntity'],
+    requiredNodes: [
+      'KartRoot',
+      'ChassisGroup',
+      'SteeringWheel',
+      'DriverMount',
+      'ExhaustL',
+      'ExhaustR',
+      'WheelFL',
+      'WheelFR',
+      'WheelRL',
+      'WheelRR',
+    ],
+  });
+
+  // 5. Definitive Track GLB (Slice 1: Porto das Lanternas)
+  const portoSize = await buildPortoDasLanternasGlb(
+    PORTO_DAS_LANTERNAS_LAYOUT,
+    path.join(PUBLIC_DIR, 'assets/tracks/porto_das_lanternas.glb'),
+  );
+  entries.push({
+    id: 'track-porto-das-lanternas',
+    name: 'Pista 1 — Porto das Lanternas',
+    type: 'track',
+    path: '/assets/tracks/porto_das_lanternas.glb',
+    format: 'glb',
+    origin: 'Pipeline local GLTF de pistas (track-builder.ts)',
+    author: 'Kart Legends 3D Pipeline',
+    license: 'Original-Project-License',
+    sizeBytes: portoSize,
+    validationStatus: 'validated',
+    usedIn: ['RaceScene', 'PortoDasLanternas'],
+    requiredNodes: [
+      'TrackRoot',
+      'MainRoadMesh',
+      'LeftStoneWall',
+      'RightStoneWall',
+      'TrackStartGantry',
+      'SceneryGroup',
+    ],
+  });
+
+  // 6. Audio SFX
+  const uiClickSize = await generateUiClickOgg(path.join(PUBLIC_DIR, 'assets/audio/sfx/ui_click.ogg'));
   entries.push({
     id: 'sfx-ui-click',
     name: 'Som de Clique de Interface',
@@ -422,8 +556,9 @@ async function main(): Promise<void> {
     usedIn: ['UISystem'],
   });
 
-  const uiConfirmPath = path.join(PUBLIC_DIR, 'assets/audio/sfx/ui_confirm.ogg');
-  const uiConfirmSize = await generateUiConfirmOgg(uiConfirmPath);
+  const uiConfirmSize = await generateUiConfirmOgg(
+    path.join(PUBLIC_DIR, 'assets/audio/sfx/ui_confirm.ogg'),
+  );
   entries.push({
     id: 'sfx-ui-confirm',
     name: 'Som de Confirmação de Interface',
@@ -435,7 +570,7 @@ async function main(): Promise<void> {
     license: 'Original-Project-License',
     sizeBytes: uiConfirmSize,
     validationStatus: 'validated',
-    usedIn: ['CalibrationStage', 'UISystem'],
+    usedIn: ['UISystem'],
   });
 
   const manifest: AssetManifest = {

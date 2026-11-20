@@ -556,9 +556,10 @@ export function buildRoadRibbon(
     const b = a + 1;
     const c = a + 2;
     const d = a + 3;
-    roadIdx.push(a, c, b, b, c, d);
-    leftIdx.push(a, c, b, b, c, d);
-    rightIdx.push(a, c, b, b, c, d);
+    // CCW winding when viewed from +Y up: (b - a) x (c - a) = (+X) x (-Z) = +Y
+    roadIdx.push(a, b, c, b, d, c);
+    leftIdx.push(a, b, c, b, d, c);
+    rightIdx.push(a, b, c, b, d, c);
   }
 
   const finalize = (pos: number[], uv: number[], idx: number[]): GeometryData => {

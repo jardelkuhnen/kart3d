@@ -295,3 +295,160 @@ export function createBoostPadTexture(size = 256): Buffer {
     return [14, 28, 56, 255];
   });
 }
+
+/**
+ * Tileable warm dirt shortcut & off-road track texture.
+ */
+export function createDirtTrackTexture(size = 256): Buffer {
+  return renderPng(size, size, (_x, _y, u, v) => {
+    const n1 = fbm2D(u, v, 8, 4, 311);
+    const pebble = valueNoise2D(u * 48, v * 48, 48, 317);
+    const rut = Math.exp(-Math.pow((u - 0.3) / 0.12, 2)) + Math.exp(-Math.pow((u - 0.7) / 0.12, 2));
+    const shade = 1 - rut * 0.12;
+    return [
+      (148 + (n1 - 0.5) * 34 + (pebble - 0.5) * 24) * shade,
+      (104 + (n1 - 0.5) * 26 + (pebble - 0.5) * 18) * shade,
+      (64 + (n1 - 0.5) * 20 + (pebble - 0.5) * 12) * shade,
+      255,
+    ];
+  });
+}
+
+/**
+ * Tileable wind-rippled coastal sand texture.
+ */
+export function createSandTexture(size = 256): Buffer {
+  return renderPng(size, size, (_x, _y, u, v) => {
+    const ripple = Math.sin((u * 8 + v * 4 + fbm2D(u, v, 6, 3, 419) * 1.4) * Math.PI * 2);
+    const grain = (valueNoise2D(u * 64, v * 64, 64, 421) - 0.5) * 14;
+    return [
+      226 + ripple * 12 + grain,
+      196 + ripple * 10 + grain * 0.9,
+      138 + ripple * 8 + grain * 0.7,
+      255,
+    ];
+  });
+}
+
+/**
+ * Tileable warm Mediterranean terracotta roof tile texture.
+ */
+export function createTerracottaTexture(size = 256): Buffer {
+  return renderPng(size, size, (_x, _y, u, v) => {
+    const wave = Math.sin(u * Math.PI * 16) * 14;
+    const rowEdge = (v * 8) % 1;
+    const shadow = rowEdge < 0.12 ? 0.72 : 1.0;
+    const grain = (fbm2D(u, v, 12, 3, 613) - 0.5) * 20;
+    return [
+      (196 + wave + grain) * shadow,
+      (84 + wave * 0.5 + grain * 0.6) * shadow,
+      (52 + wave * 0.3 + grain * 0.4) * shadow,
+      255,
+    ];
+  });
+}
+
+/**
+ * Tileable stylized turquoise coastal bay water texture with sun-caustic shimmer.
+ */
+export function createWaterTexture(size = 256): Buffer {
+  return renderPng(size, size, (_x, _y, u, v) => {
+    const n1 = fbm2D(u, v, 6, 4, 821);
+    const n2 = fbm2D(u + 0.3, v + 0.15, 12, 3, 829);
+    const caustic = smoothstep(0.62, 0.85, (n1 + n2) * 0.5);
+    return [
+      lerp(18, 120, caustic),
+      lerp(116, 224, caustic),
+      lerp(182, 248, caustic),
+      255,
+    ];
+  });
+}
+
+/**
+ * Stylized 2D character portrait / HUD emblem PNG with radial burst & clean silhouette.
+ */
+export function createCharacterPortraitPng(
+  bgTop: RgbColor,
+  bgBottom: RgbColor,
+  primary: RgbColor,
+  accent: RgbColor,
+  size = 256,
+  isIcon = false,
+): Buffer {
+  return renderPng(size, size, (_x, _y, u, v) => {
+    const cx = u - 0.5;
+    const cy = v - 0.52;
+    const dist = Math.hypot(cx, cy);
+    const angle = Math.atan2(cy, cx);
+
+    // Rounded emblem frame border
+    if (dist > 0.48) {
+      return [0, 0, 0, 0];
+    }
+    if (dist > 0.44) {
+      return [255, 204, 42, 255];
+    }
+
+    // Radial burst backdrop
+    const burst = 0.88 + 0.12 * Math.sin(angle * 12);
+    let r = lerp(bgTop[0], bgBottom[0], v) * burst;
+    let g = lerp(bgTop[1], bgBottom[1], v) * burst;
+    let b = lerp(bgTop[2], bgBottom[2], v) * burst;
+
+    // Stylized character head & ears silhouette
+    const inHead = Math.hypot(cx * 1.1, (cy - 0.04) * 1.15) < 0.24;
+    const inLeftEar =
+      cx < -0.05 && cx > -0.25 && cy < -0.08 && cy > -0.34 && Math.abs(cx + 0.15 + (cy + 0.21) * 0.35) < 0.095;
+    const inRightEar =
+      cx > 0.05 && cx < 0.25 && cy < -0.08 && cy > -0.34 && Math.abs(cx - 0.15 - (cy + 0.21) * 0.35) < 0.095;
+    const inScarf = Math.hypot(cx * 0.72, (cy - 0.28) * 1.6) < 0.24;
+
+    if (inScarf) {
+      r = accent[0];
+      g = accent[1];
+      b = accent[2];
+    }
+    if (inLeftEar || inRightEar || inHead) {
+      r = primary[0];
+      g = primary[1];
+      b = primary[2];
+    }
+
+    // Cream muzzle & aviator goggles highlight
+    const inMuzzle = Math.hypot(cx * 1.25, (cy - 0.12) * 1.6) < 0.14;
+    if (inMuzzle) {
+      r = 252;
+      g = 242;
+      b = 222;
+    }
+
+    const inLeftGoggle = Math.hypot(cx + 0.09, cy + 0.12) < 0.068;
+    const inRightGoggle = Math.hypot(cx - 0.09, cy + 0.12) < 0.068;
+    if (inLeftGoggle || inRightGoggle) {
+      const inner = Math.hypot(cx + (cx < 0 ? 0.09 : -0.09), cy + 0.12) < 0.045;
+      r = inner ? 252 : 34;
+      g = inner ? 196 : 42;
+      b = inner ? 48 : 64;
+    }
+
+    // Glossy eyes
+    if (!isIcon || dist < 0.42) {
+      const inEyeL = Math.hypot(cx + 0.075, cy - 0.01) < 0.028;
+      const inEyeR = Math.hypot(cx - 0.075, cy - 0.01) < 0.028;
+      if (inEyeL || inEyeR) {
+        r = 18;
+        g = 24;
+        b = 38;
+      }
+      const inNose = Math.hypot(cx, cy - 0.085) < 0.024;
+      if (inNose) {
+        r = 22;
+        g = 24;
+        b = 30;
+      }
+    }
+
+    return [r, g, b, 255];
+  });
+}

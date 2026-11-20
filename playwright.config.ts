@@ -19,13 +19,16 @@ export default defineConfig({
         channel: 'chrome',
         viewport: { width: 1280, height: 720 },
         launchOptions: {
-          args: [
-            '--use-gl=angle',
-            '--use-angle=swiftshader',
-            '--enable-webgl',
-            '--ignore-gpu-blocklist',
-            '--enable-unsafe-swiftshader',
-          ],
+          args:
+            process.platform === 'darwin'
+              ? ['--use-gl=angle', '--use-angle=metal', '--enable-webgl', '--ignore-gpu-blocklist']
+              : [
+                  '--use-gl=angle',
+                  '--use-angle=swiftshader',
+                  '--enable-webgl',
+                  '--ignore-gpu-blocklist',
+                  '--enable-unsafe-swiftshader',
+                ],
         },
       },
     },

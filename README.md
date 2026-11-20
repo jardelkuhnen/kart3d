@@ -2,7 +2,7 @@
 
 Jogo original de corrida de kart arcade 3D para navegador, construído com **React**, **TypeScript (strict)**, **Three.js / React Three Fiber**, **Rapier Physics**, **Zustand** e **Howler.js**.
 
-> **Status Atual:** Slice 0 concluído (Fundação técnica, catálogos completos, pipeline local de assets GLB/PNG/OGG, validador automatizado, cena de calibração WebGL + Rapier e suíte de testes unitários e E2E).
+> **Status Atual:** Slice 1 concluído (Núcleo jogável 1×1×1 com o piloto **Nilo** animado por GLTF `AnimationMixer`, kart **Trilha Raposa** multi-peça, pista **Porto das Lanternas**, física arcade em 60 Hz integrada ao Rapier, drift de 3 níveis com miniturbo, rampas, atalho de terra, câmera dinâmica, controles teclado/Gamepad e sistema de voltas/checkpoints anti-corte).
 
 ## Requisitos de Ambiente
 
@@ -18,6 +18,16 @@ npm install
 npm run assets:build
 ```
 
+## Controles na Pista
+
+- `W` / `Seta Cima`: Acelerar
+- `S` / `Seta Baixo`: Frear / Marcha à ré
+- `A` / `D` ou `Setas`: Virar
+- `Espaço`: Saltar / Drift (Níveis 1, 2 e 3 com Miniturbo ao soltar)
+- `R`: Recuperar kart no último checkpoint válido
+- `Esc`: Pausar / Retomar
+- Suporte completo à **Gamepad API**
+
 ## Comandos Disponíveis
 
 - `npm run dev` — Inicia o servidor de desenvolvimento Vite.
@@ -28,8 +38,11 @@ npm run assets:build
 - `npm run test` — Executa os testes unitários no Vitest.
 - `npm run test:e2e` — Executa os testes ponta a ponta no Playwright (Chrome + WebGL).
 - `npm run assets:build` — Gera os assets locais (GLB, PNG, OGG) e atualiza `public/assets/manifest.json` e `ASSET_MANIFEST.md`.
-- `npm run validate:assets` — Audita todos os arquivos em `public/assets/` contra o manifesto, checando formatos, licenças, integridade GLB/PNG/OGG e ausência de arquivos órfãos.
+- `npm run validate:assets` — Audita todos os arquivos em `public/assets/` contra o manifesto, checando formatos, licenças, integridade GLB/PNG/OGG, nós/animações obrigatórios e ausência de arquivos órfãos.
 
-## Estrutura do Projeto
+## Documentação Complementar
 
-Veja os detalhes completos da arquitetura em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), registro de assets em [ASSET_MANIFEST.md](ASSET_MANIFEST.md), licenças em [LICENSES.md](LICENSES.md) e o relatório de verificação em [QA_REPORT.md](QA_REPORT.md).
+- Arquitetura: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- Manifesto de Assets: [ASSET_MANIFEST.md](ASSET_MANIFEST.md)
+- Licenças: [LICENSES.md](LICENSES.md)
+- Relatório de QA: [QA_REPORT.md](QA_REPORT.md)

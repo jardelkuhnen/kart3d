@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-20T01:35:58.140Z",
+  "generatedAt": "2026-11-20T02:04:32.264Z",
   "project": "KART LEGENDS 3D",
   "assets": [
     {
@@ -9,13 +9,12 @@
       "type": "texture",
       "path": "/assets/textures/asphalt_albedo.png",
       "format": "png",
-      "origin": "Pipeline local de texturas PBR (texture-builder.ts)",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
       "author": "Kart Legends 3D Pipeline",
       "license": "Original-Project-License",
       "sizeBytes": 267635,
       "validationStatus": "validated",
       "usedIn": [
-        "CalibrationStage",
         "TrackSurfaces"
       ]
     },
@@ -25,13 +24,12 @@
       "type": "texture",
       "path": "/assets/textures/asphalt_roughness.png",
       "format": "png",
-      "origin": "Pipeline local de texturas PBR (texture-builder.ts)",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
       "author": "Kart Legends 3D Pipeline",
       "license": "Original-Project-License",
       "sizeBytes": 117710,
       "validationStatus": "validated",
       "usedIn": [
-        "CalibrationStage",
         "TrackSurfaces"
       ]
     },
@@ -41,13 +39,12 @@
       "type": "texture",
       "path": "/assets/textures/curb_albedo.png",
       "format": "png",
-      "origin": "Pipeline local de texturas PBR (texture-builder.ts)",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
       "author": "Kart Legends 3D Pipeline",
       "license": "Original-Project-License",
       "sizeBytes": 33750,
       "validationStatus": "validated",
       "usedIn": [
-        "CalibrationStage",
         "TrackCurbs"
       ]
     },
@@ -57,13 +54,12 @@
       "type": "texture",
       "path": "/assets/textures/start_line_albedo.png",
       "format": "png",
-      "origin": "Pipeline local de texturas PBR (texture-builder.ts)",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
       "author": "Kart Legends 3D Pipeline",
       "license": "Original-Project-License",
       "sizeBytes": 59335,
       "validationStatus": "validated",
       "usedIn": [
-        "CalibrationStage",
         "StartGantry",
         "TrackStartLine"
       ]
@@ -74,7 +70,7 @@
       "type": "texture",
       "path": "/assets/textures/chevron_sign_albedo.png",
       "format": "png",
-      "origin": "Pipeline local de texturas PBR (texture-builder.ts)",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
       "author": "Kart Legends 3D Pipeline",
       "license": "Original-Project-License",
       "sizeBytes": 3086,
@@ -82,6 +78,38 @@
       "usedIn": [
         "ChevronBoardProp",
         "TrackSigns"
+      ]
+    },
+    {
+      "id": "ui-portrait-nilo",
+      "name": "Retrato de Seleção — Nilo",
+      "type": "ui",
+      "path": "/assets/ui/portrait_nilo.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 23651,
+      "validationStatus": "validated",
+      "usedIn": [
+        "CharacterSelect",
+        "RaceHud"
+      ]
+    },
+    {
+      "id": "ui-icon-nilo",
+      "name": "Ícone de HUD — Nilo",
+      "type": "ui",
+      "path": "/assets/ui/icon_nilo.png",
+      "format": "png",
+      "origin": "Pipeline local de texturas PBR e UI (texture-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 9296,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceHud",
+        "Minimap"
       ]
     },
     {
@@ -96,7 +124,6 @@
       "sizeBytes": 139488,
       "validationStatus": "validated",
       "usedIn": [
-        "CalibrationStage",
         "AllTracks"
       ],
       "requiredNodes": [
@@ -117,7 +144,6 @@
       "sizeBytes": 11280,
       "validationStatus": "validated",
       "usedIn": [
-        "CalibrationStage",
         "TrackCorners"
       ],
       "requiredNodes": [
@@ -137,12 +163,100 @@
       "sizeBytes": 36860,
       "validationStatus": "validated",
       "usedIn": [
-        "CalibrationStage",
         "TrackBoostPads"
       ],
       "requiredNodes": [
         "BoostPadRoot",
         "BoostDeck"
+      ]
+    },
+    {
+      "id": "character-nilo",
+      "name": "Piloto Nilo — Raposa Exploradora",
+      "type": "character",
+      "path": "/assets/characters/nilo.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF animado (character-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 136320,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "CharacterRig"
+      ],
+      "requiredNodes": [
+        "Character_nilo_Root",
+        "Torso",
+        "Head",
+        "ArmL",
+        "ArmR",
+        "EarL",
+        "EarR",
+        "TailBase"
+      ],
+      "requiredAnimations": [
+        "idle",
+        "drive",
+        "turnLeft",
+        "turnRight",
+        "drift",
+        "hit",
+        "victory",
+        "defeat",
+        "podium"
+      ]
+    },
+    {
+      "id": "kart-trilha-raposa",
+      "name": "Kart Trilha Raposa",
+      "type": "kart",
+      "path": "/assets/karts/trilha_raposa.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de veículos (kart-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 155760,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "KartEntity"
+      ],
+      "requiredNodes": [
+        "KartRoot",
+        "ChassisGroup",
+        "SteeringWheel",
+        "DriverMount",
+        "ExhaustL",
+        "ExhaustR",
+        "WheelFL",
+        "WheelFR",
+        "WheelRL",
+        "WheelRR"
+      ]
+    },
+    {
+      "id": "track-porto-das-lanternas",
+      "name": "Pista 1 — Porto das Lanternas",
+      "type": "track",
+      "path": "/assets/tracks/porto_das_lanternas.glb",
+      "format": "glb",
+      "origin": "Pipeline local GLTF de pistas (track-builder.ts)",
+      "author": "Kart Legends 3D Pipeline",
+      "license": "Original-Project-License",
+      "sizeBytes": 1135732,
+      "validationStatus": "validated",
+      "usedIn": [
+        "RaceScene",
+        "PortoDasLanternas"
+      ],
+      "requiredNodes": [
+        "TrackRoot",
+        "MainRoadMesh",
+        "LeftStoneWall",
+        "RightStoneWall",
+        "TrackStartGantry",
+        "SceneryGroup"
       ]
     },
     {
@@ -172,7 +286,6 @@
       "sizeBytes": 5502,
       "validationStatus": "validated",
       "usedIn": [
-        "CalibrationStage",
         "UISystem"
       ]
     }

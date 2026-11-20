@@ -1,12 +1,15 @@
 import { Component, type ReactNode, useCallback, useEffect, useState } from 'react';
 import { Howl } from 'howler';
 import { useGameStore } from './store';
-import { CHARACTERS } from '../data/characters';
-import { ITEMS } from '../data/items';
-import { KARTS } from '../data/karts';
-import { TRACKS } from '../data/tracks';
+import { RaceHud } from '../components/hud/RaceHud';
+import { getCharacterById } from '../data/characters';
+import { getKartById } from '../data/karts';
+import { getTrackById } from '../data/tracks';
 import { loadAssetManifest, resolveAssetPath } from '../game/core/assetLoader';
-import { CalibrationStage } from '../scenes/CalibrationStage';
+import { DEFAULT_LAPS } from '../game/core/constants';
+import type { RacePhase } from '../game/racing/raceManager';
+import type { KartHudTelemetry } from '../game/vehicles/KartEntity';
+import { RaceScene, type RaceStageSync } from '../scenes/RaceScene';
 
 interface ErrorBoundaryState {
   error: string | null;
@@ -32,15 +35,45 @@ class SceneErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundar
   }
 }
 
+const INITIAL_TELEMETRY: KartHudTelemetry = {
+  speedKmh: 0,
+  surface: 'asphalt',
+  driftActive: false,
+  driftTier: 0,
+  driftChargeProgress: 0,
+  boostActive: false,
+  boostLabel: null,
+  currentLap: 1,
+  totalLaps: DEFAULT_LAPS,
+  raceTimeMs: 0,
+  lapTimesMs: [],
+  bestLapMs: null,
+  wrongWay: false,
+  finished: false,
+  recovering: false,
+  onShortcut: false,
+  progressRatio: 0,
+};
+
 export function App() {
   const manifest = useGameStore((s) => s.manifest);
   const manifestError = useGameStore((s) => s.manifestError);
-  const physicsStepsObserved = useGameStore((s) => s.physicsStepsObserved);
+  const selectedCharacterId = useGameStore((s) => s.selectedCharacterId);
+  const selectedKartId = useGameStore((s) => s.selectedKartId);
+  const selectedTrackId = useGameStore((s) => s.selectedTrackId);
   const settings = useGameStore((s) => s.settings);
   const setManifest = useGameStore((s) => s.setManifest);
   const setManifestError = useGameStore((s) => s.setManifestError);
   const setScreen = useGameStore((s) => s.setScreen);
-  const [audioStatus, setAudioStatus] = useState<'idle' | 'played' | 'error'>('idle');
+
+  const [phaseRequest, setPhaseRequest] = useState<RacePhase>('intro');
+  const [stageSync, setStageSync] = useState<RaceStageSync>({
+    phase: 'intro',
+    countdownLabel: null,
+  });
+  const [paused, setPaused] = useState(false);
+  const [resetToken, setResetToken] = useState(0);
+  const [telemetry, setTelemetry] = useState<KartHudTelemetry>(INITIAL_TELEMETRY);
 
   useEffect(() => {
     let active = true;
@@ -48,7 +81,7 @@ export function App() {
       .then((loaded) => {
         if (!active) return;
         setManifest(loaded);
-        setScreen('main-menu');
+        setScreen('race');
       })
       .catch((err: unknown) => {
         if (!active) return;
@@ -60,82 +93,80 @@ export function App() {
     };
   }, [setManifest, setManifestError, setScreen]);
 
-  const handleTestAudio = useCallback(() => {
+  const playConfirmSound = useCallback(() => {
     if (!manifest) return;
     try {
       const path = resolveAssetPath(manifest, 'sfx-ui-confirm');
-      const sound = new Howl({
-        src: [path],
-        volume: settings.audio.sfxVolume,
-        onplay: () => setAudioStatus('played'),
-        onloaderror: () => setAudioStatus('error'),
-      });
-      sound.play();
+      const sfx = new Howl({ src: [path], volume: settings.audio.sfxVolume });
+      sfx.play();
     } catch {
-      setAudioStatus('error');
+      // Ignore audio errors if manifest unavailable
     }
   }, [manifest, settings.audio.sfxVolume]);
 
+  const handleStartRace = useCallback(() => {
+    playConfirmSound();
+    setPaused(false);
+    setPhaseRequest('countdown');
+    setResetToken((n) => n + 1);
+  }, [playConfirmSound]);
+
+  const handleRestartRace = useCallback(() => {
+    playConfirmSound();
+    setPaused(false);
+    setTelemetry(INITIAL_TELEMETRY);
+    setPhaseRequest('countdown');
+    setResetToken((n) => n + 1);
+  }, [playConfirmSound]);
+
+  const handleTogglePause = useCallback(() => {
+    setPaused((prev) => !prev);
+  }, []);
+
+  const characterDef = getCharacterById(selectedCharacterId);
+  const kartDef = getKartById(selectedKartId);
+  const trackDef = getTrackById(selectedTrackId);
+  const characterIconPath = manifest
+    ? resolveAssetPath(manifest, characterDef.iconAssetId)
+    : '/assets/ui/icon_nilo.png';
+
   return (
     <main className="kl-app">
-      <SceneErrorBoundary>
-        <CalibrationStage />
-      </SceneErrorBoundary>
+      {manifestError ? (
+        <div className="kl-panel" style={{ margin: 24 }}>
+          <h1 className="kl-title">KART LEGENDS 3D</h1>
+          <p className="kl-error-banner" role="alert">
+            {manifestError}
+          </p>
+        </div>
+      ) : (
+        <>
+          <SceneErrorBoundary>
+            <RaceScene
+              phaseRequest={phaseRequest}
+              paused={paused}
+              resetToken={resetToken}
+              onTelemetry={setTelemetry}
+              onStageSync={setStageSync}
+              onPauseToggle={handleTogglePause}
+            />
+          </SceneErrorBoundary>
 
-      <div className="kl-hud-overlay">
-        <header className="kl-topbar">
-          <section className="kl-panel" aria-label="Status da Fundação">
-            <span className="kl-brand-badge">SLICE 0 · FUNDAÇÃO TÉCNICA</span>
-            <h1 className="kl-title">KART LEGENDS 3D</h1>
-            <p className="kl-subtitle">
-              Fundação WebGL + Rapier Ativa · {CHARACTERS.length} pilotos · {KARTS.length} karts ·{' '}
-              {TRACKS.length} pistas · {ITEMS.length} itens registrados
-            </p>
-            {manifestError && (
-              <p className="kl-error-banner" role="alert">
-                {manifestError}
-              </p>
-            )}
-          </section>
-
-          <section className="kl-panel kl-stats-grid" aria-label="Telemetria de Inicialização">
-            <div className="kl-stat-pill">
-              <span className="kl-stat-label">Manifesto</span>
-              <span className={`kl-stat-value ${manifest ? 'ok' : manifestError ? 'error' : ''}`}>
-                {manifest ? `${manifest.assets.length} ativos` : manifestError ? 'Erro' : 'Carregando'}
-              </span>
-            </div>
-            <div className="kl-stat-pill">
-              <span className="kl-stat-label">Física Rapier</span>
-              <span className="kl-stat-value ok">60 Hz ({physicsStepsObserved} steps)</span>
-            </div>
-            <div className="kl-stat-pill">
-              <span className="kl-stat-label">Qualidade</span>
-              <span className="kl-stat-value">{settings.quality.toUpperCase()}</span>
-            </div>
-          </section>
-        </header>
-
-        <footer className="kl-bottom-bar">
-          <div className="kl-panel">
-            <span className="kl-subtitle">
-              Arraste o mouse para inspecionar o pórtico GLB, placas direcionais e o probe Rapier.
-            </span>
-          </div>
-          <button
-            type="button"
-            className="kl-btn"
-            onClick={handleTestAudio}
-            disabled={!manifest}
-          >
-            {audioStatus === 'played'
-              ? 'Áudio Confirmado (Howler.js)'
-              : audioStatus === 'error'
-                ? 'Erro no Áudio'
-                : 'Testar Áudio (Howler.js)'}
-          </button>
-        </footer>
-      </div>
+          <RaceHud
+            trackName={trackDef.name}
+            characterName={characterDef.name}
+            kartName={kartDef.name}
+            characterIconPath={characterIconPath}
+            phase={stageSync.phase}
+            countdownLabel={stageSync.countdownLabel}
+            paused={paused}
+            telemetry={telemetry}
+            onStartRace={handleStartRace}
+            onRestartRace={handleRestartRace}
+            onTogglePause={handleTogglePause}
+          />
+        </>
+      )}
     </main>
   );
 }
